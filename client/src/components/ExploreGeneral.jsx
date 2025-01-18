@@ -11,12 +11,12 @@ import "swiper/css/autoplay";
 import "swiper/css/pagination";
 import "../css/explore_general.css";
 import toast from "react-hot-toast";
-import LoadingSpinner from "../spinner/Spinner";
+import Spinner from "../spinner/Spinner";
 
 const ExploreGeneral = () => {
   const navigation = useNavigation();
-  const [topicCategories, exploreGeneralData] = useLoaderData();
-  const { topics, bookWorms, topLikedBooks } = exploreGeneralData;
+  const [topicCategories, generalData] = useLoaderData();
+  const { topics, bookWorms, topLikedBooks } = generalData;
   const [followingStates, setFollowingStates] = useState(
     topics.reduce((acc, curr) => {
       acc[curr.id] = curr.isFollowing;
@@ -290,7 +290,7 @@ const ExploreGeneral = () => {
           </Swiper>
         </div>
       </div>
-      <LoadingSpinner pendingVal={pending} />
+      <Spinner pendingVal={pending} />
     </>
   );
 };

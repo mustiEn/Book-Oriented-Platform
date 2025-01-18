@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 
-export const loadTopicCategories = async () => {
+export const loadExploreGeneral = async () => {
   const response = await Promise.all([
     fetch("/api/get-topic-categories"),
     fetch("/api/get-explore-general"),
@@ -15,6 +15,23 @@ export const loadTopicCategories = async () => {
   console.log(data);
 
   // return { topicCategories, topics };
+  return data;
+};
+
+export const loadExploreTopics = async () => {
+  const response = await Promise.all([
+    fetch("/api/get-topic-categories"),
+    fetch("/api/get-explore-topics"),
+  ]);
+
+  for (const res of response) {
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
+  }
+  const data = await Promise.all([response[0].json(), response[1].json()]);
+  console.log(data);
+
   return data;
 };
 
@@ -235,15 +252,6 @@ export const loadBookDetailsShareReview = async ({ params }) => {
   const data = await res.json();
   if (!res.ok) {
     return "Sometinhg went wrong";
-  }
-  return data;
-};
-
-export const loadExploreGeneral = async () => {
-  const response = await fetch("/api/get-explore-general");
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(response);
   }
   return data;
 };

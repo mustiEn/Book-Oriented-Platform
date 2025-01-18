@@ -6,7 +6,7 @@ import InputGroup from "react-bootstrap/InputGroup";
 import Modal from "react-bootstrap/Modal";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
-import LoadingSpinner from "../spinner/Spinner";
+import Spinner from "../spinner/Spinner";
 import { toast } from "react-hot-toast";
 
 const ReaderBookModalDetails = ({ modalProps }) => {
@@ -388,7 +388,7 @@ const ReaderBookModalDetails = ({ modalProps }) => {
         </Modal.Footer>
       </Modal>
 
-      <LoadingSpinner pendingVal={pending} />
+      <Spinner pendingVal={pending} />
     </>
   );
 };

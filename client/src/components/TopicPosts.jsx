@@ -13,7 +13,7 @@ import {
 } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import toast from "react-hot-toast";
-import LoadingSpinner from "../spinner/Spinner";
+import Spinner from "../spinner/Spinner";
 
 const TopicPosts = () => {
   const params = useParams();
@@ -119,7 +119,7 @@ const TopicPosts = () => {
         </NavLink>
       </div>
       <Outlet />
-      <LoadingSpinner pendingVal={pending} />
+      <Spinner pendingVal={pending} />
     </>
   );
 };

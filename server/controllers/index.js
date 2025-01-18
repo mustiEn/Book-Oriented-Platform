@@ -206,15 +206,4 @@ const bookCollection = async (req, res, next) => {
   }
 };
 
-const getTopicCategories = async (req, res, next) => {
-  try {
-    let results = await TopicCategory.findAll();
-    results = results.map((result) => result.toJSON());
-    // logger.log(results);
-    res.status(200).json(results);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export { signup, bookCollection, login, getTopicCategories };
+export { signup, bookCollection, login };

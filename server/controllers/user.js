@@ -18,6 +18,7 @@ import { Thought } from "../models/Thought.js";
 import { ThoughtImage } from "../models/ThoughtImage.js";
 import { BookCollection } from "../models/BookCollection.js";
 import { Quote } from "../models/Quote.js";
+import { trendingTopics } from "../crons/index.js";
 
 const shareReview = async (req, res, next) => {
   const t = await sequelize.transaction();
@@ -2027,6 +2028,52 @@ const getExploreGenerals = async (req, res, next) => {
   }
 };
 
+const getExploreTopics = async (req, res, next) => {
+  try {
+    const userId = req.session.passport.user;
+    // const trendingTopicsSql = ``
+    res.status(200).json(trendingTopics);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUpdated = async (req, res, next) => {
+  try {
+    const ids = trendingTopics.map((topic) => topic.topicId);
+    logger.log(ids);
+    const updated = await Post.findAll({
+      attributes: ["topicId", sequelize.fn("COUNT", sequelize.col("id"))],
+      where: {
+        topicId: ids,
+        createdAt: {
+          [Op.gte]: sequelize.literal("NOW() - INTERVAL 24 HOUR"),
+        },
+        post_type: {
+          [Op.not]: "comment",
+        },
+      },
+      group: ["topicId"],
+      raw: true,
+    });
+    logger.log(updated);
+    res.status(200).json({ updated });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getTopicCategories = async (req, res, next) => {
+  try {
+    let results = await TopicCategory.findAll();
+    results = results.map((result) => result.toJSON());
+    // logger.log(results);
+    res.status(200).json(results);
+  } catch (error) {
+    next(error);
+  }
+};
+
 const setFollowingState = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
@@ -2085,6 +2132,9 @@ export {
   getReaderBookModalDetails,
   getTopicReaders,
   getExploreGenerals,
+  getExploreTopics,
+  getTopicCategories,
   setFollowingState,
+  getUpdated,
   getTopicPosts,
 };

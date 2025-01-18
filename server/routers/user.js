@@ -79,6 +79,11 @@ router.get("/get-topic-books/:topicName", userController.getTopicBooks);
 router.get("/get-topic-readers/:topicName", userController.getTopicReaders);
 
 router.get("/get-explore-general", userController.getExploreGenerals);
+router.get("/get-explore-topics", userController.getExploreTopics);
+router.get("/get-updated", userController.getUpdated);
+
+router.get("/get-topic-categories", userController.getTopicCategories);
+
 router.post("/set-following-state", userController.setFollowingState);
 
 router.post(

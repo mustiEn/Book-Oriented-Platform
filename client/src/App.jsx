@@ -136,14 +136,18 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <ExploreGeneral />,
-            loader: Loader.loadTopicCategories,
+            loader: Loader.loadExploreGeneral,
           },
           {
             path: "books",
             element: <ExploreBooks />,
-            loader: [Loader.loadTopicCategories, Loader.loadExploreGeneral],
+            // loader: Loader.loadExploreTopics,
           },
-          { path: "topics", element: <ExploreTopics /> },
+          {
+            path: "topics",
+            element: <ExploreTopics />,
+            loader: Loader.loadExploreTopics,
+          },
           { path: "readers", element: <ExploreReaders /> },
         ],
       },

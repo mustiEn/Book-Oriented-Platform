@@ -17,10 +17,9 @@ import {
 } from "react-icons/fa6";
 import { toast } from "react-hot-toast";
 import Button from "react-bootstrap/Button";
-import Spinner from "react-bootstrap/Spinner";
 import "../css/book_details_section.css";
 import ReaderBookModalDetails from "./ReaderBookModalDetails";
-import LoadingSpinner from "../spinner/Spinner";
+import Spinner from "../spinner/Spinner";
 
 const BookDetailsSection = ({ bookDetails, readerBookDetailsHeader }) => {
   const navigate = useNavigate();
@@ -313,7 +312,7 @@ const BookDetailsSection = ({ bookDetails, readerBookDetailsHeader }) => {
         </ul>
         {/* <Outlet context={bookDetails} /> */}
       </div>
-      <LoadingSpinner pendingVal={pending} />
+      <Spinner pendingVal={pending} />
     </>
   );
 };

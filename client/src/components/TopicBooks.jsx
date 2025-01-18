@@ -4,7 +4,7 @@ import { FaCaretDown, FaLock } from "react-icons/fa6";
 import Button from "react-bootstrap/esm/Button";
 import { toast } from "react-hot-toast";
 import ReaderBookModalDetails from "./ReaderBookModalDetails";
-import LoadingSpinner from "../spinner/Spinner";
+import Spinner from "../spinner/Spinner";
 
 const TopicBooks = () => {
   const { books, bookPageCounts } = useLoaderData();
@@ -125,7 +125,7 @@ const TopicBooks = () => {
           </li>
         ))}
       </ul>
-      <LoadingSpinner pendingVal={pending} />
+      <Spinner pendingVal={pending} />
     </>
   );
 };
