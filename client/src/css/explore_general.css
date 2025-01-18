@@ -1,0 +1,12 @@
+.topic-li:hover {
+  background-color: #c6cacc14;
+}
+
+.swiper-slide {
+  width: 140px;
+  height: 230px;
+}
+
+.swiper-pagination-bullet {
+  background-color: #fff;
+}

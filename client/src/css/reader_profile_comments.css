@@ -1,0 +1,8 @@
+.comment-to:hover {
+  background-color: #3d3d3d;
+  cursor: pointer;
+}
+
+.replying-to:hover {
+  text-decoration: underline;
+}

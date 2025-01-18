@@ -1,0 +1,8 @@
+.statistic {
+  width: 185px;
+  text-decoration: none;
+}
+
+.statistic:hover {
+  background-color: #363535;
+}

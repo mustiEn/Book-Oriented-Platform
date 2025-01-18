@@ -1,0 +1,9 @@
+.topic-category-item:hover {
+  background-color: white !important;
+  color: black !important;
+  cursor: pointer;
+}
+
+.topic-category-item-disabled:hover {
+  cursor: not-allowed;
+}

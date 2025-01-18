@@ -1,0 +1,13 @@
+.search-book-item:hover {
+  background-color: #1e1d1d;
+}
+
+#arrow-left {
+  width: 50px;
+  height: 50px;
+}
+
+#arrow-left:hover {
+  background-color: #505050;
+  cursor: pointer;
+}
