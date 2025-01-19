@@ -21,26 +21,34 @@ import { Quote } from "../models/Quote.js";
 import { trendingTopics } from "../crons/index.js";
 
 const shareReview = async (req, res, next) => {
-  const t = await sequelize.transaction();
   try {
-    const { review, title, topic, bookId } = req.body;
-    const reviewRecord = await Review.create(
-      {
-        title,
-        review,
-        topic,
-        bookId,
-        userId: req.session.passport.user,
+    const { review, title, bookId } = req.body;
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+      logger.log(result.array());
+      return res.status(400).json({ error: result.array() });
+    }
+    const { topic: topicName } = matchedData(req);
+    const topic = await Topic.findOne({
+      where: {
+        topic: topicName,
       },
-      { transaction: t }
-    );
+    });
+    if (!topic) {
+      throw new Error("Topic not found");
+    }
+    const reviewRecord = await Review.create({
+      title,
+      review,
+      topicId: topic.id,
+      bookId,
+      userId: req.session.passport.user,
+    });
     logger.log(reviewRecord);
-    await t.commit();
     res.status(200).json({
       message: "Review added successfully",
     });
   } catch (error) {
-    await t.rollback();
     next(error);
   }
 };
@@ -2043,7 +2051,17 @@ const getUpdated = async (req, res, next) => {
     const ids = trendingTopics.map((topic) => topic.topicId);
     logger.log(ids);
     const updated = await Post.findAll({
-      attributes: ["topicId", sequelize.fn("COUNT", sequelize.col("id"))],
+      attributes: [
+        "topicId",
+        [sequelize.col("Topic.topic"), "topic"],
+        [sequelize.col("Topic.image"), "image"],
+        [sequelize.col("Topic.post_count"), "post_count"],
+      ],
+      include: {
+        attributes: [],
+        model: Topic,
+        required: true,
+      },
       where: {
         topicId: ids,
         createdAt: {

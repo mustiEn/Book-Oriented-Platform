@@ -1,6 +1,6 @@
 import express from "express";
 import * as userController from "../controllers/user.js";
-import { query } from "express-validator";
+import { query, body } from "express-validator";
 import multer from "multer";
 
 const maxSize = 25 * 1000 * 100;
@@ -28,7 +28,11 @@ router.get(
 );
 router.get("/get-reader-username", userController.getLoggedInReader);
 
-router.post("/share-review", userController.shareReview);
+router.post(
+  "/share-review",
+  body("topic").notEmpty().isString(),
+  userController.shareReview
+);
 
 router.get("/get-book-reviews/:bookId", userController.getBookReviews);
 

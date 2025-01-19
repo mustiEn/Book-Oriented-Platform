@@ -84,7 +84,7 @@ const ShareReview = () => {
             >
               <option value="--" hidden></option>
               <option value="Edebiyat">Edebiyat</option>
-              <option value="Tarih">Tarih</option>
+              <option value="History">History</option>
             </Form.Select>
           </Form.Group>
           <Form.Group controlId="formBasicTitle">
