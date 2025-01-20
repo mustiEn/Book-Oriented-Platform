@@ -35,6 +35,16 @@ export const loadExploreTopics = async () => {
   return data;
 };
 
+export const loadExploreBooks = async () => {
+  const response = await fetch("/api/get-explore-books");
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error);
+  }
+  console.log(data);
+  return data;
+};
+
 export const loadThemedTopics = async ({ params }) => {
   const response = await fetch(`/api/get-themed-topics/${params.category}`);
   const data = await response.json();
@@ -252,6 +262,15 @@ export const loadBookDetailsShareReview = async ({ params }) => {
   const data = await res.json();
   if (!res.ok) {
     return "Sometinhg went wrong";
+  }
+  return data;
+};
+
+export const loadBookCategories = async () => {
+  const response = await fetch("/api/get-book-categories");
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(response);
   }
   return data;
 };

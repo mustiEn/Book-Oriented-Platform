@@ -49,6 +49,7 @@ import TopicPostsThought from "./components/TopicPostsThought.jsx";
 import TopicPostsQuote from "./components/TopicPostsQuote.jsx";
 import TopicPostsAll from "./components/TopicPostsAll.jsx";
 import TopicReaders from "./components/TopicReaders.jsx";
+import BookCategories from "./views/BookCategories.jsx";
 
 const router = createBrowserRouter([
   {
@@ -141,7 +142,7 @@ const router = createBrowserRouter([
           {
             path: "books",
             element: <ExploreBooks />,
-            // loader: Loader.loadExploreTopics,
+            loader: Loader.loadExploreBooks,
           },
           {
             path: "topics",
@@ -202,6 +203,11 @@ const router = createBrowserRouter([
       {
         path: "/:postType/:postId",
         element: <ReaderPostComments />,
+        loader: loadReaderPostComments,
+      },
+      {
+        path: "/book-categories",
+        element: <BookCategories />,
         loader: loadReaderPostComments,
       },
       {

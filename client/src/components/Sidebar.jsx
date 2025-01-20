@@ -89,6 +89,11 @@ const Sidebar = ({ pos, loggedInReader }) => {
             </Link>
           </li>
           <li className="sidebar-item">
+            <Link className="sidebar-a" to="/book-categories">
+              Book Categories
+            </Link>
+          </li>
+          <li className="sidebar-item">
             <Link className="sidebar-a" to="/authors">
               Authors
             </Link>

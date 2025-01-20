@@ -18,25 +18,29 @@ import { Thought } from "../models/Thought.js";
 import { ThoughtImage } from "../models/ThoughtImage.js";
 import { BookCollection } from "../models/BookCollection.js";
 import { Quote } from "../models/Quote.js";
-import { trendingTopics } from "../crons/index.js";
+import { trendingTopics, trendingTopicsSql } from "../crons/index.js";
 
 const shareReview = async (req, res, next) => {
   try {
     const { review, title, bookId } = req.body;
     const result = validationResult(req);
+
     if (!result.isEmpty()) {
       logger.log(result.array());
       return res.status(400).json({ error: result.array() });
     }
+
     const { topic: topicName } = matchedData(req);
     const topic = await Topic.findOne({
       where: {
         topic: topicName,
       },
     });
+
     if (!topic) {
       throw new Error("Topic not found");
     }
+
     const reviewRecord = await Review.create({
       title,
       review,
@@ -52,6 +56,7 @@ const shareReview = async (req, res, next) => {
     next(error);
   }
 };
+
 // !!!!!! change
 const getBookReviews = async (req, res, next) => {
   try {
@@ -2039,43 +2044,210 @@ const getExploreGenerals = async (req, res, next) => {
 const getExploreTopics = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
-    // const trendingTopicsSql = ``
-    res.status(200).json(trendingTopics);
+    const popularTopicsSql = `SELECT 
+                                t.id, 
+                                t.topic, 
+                                t.image,
+                                t.post_count, 
+                                t.follower_count, 
+                                IF(uta.UserId IS NULL, FALSE, TRUE) AS isFollowing 
+                              FROM 
+                                topics t 
+                                LEFT JOIN user_topic_association uta ON uta.TopicId = t.id 
+                                AND uta.UserId = ${userId} 
+                              ORDER BY 
+                                t.follower_count DESC
+                              LIMIT 10;
+                    `;
+    const popularTopics = await returnRawQuery(popularTopicsSql);
+    logger.log(popularTopics);
+    res.status(200).json({ trendingTopics, popularTopics });
   } catch (error) {
     next(error);
   }
 };
 
-const getUpdated = async (req, res, next) => {
+const getExploreBooks = async (req, res, next) => {
   try {
-    const ids = trendingTopics.map((topic) => topic.topicId);
-    logger.log(ids);
-    const updated = await Post.findAll({
-      attributes: [
-        "topicId",
-        [sequelize.col("Topic.topic"), "topic"],
-        [sequelize.col("Topic.image"), "image"],
-        [sequelize.col("Topic.post_count"), "post_count"],
-      ],
-      include: {
-        attributes: [],
-        model: Topic,
-        required: true,
-      },
-      where: {
-        topicId: ids,
-        createdAt: {
-          [Op.gte]: sequelize.literal("NOW() - INTERVAL 24 HOUR"),
-        },
-        post_type: {
-          [Op.not]: "comment",
-        },
-      },
-      group: ["topicId"],
-      raw: true,
+    const whatShallIread = "";
+
+    const mostReadLastMonthSql = `SELECT 
+                                    brs.bookId id, 
+                                    MAX(brs.createdAt),
+                                    COUNT(DISTINCT brs.id) people_read, 
+                                    COUNT(DISTINCT lb.id) likes, 
+                                    ROUND(
+                                      AVG(rb.rating), 
+                                      1
+                                    ) rate, 
+                                    CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+                                      SUBSTRING(bc.title, 1, 15), 
+                                      '...'
+                                    ) ELSE bc.title END truncatedTitle, 
+                                    bc.title, 
+                                    bc.thumbnail 
+                                  FROM 
+                                    book_reading_states brs 
+                                    LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
+                                    AND lb.is_liked = 1 
+                                    LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
+                                    AND rb.rating IS NOT NULL 
+                                    JOIN book_collections bc ON bc.id = brs.bookId 
+                                  WHERE 
+                                    brs.reading_state = "Read"
+                                    AND brs.createdAt >= DATE_FORMAT(
+                                  CURDATE() - INTERVAL 1 MONTH, 
+                                  '%Y-%m-01'
+                                ) 
+                                AND brs.createdAt < DATE_FORMAT(
+                                  CURDATE(), 
+                                  '%Y-%m-01'
+                                ) 
+                                  GROUP BY 
+                                    brs.bookId  `;
+    const mostReadLastYearSql = `SELECT 
+                                  brs.bookId id, 
+                                  MAX(brs.createdAt),
+                                  COUNT(DISTINCT brs.id) people_read, 
+                                  COUNT(DISTINCT lb.id) likes, 
+                                  ROUND(
+                                    AVG(rb.rating), 
+                                    1
+                                  ) rate, 
+                                  CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+                                    SUBSTRING(bc.title, 1, 15), 
+                                    '...'
+                                  ) ELSE bc.title END truncatedTitle, 
+                                  bc.title, 
+                                  bc.thumbnail 
+                                FROM 
+                                  book_reading_states brs 
+                                  LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
+                                  AND lb.is_liked = 1 
+                                  LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
+                                  AND rb.rating IS NOT NULL 
+                                  JOIN book_collections bc ON bc.id = brs.bookId 
+                                WHERE 
+                                  brs.reading_state = "Read"
+                                  AND brs.createdAt >= DATE_FORMAT(
+                                CURDATE() - INTERVAL 1 YEAR, 
+                                '%Y-%m-01'
+                              ) 
+                              AND brs.createdAt < DATE_FORMAT(
+                                CURDATE(), 
+                                '%Y-%m-01'
+                              ) 
+                                GROUP BY 
+                                  brs.bookId
+                      `;
+    const mostLikedSql = `SELECT 
+                            lb.bookId, 
+                            ROUND(
+                              AVG(rating), 
+                              1
+                            ) rate, 
+                            COUNT(DISTINCT brs.id) people_read, 
+                            COUNT(DISTINCT lb.id) likes, 
+                            CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+                              SUBSTRING(bc.title, 1, 15), 
+                              '...'
+                            ) ELSE bc.title END truncatedTitle, 
+                            bc.title, 
+                            bc.thumbnail 
+                          FROM 
+                            liked_books lb 
+                            LEFT JOIN rated_books rb ON rb.bookId = lb.bookId 
+                            LEFT JOIN book_reading_states brs ON brs.bookId = lb.bookId 
+                            AND brs.reading_state = "Read" 
+                            JOIN book_collections bc ON bc.id = rb.bookId 
+                          WHERE 
+                            is_liked = 1 
+                          GROUP BY 
+                            lb.bookId;
+ `;
+    const mostReadSql = `SELECT 
+                          brs.bookId id, 
+                          COUNT(DISTINCT brs.id) people_read, 
+                          COUNT(DISTINCT lb.id) likes, 
+                          ROUND(
+                            AVG(rb.rating), 
+                            1
+                          ) rate, 
+                          CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+                            SUBSTRING(bc.title, 1, 15), 
+                            '...'
+                          ) ELSE bc.title END truncatedTitle, 
+                          bc.title, 
+                          bc.thumbnail 
+                        FROM 
+                          book_reading_states brs 
+                          LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
+                          AND lb.is_liked = 1 
+                          LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
+                          AND rb.rating IS NOT NULL 
+                          JOIN book_collections bc ON bc.id = brs.bookId 
+                        WHERE 
+                          brs.reading_state = "Read" 
+                        GROUP BY 
+                          brs.bookId
+`;
+    const highestRatedSql = `SELECT 
+                              rb.bookId, 
+                              ROUND(
+                                AVG(rating), 
+                                1
+                              ) rate, 
+                              COUNT(DISTINCT brs.id) people_read, 
+                              COUNT(DISTINCT lb.id) likes, 
+                              CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+                                SUBSTRING(bc.title, 1, 15), 
+                                '...'
+                              ) ELSE bc.title END truncatedTitle, 
+                              bc.title, 
+                              bc.thumbnail 
+                            FROM 
+                              rated_books rb 
+                              LEFT JOIN liked_books lb ON lb.bookId = rb.bookId 
+                              AND lb.is_liked = 1 
+                              LEFT JOIN book_reading_states brs ON brs.bookId = rb.bookId 
+                              AND brs.reading_state = "Read" 
+                              JOIN book_collections bc ON bc.id = rb.bookId 
+                            WHERE 
+                              rating IS NOT NULL 
+                            GROUP BY 
+                              rb.bookId;`;
+    const [
+      mostRead,
+      mostLiked,
+      highestRated,
+      mostReadLastMonth,
+      mostReadLastYear,
+    ] = await Promise.all([
+      returnRawQuery(mostReadSql),
+      returnRawQuery(mostLikedSql),
+      returnRawQuery(highestRatedSql),
+      returnRawQuery(mostReadLastMonthSql),
+      returnRawQuery(mostReadLastYearSql),
+    ]);
+
+    res.status(200).json({
+      mostRead,
+      mostLiked,
+      highestRated,
+      mostReadLastMonth,
+      mostReadLastYear,
     });
+  } catch (error) {
+    logger.log(error);
+    next(error);
+  }
+};
+
+const getTrendingTopics = async (req, res, next) => {
+  try {
+    const updated = await returnRawQuery(trendingTopicsSql);
     logger.log(updated);
-    res.status(200).json({ updated });
+    res.status(200).json(updated);
   } catch (error) {
     next(error);
   }
@@ -2119,6 +2291,17 @@ const setFollowingState = async (req, res, next) => {
   }
 };
 
+const getBookCategories = async (req, res, next) => {
+  try {
+    // let results = await BookCategory.findAll();
+    // results = results.map((result) => result.toJSON());
+    // // logger.log(results);
+    res.status(200).json({ 1: 1 });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   shareReview,
   getBookReviews,
@@ -2151,8 +2334,10 @@ export {
   getTopicReaders,
   getExploreGenerals,
   getExploreTopics,
+  getExploreBooks,
   getTopicCategories,
   setFollowingState,
-  getUpdated,
+  getTrendingTopics,
   getTopicPosts,
+  getBookCategories,
 };

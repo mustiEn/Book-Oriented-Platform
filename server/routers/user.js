@@ -84,7 +84,8 @@ router.get("/get-topic-readers/:topicName", userController.getTopicReaders);
 
 router.get("/get-explore-general", userController.getExploreGenerals);
 router.get("/get-explore-topics", userController.getExploreTopics);
-router.get("/get-updated", userController.getUpdated);
+router.get("/get-explore-books", userController.getExploreBooks);
+router.get("/get-trending-topics", userController.getTrendingTopics);
 
 router.get("/get-topic-categories", userController.getTopicCategories);
 
@@ -118,4 +119,6 @@ router.get("/get-themed-topics/:category", userController.getThemedTopics);
 router.get("/:postType/:postId", userController.getReaderPostComments);
 router.post("/send-comment", userController.sendComment);
 router.post("/create-topic", userController.createTopic);
+router.get("/get-book-categories", userController.getBookCategories);
+
 export default router;
