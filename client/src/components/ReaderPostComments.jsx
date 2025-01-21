@@ -17,6 +17,7 @@ import PostComment from "./PostComment";
 import PostReview from "./PostReview";
 import PostQuote from "./PostQuote";
 import PostThought from "./PostThought";
+import BackNavigation from "./BackNavigation";
 
 const ReaderPostComments = () => {
   let { post, comments, user } = useLoaderData();
@@ -72,17 +73,7 @@ const ReaderPostComments = () => {
 
   return (
     <>
-      <div
-        className="position-sticky top-0"
-        style={{ backgroundColor: "#121212d4" }}
-      >
-        <FaArrowLeft
-          id="arrow-left"
-          className="rounded-circle p-2"
-          onClick={() => navigate(-1)}
-        />
-        <span>Post</span>
-      </div>
+      <BackNavigation innerHtml={"Post"} />
       <div className="post p-3">
         {returnPostComponent()}
         <hr />

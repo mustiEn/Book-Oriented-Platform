@@ -19,6 +19,7 @@ import { ThoughtImage } from "../models/ThoughtImage.js";
 import { BookCollection } from "../models/BookCollection.js";
 import { Quote } from "../models/Quote.js";
 import { trendingTopics, trendingTopicsSql } from "../crons/index.js";
+import { Category } from "../models/Category.js";
 
 const shareReview = async (req, res, next) => {
   try {
@@ -2293,11 +2294,57 @@ const setFollowingState = async (req, res, next) => {
 
 const getBookCategories = async (req, res, next) => {
   try {
-    // let results = await BookCategory.findAll();
-    // results = results.map((result) => result.toJSON());
-    // // logger.log(results);
-    res.status(200).json({ 1: 1 });
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+      throw new Error({ error: result.array() });
+    }
+    const { q, index } = matchedData(req);
+    console.log(index);
+
+    const offset = index == undefined ? "OFFSET 0" : `OFFSET ${index}`;
+    const where = q ? `WHERE c.category LIKE '${q}%'` : "";
+    const bookCategoriesSql = `SELECT 
+                                  * 
+                                FROM 
+                                  (
+                                    SELECT 
+                                      COUNT(cba.id) book_count, 
+                                      categoryId id, 
+                                      c.category 
+                                    FROM 
+                                      category_book_association cba 
+                                      INNER JOIN categories c ON c.id = cba.categoryId 
+                                      ${where}
+                                      GROUP BY 
+                                      categoryId 
+                                    ORDER BY 
+                                      COUNT(cba.id) DESC
+                                  ) temp 
+                                LIMIT 
+                                  50 
+                                ${offset}  
+                                  `;
+    const bookCategories = await returnRawQuery(bookCategoriesSql);
+    res.status(200).json(bookCategories);
   } catch (error) {
+    next(error);
+  }
+};
+
+const getBookCategory = async (req, res, next) => {
+  try {
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+      throw new Error({ error: result.array() });
+    }
+    const { categoryId } = matchedData(req);
+    const category = await Category.findByPk(categoryId);
+    if (!category) {
+      throw new Error("Category not found");
+    }
+    res.status(200).json(category);
+  } catch (error) {
+    logger.log(error);
     next(error);
   }
 };
@@ -2340,4 +2387,5 @@ export {
   getTrendingTopics,
   getTopicPosts,
   getBookCategories,
+  getBookCategory,
 };

@@ -2,6 +2,7 @@ import React from "react";
 import { NavLink, Outlet, useLoaderData, useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import { FaArrowLeft } from "react-icons/fa6";
+import BackNavigation from "../components/BackNavigation";
 
 const Topic = () => {
   const { topic } = useLoaderData();
@@ -10,17 +11,7 @@ const Topic = () => {
 
   return (
     <>
-      <div
-        className="position-sticky top-0"
-        style={{ backgroundColor: "#121212d4" }}
-      >
-        <FaArrowLeft
-          id="arrow-left"
-          className="rounded-circle p-2"
-          onClick={() => navigate(-1)}
-        />
-        <span></span>
-      </div>
+      <BackNavigation innerHtml={""} />
       <div className="d-flex align-items-center mt-4">
         {topic.image.includes(".") ? (
           <img src={`/Topics/${topic.image}`} width={60} alt="" />

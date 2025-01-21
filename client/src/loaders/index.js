@@ -274,3 +274,13 @@ export const loadBookCategories = async () => {
   }
   return data;
 };
+
+export const loadBookCategory = async ({ params }) => {
+  const { categoryId } = params;
+  const response = await fetch(`/api/get-book-category/:${categoryId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(response);
+  }
+  return data;
+};

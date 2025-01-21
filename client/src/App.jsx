@@ -50,6 +50,7 @@ import TopicPostsQuote from "./components/TopicPostsQuote.jsx";
 import TopicPostsAll from "./components/TopicPostsAll.jsx";
 import TopicReaders from "./components/TopicReaders.jsx";
 import BookCategories from "./views/BookCategories.jsx";
+import BookCategory from "./components/BookCategory.jsx";
 
 const router = createBrowserRouter([
   {
@@ -208,7 +209,14 @@ const router = createBrowserRouter([
       {
         path: "/book-categories",
         element: <BookCategories />,
-        loader: loadReaderPostComments,
+        loader: Loader.loadBookCategories,
+        children: [
+          {
+            path: ":categoryId",
+            element: <BookCategory />,
+            loader: Loader.loadBookCategory,
+          },
+        ],
       },
       {
         path: "/book/:bookTitle/:bookId",

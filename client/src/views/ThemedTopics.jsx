@@ -10,6 +10,7 @@ import {
 import Button from "react-bootstrap/Button";
 import "../css/themed_topics.css";
 import toast from "react-hot-toast";
+import BackNavigation from "../components/BackNavigation";
 
 const ThemedTopics = () => {
   const topics = useLoaderData();
@@ -72,17 +73,7 @@ const ThemedTopics = () => {
 
   return (
     <>
-      <div
-        className="position-sticky top-0"
-        style={{ backgroundColor: "#121212d4" }}
-      >
-        <FaArrowLeft
-          id="arrow-left"
-          className="rounded-circle p-2"
-          onClick={() => navigate(-1)}
-        />
-        <span>Topics related to {params.category}</span>
-      </div>
+      <BackNavigation innerHtml={`Topics related to ${params.category}`} />
       <ul className="d-flex flex-column gap-2">
         {topics.map((topic, i) => (
           <li key={topic.id} className="themed-topic">

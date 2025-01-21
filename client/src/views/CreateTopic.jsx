@@ -5,6 +5,7 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { toast } from "react-hot-toast";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import "../css/topic_category.css";
+import BackNavigation from "../components/BackNavigation";
 
 const CreateTopic = () => {
   const data = useLoaderData();
@@ -80,17 +81,7 @@ const CreateTopic = () => {
       <div>
         <ToastContainer />
       </div>
-      <div
-        className="position-sticky top-0"
-        style={{ backgroundColor: "#121212d4" }}
-      >
-        <FaArrowLeft
-          id="arrow-left"
-          className="rounded-circle p-2"
-          onClick={() => navigate(-1)}
-        />
-        <span>Create Topic</span>
-      </div>
+      <BackNavigation innerHtml={"Create Topic"} />
       <div id="topicContainer" className="w-100 p-4">
         <Form className="d-flex flex-column gap-3 mb-3" data-bs-theme="dark">
           <Form.Group controlId="formBasicTopic">

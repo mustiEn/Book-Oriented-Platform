@@ -18,7 +18,7 @@ const ExploreBooks = () => {
   return (
     <>
       <div>
-        <Link className="btn btn-outline-light" to="">
+        <Link className="btn btn-outline-light" to="/book-categories">
           Book Categories
         </Link>
         <Link className="btn btn-outline-light" to="">
