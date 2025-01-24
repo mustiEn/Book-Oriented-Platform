@@ -9,4 +9,6 @@ router.post("/login", indexController.login);
 
 router.get("/books/v1/:bookId?", indexController.bookCollection);
 
+router.get("/get-topic-categories", indexController.getTopicCategories);
+
 export default router;

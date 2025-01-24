@@ -2,7 +2,6 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "./db.js";
 import { Post } from "./Post.js";
 import { logger } from "../utils/constants.js";
-import { Topic } from "./Topic.js";
 
 export const Review = sequelize.define("Review", {
   title: {
@@ -17,11 +16,13 @@ export const Review = sequelize.define("Review", {
 
 Review.addHook("afterCreate", async (review, options) => {
   try {
-    await Post.create({
-      postId: review.id,
-      post_type: "review",
-      topicId: review.topicId,
-    });
+    await Post.create(
+      {
+        postId: review.id,
+        post_type: "review",
+      },
+      { transaction: options.t }
+    );
   } catch (error) {
     logger.log(error);
     throw error;

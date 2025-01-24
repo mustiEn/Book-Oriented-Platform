@@ -9,7 +9,7 @@ import BackNavigation from "../components/BackNavigation";
 import RightSidebar from "../components/RightSidebar";
 
 const CreateTopic = () => {
-  const data = useLoaderData();
+  const [topicCategories, sidebarTopics] = useLoaderData();
   const navigate = useNavigate();
   const [categoryCount, setCategoryCount] = useState(0);
   const [topic, setTopic] = useState({
@@ -107,7 +107,7 @@ const CreateTopic = () => {
             {categoryCount}/3
           </div>
           <div className="d-flex flex-wrap gap-2 pb-2">
-            {data.map((category) => (
+            {topicCategories.map((category) => (
               <div
                 key={category.id}
                 className={returnCategoryClassnames(category.topic_category)}
@@ -150,7 +150,7 @@ const CreateTopic = () => {
           Share
         </Button>
       </div>
-      <RightSidebar />
+      <RightSidebar topics={sidebarTopics} />
     </>
   );
 };

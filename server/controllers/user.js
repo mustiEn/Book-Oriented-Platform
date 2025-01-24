@@ -18,47 +18,33 @@ import { Thought } from "../models/Thought.js";
 import { ThoughtImage } from "../models/ThoughtImage.js";
 import { BookCollection } from "../models/BookCollection.js";
 import { Quote } from "../models/Quote.js";
-import { trendingTopics, trendingTopicsSql } from "../crons/index.js";
-import { Category } from "../models/Category.js";
+import { query } from "express";
 
 const shareReview = async (req, res, next) => {
+  const t = await sequelize.transaction();
   try {
-    const { review, title, bookId } = req.body;
-    const result = validationResult(req);
-
-    if (!result.isEmpty()) {
-      logger.log(result.array());
-      return res.status(400).json({ error: result.array() });
-    }
-
-    const { topic: topicName } = matchedData(req);
-    const topic = await Topic.findOne({
-      where: {
-        topic: topicName,
+    const { review, title, topic, bookId } = req.body;
+    const reviewRecord = await Review.create(
+      {
+        title,
+        review,
+        topic,
+        bookId,
+        userId: req.session.passport.user,
       },
-    });
-
-    if (!topic) {
-      throw new Error("Topic not found");
-    }
-
-    const reviewRecord = await Review.create({
-      title,
-      review,
-      topicId: topic.id,
-      bookId,
-      userId: req.session.passport.user,
-    });
+      { transaction: t }
+    );
     logger.log(reviewRecord);
+    await t.commit();
     res.status(200).json({
       message: "Review added successfully",
     });
   } catch (error) {
+    await t.rollback();
     next(error);
   }
 };
 
-// !!!!!! change
 const getBookReviews = async (req, res, next) => {
   try {
     const { bookId } = req.params;
@@ -182,16 +168,11 @@ const setReadingState = async (req, res, next) => {
         }
       );
     } else {
-      await BookReadingState.create(
-        {
-          bookId: bookId,
-          userId: userId,
-          reading_state: readingState,
-        },
-        {
-          individualHooks: true,
-        }
-      );
+      await BookReadingState.create({
+        bookId: bookId,
+        userId: userId,
+        reading_state: readingState,
+      });
     }
 
     res.status(200).json({
@@ -700,6 +681,7 @@ const filterReaderBooks = async (req, res, next) => {
 const getReaderReviews = async (req, res, next) => {
   try {
     const { username } = req.params;
+    const userId = req.session.passport.user;
     const user = await User.findOne({
       where: {
         username: username,
@@ -709,74 +691,59 @@ const getReaderReviews = async (req, res, next) => {
     if (!user) {
       throw new Error("User not found");
     }
-    const reviewsSql = `SELECT 
-                        r.id, 
-                        r.bookId, 
-                        u.username, 
-                        u.firstname, 
-                        u.lastname, 
-                        r.title, 
-                        r.review, 
-                        p.comment_count, 
-                        people_read,
-                        rb.rating,
-                        lb.is_liked,
-                        brs.reading_state, 
-                        r.topicId, 
-                        t.topic, 
-	                      t.image topic_image,   
-                        truncated_title, 
-                        publishers, 
-                        authors_, 
-                        thumbnail, 
-                        published_date, 
-                        r.createdAt 
-                      FROM 
-                        reviews r 
+    const reviewsSql = `SELECT r.id,r.bookId,u.username,u.firstname,u.lastname,
+                        r.title,r.review,comment_count,
+                        people_read,r.topicId AS topicId,
+                        topic,topic_image,truncated_title,
+                        publishers,authors_,thumbnail,published_date,r.createdAt AS created_at
+                        FROM reviews r
                         INNER JOIN (
-                          SELECT 
-                            r.bookId AS bcId, 
-                            bc.people_read AS people_read, 
-                            CASE WHEN MAX(
-                              LENGTH(bc.title)
-                            ) > 100 THEN CONCAT(
-                              SUBSTRING(
-                                MAX(bc.title), 
-                                1, 
-                                100
-                              ), 
-                              '...'
-                            ) ELSE MAX(bc.title) END AS truncated_title, 
-                            GROUP_CONCAT(
-                              DISTINCT pu.publisher SEPARATOR ', '
-                            ) AS publishers, 
-                            GROUP_CONCAT(DISTINCT au.author SEPARATOR ', ') AS authors_, 
-                            bc.thumbnail AS thumbnail, 
-                            bc.published_date AS published_date
-                          FROM 
-                            reviews r 
-                            LEFT JOIN book_collections bc ON r.bookId = bc.id 
-                            LEFT JOIN publisher_book_association pubo ON pubo.bookId = r.bookId 
-                            JOIN publishers pu ON pu.id = pubo.publisherId 
-                            LEFT JOIN author_book_association aubo ON aubo.bookId = r.bookId 
-                            INNER JOIN AUTHORS au ON au.id = aubo.authorId 
-                             
-                          WHERE 
-                            r.userId = ${user.toJSON().id} 
-                          GROUP BY 
-                            r.bookId
-                        ) temp2 ON temp2.bcId = r.bookId 
+                        SELECT MAX(bcId) AS bcId,COUNT(br.reading_state) people_read, publishers,
+                        authors_, thumbnail,published_date,truncated_title,topic,topic_image
+                        FROM book_reading_states AS br
+                        RIGHT JOIN (SELECT r.bookId AS bcId,                        
+                        CASE WHEN MAX(LENGTH(bc.title)) > 100
+                        THEN CONCAT(SUBSTRING(MAX(bc.title), 1, 100), '...')
+                        ELSE MAX(bc.title) END AS truncated_title,
+                        GROUP_CONCAT(DISTINCT pu.publisher SEPARATOR ', ') AS publishers,
+                        GROUP_CONCAT(DISTINCT au.author SEPARATOR ', ') AS authors_,
+                        bc.thumbnail AS thumbnail,bc.published_date AS published_date
+                        ,MAX(t.topic) AS topic,MAX(t.image) AS topic_image 
+                        FROM reviews r 
+                        LEFT JOIN book_collections bc
+                        ON r.bookId=bc.id
+                        LEFT JOIN publisher_book_association pubo 
+                        ON pubo.bookId=r.bookId
+                        JOIN publishers pu 
+                        ON pu.id=pubo.publisherId
+                        LEFT JOIN author_book_association aubo
+                        ON aubo.bookId=r.bookId
+                        INNER JOIN AUTHORS au 
+                        ON au.id=aubo.authorId
+                        LEFT JOIN topics t
+                        ON t.id=r.topicId 
+                        WHERE r.userId=${user.toJSON().id}
+                        GROUP BY r.bookId
+                        ) temp
+                        ON temp.bcId=br.bookId
+                        AND br.reading_state = "Read"
+                        GROUP BY temp.bcId) temp2
+                        ON temp2.bcId=r.bookId
                         AND r.userId = ${user.toJSON().id}
-                        LEFT JOIN rated_books rb ON rb.bookId = r.bookId
-                        AND rb.userId = r.userId
-                        LEFT JOIN book_reading_states brs ON brs.bookId = r.bookId
-                        AND brs.userId = r.userId
-                        LEFT JOIN topics t ON t.id = r.topicId
-                        LEFT JOIN liked_books lb ON lb.bookId = r.bookId
-                        AND lb.userId = r.userId 
-                        INNER JOIN posts p ON p.postId = r.id
-                        and p.post_type = "review" 
-                        INNER JOIN users u ON u.id = r.userId
+                        INNER JOIN (
+                        SELECT p.postId AS id,COUNT(c.id) AS comment_count
+                        FROM posts p
+                        INNER JOIN reviews r
+                        ON r.id=p.postId
+                        AND p.post_type="review"
+                        AND r.userId=${user.toJSON().id}
+                        LEFT JOIN comments c
+                        ON p.id=c.commentToId
+                        GROUP BY p.postId
+                        ) temp3
+                        ON temp3.id=r.id
+                        INNER JOIN users u
+                        ON u.id=r.userId
                         `;
 
     const readerReviews = await returnRawQuery(reviewsSql);
@@ -802,67 +769,59 @@ const getReaderQuotes = async (req, res, next) => {
     if (!user) {
       throw new Error("User not found");
     }
-    const quotesSql = `SELECT 
-                        q.id, 
-                        q.bookId, 
-                        u.username, 
-                        u.firstname, 
-                        u.lastname, 
-                        q.title, 
-                        q.quote,
-                        q.page, 
-                        p.comment_count, 
-                        people_read, 
-                        q.topicId, 
-                        topic, 
-                        topic_image, 
-                        truncated_title, 
-                        publishers, 
-                        authors_, 
-                        thumbnail, 
-                        published_date, 
-                        q.createdAt 
-                        FROM 
-                        quotes q 
+    const quotesSql = `SELECT r.id,r.bookId,u.username,u.firstname,u.lastname,
+                        r.title,r.quote,comment_count,
+                        people_read,r.topicId AS topicId,
+                        topic,topic_image,truncated_title,
+                        publishers,authors_,thumbnail,published_date,r.createdAt AS created_at
+                        FROM quotes r
                         INNER JOIN (
-                          SELECT 
-                          q.bookId AS bcId, 
-                          bc.people_read AS people_read, 
-                          CASE WHEN MAX(
-                            LENGTH(bc.title)
-                          ) > 100 THEN CONCAT(
-                            SUBSTRING(
-                            MAX(bc.title), 
-                            1, 
-                            100
-                            ), 
-                            '...'
-                          ) ELSE MAX(bc.title) END AS truncated_title, 
-                          GROUP_CONCAT(
-                            DISTINCT pu.publisher SEPARATOR ', '
-                          ) AS publishers, 
-                          GROUP_CONCAT(DISTINCT au.author SEPARATOR ', ') AS authors_, 
-                          bc.thumbnail AS thumbnail, 
-                          bc.published_date AS published_date, 
-                          MAX(t.topic) AS topic, 
-                          MAX(t.image) AS topic_image 
-                          FROM 
-                          quotes q
-                          LEFT JOIN book_collections bc ON q.bookId = bc.id 
-                          LEFT JOIN publisher_book_association pubo ON pubo.bookId = q.bookId 
-                          JOIN publishers pu ON pu.id = pubo.publisherId 
-                          LEFT JOIN author_book_association aubo ON aubo.bookId = q.bookId 
-                          INNER JOIN AUTHORS au ON au.id = aubo.authorId 
-                          LEFT JOIN topics t ON t.id = q.topicId 
-                          WHERE 
-                          q.userId = ${userId} 
-                          GROUP BY 
-                          q.bookId
-                        ) temp2 ON temp2.bcId = q.bookId 
-                        AND q.userId = ${userId}
-                        INNER JOIN posts p ON p.postId = q.id
-                        AND p.post_type = "quote" 
-                        INNER JOIN users u ON u.id = q.userId
+                        SELECT MAX(bcId) AS bcId,COUNT(br.reading_state) people_read, publishers,
+                        authors_, thumbnail,published_date,truncated_title,topic,topic_image
+                        FROM book_reading_states AS br
+                        RIGHT JOIN (SELECT r.bookId AS bcId,                        
+                        CASE WHEN MAX(LENGTH(bc.title)) > 100
+                        THEN CONCAT(SUBSTRING(MAX(bc.title), 1, 100), '...')
+                        ELSE MAX(bc.title) END AS truncated_title,
+                        GROUP_CONCAT(DISTINCT pu.publisher SEPARATOR ', ') AS publishers,
+                        GROUP_CONCAT(DISTINCT au.author SEPARATOR ', ') AS authors_,
+                        bc.thumbnail AS thumbnail,bc.published_date AS published_date
+                        ,MAX(t.topic) AS topic,MAX(t.image) AS topic_image 
+                        FROM quotes r 
+                        LEFT JOIN book_collections bc
+                        ON r.bookId=bc.id
+                        LEFT JOIN publisher_book_association pubo 
+                        ON pubo.bookId=r.bookId
+                        JOIN publishers pu 
+                        ON pu.id=pubo.publisherId
+                        LEFT JOIN author_book_association aubo
+                        ON aubo.bookId=r.bookId
+                        INNER JOIN AUTHORS au 
+                        ON au.id=aubo.authorId
+                        LEFT JOIN topics t
+                        ON t.id=r.topicId 
+                        WHERE r.userId=${user.toJSON().id}
+                        GROUP BY r.bookId
+                        ) temp
+                        ON temp.bcId=br.bookId
+                        AND br.reading_state = "Read"
+                        GROUP BY temp.bcId) temp2
+                        ON temp2.bcId=r.bookId
+                        AND r.userId = ${user.toJSON().id}
+                        INNER JOIN (
+                        SELECT p.postId AS id,COUNT(c.id) AS comment_count
+                        FROM posts p
+                        INNER JOIN quotes r
+                        ON r.id=p.postId
+                        AND p.post_type="quote"
+                        AND r.userId=${user.toJSON().id}
+                        LEFT JOIN comments c
+                        ON p.id=c.commentToId
+                        GROUP BY p.postId
+                        ) temp3
+                        ON temp3.id=r.id
+                        INNER JOIN users u
+                        ON u.id=r.userId
                         `;
 
     const readerQuotes = await returnRawQuery(quotesSql);
@@ -888,42 +847,68 @@ const getReaderThoughts = async (req, res, next) => {
   if (!user) {
     throw new Error("User not found");
   }
-  const thoughtsSql = `SELECT 
-                          MAX(t.id) id,
-                          MAX(t.title) title,
-                          MAX(t.thought) thought,
-                          JSON_ARRAYAGG(ti.image) images,
-                          MAX(p.comment_count) comment_count,
-                          MAX(bc.title) title,
-                          CASE 
-                              WHEN LENGTH(MAX(bc.title)) > 80 
-                              THEN CONCAT(SUBSTRING(MAX(bc.title), 1, 80), '...') 
-                              ELSE MAX(bc.title) 
-                          END AS truncated_title,
-                          MAX(top.topic) topic,
-                          MAX(top.image) AS topic_image,
-                          u.username,
-                          u.firstname,
-                          u.lastname,
-                          u.profile_photo
-                      FROM 
-                          thoughts t
-                      JOIN 
-                          thought_images ti ON t.id = ti.thoughtId
-                      JOIN 
-                          book_collections bc ON t.bookId = bc.id
-                      JOIN 
-                          topics top ON t.topicId = top.id
-                      JOIN 
-                          users u ON t.userId = u.id
-                      JOIN
-                        posts p ON p.postId = t.id
-                        AND p.post_type = "thought"
-                      WHERE 
-                          u.id = ${userId};`;
-  const thoughts = await returnRawQuery(thoughtsSql);
-  logger.log(thoughts);
-  res.status(200).json({ thoughts });
+  const thoughtRecords = await Thought.findAll({
+    include: [
+      {
+        model: ThoughtImage,
+        attributes: ["image"],
+        required: true,
+      },
+      {
+        model: BookCollection,
+        attributes: [
+          [
+            Sequelize.literal(`CASE WHEN LENGTH(Book_Collection.title) > 100
+                              THEN CONCAT(SUBSTRING(Book_Collection.title, 1, 100), '...')
+                              ELSE Book_Collection.title END`),
+            "truncated_title",
+          ],
+        ],
+      },
+      {
+        model: Topic,
+        attributes: ["topic", "image"],
+      },
+      {
+        model: User,
+        attributes: ["username", "firstname", "lastname", "profile_photo"],
+        where: {
+          id: user.toJSON().id,
+        },
+      },
+    ],
+  });
+
+  const thoughts = JSON.parse(JSON.stringify(thoughtRecords, null, 2));
+
+  const thoughtCommentCountRecords = await Post.findAll({
+    attributes: ["postId", "comment_count"],
+    where: {
+      userId: user.toJSON().id,
+      post_type: "thought",
+    },
+    raw: true,
+  });
+
+  const thoughtCommentCounts = thoughtCommentCountRecords.reduce(
+    (acc, item) => {
+      acc[item.postId] = item.comment_count;
+      return acc;
+    },
+    {}
+  );
+
+  thoughtsMerged = thoughts.map((item) => ({
+    ...item,
+    ...{ comment_count: thoughtCommentCounts[item.id] || 0 },
+  }));
+  if (!thoughts) {
+    thoughtsMerged = null;
+  }
+  // logger.log(thoughts);
+  // logger.log(thoughtsMerged);
+  // logger.log(thoughtComments);
+  res.status(200).json({ thoughtsMerged });
 };
 
 const updateReaderBookDates = async (req, res, next) => {
@@ -1164,7 +1149,7 @@ const getReaderPostComments = async (req, res, next) => {
           "id",
           "bookId",
           "title",
-          "review",
+          ["review", "post"],
           "createdAt",
           [
             Sequelize.literal(`
@@ -1184,44 +1169,36 @@ const getReaderPostComments = async (req, res, next) => {
             `),
             "authors",
           ],
-          // Using sequelize.col() for prefixed attributes
-          [Sequelize.col("User.username"), "username"],
-          [Sequelize.col("User.firstname"), "firstname"],
-          [Sequelize.col("User.lastname"), "lastname"],
-          [Sequelize.col("User.profile_photo"), "profile_photo"],
-          [Sequelize.col("Book_Collection.thumbnail"), "thumbnail"],
-          [Sequelize.col("Book_Collection.published_date"), "published_date"],
-          [
-            Sequelize.literal(`CASE WHEN LENGTH(Book_Collection.title) > 100
-              THEN CONCAT(SUBSTRING(Book_Collection.title, 1, 100), '...')
-              ELSE Book_Collection.title END`),
-            "truncated_title",
-          ],
-          [Sequelize.col("Topic.topic"), "topic"],
-          [Sequelize.col("Topic.image"), "topic_image"],
         ],
         include: [
           {
             model: User,
-            attributes: [], // No need to include attributes here since we're using sequelize.col()
+            attributes: ["username", "firstname", "lastname", "profile_photo"],
             required: true,
           },
           {
             model: BookCollection,
-            attributes: [], // No need to include attributes here since we're using sequelize.col()
+            attributes: [
+              "thumbnail",
+              "published_date",
+              [
+                Sequelize.literal(`CASE WHEN LENGTH(Book_Collection.title) > 100
+              THEN CONCAT(SUBSTRING(Book_Collection.title, 1, 100), '...')
+              ELSE Book_Collection.title END`),
+                "truncated_title",
+              ],
+            ],
           },
           {
             model: Topic,
-            attributes: [], // No need to include attributes here since we're using sequelize.col()
+            attributes: ["topic", ["image", "topic_image"]],
           },
         ],
         where: {
           id: fkPostId,
         },
-        raw: true,
         group: ["Review.id", "Book_Collection.id", "Topic.id"],
       });
-      logger.log(post);
     } else if (postType == "quote") {
       post = await Quote.findOne({
         attributes: [
@@ -1698,197 +1675,6 @@ const getTopicBooks = async (req, res, next) => {
   }
 };
 
-const getTopicPosts = async (req, res, next) => {
-  try {
-    const { topicName, postType } = req.params;
-    const jsonDict = {};
-    const result = validationResult(req);
-    const topic = await Topic.findOne({
-      attributes: ["id"],
-      where: {
-        topic: topicName,
-      },
-      raw: true,
-    });
-    const returnPosts = async (sql) => {
-      const result = await returnRawQuery(sql);
-      return result;
-    };
-    let posts;
-
-    if (!result.isEmpty()) {
-      return res.status(400).json({ error: result.array() });
-    }
-
-    let { sortBy } = matchedData(req);
-    sortBy = sortBy != undefined ? "ASC" : "DESC";
-
-    const reviewsSql = `SELECT 
-                    r.id,
-                    r.bookId,
-                    u.id AS userId,
-                    u.username, 
-                    u.firstname, 
-                    u.lastname,
-                    u.profile_photo, 
-                    r.title, 
-                    r.review, 
-                    MAX(rb.rating) rating,
-                    MAX(lb.is_liked) is_liked,
-                    MAX(brs.reading_state) reading_state,
-                    MAX(p.comment_count) AS comment_count,   
-                    bc.people_read, 
-                    CASE WHEN MAX(
-                      LENGTH(bc.title)
-                    ) > 80 THEN CONCAT(
-                      SUBSTRING(
-                      MAX(bc.title), 
-                      1, 
-                      80
-                          ), 
-                          '...'
-                        ) ELSE MAX(bc.title) END AS truncated_title, 
-                    GROUP_CONCAT(
-                      DISTINCT pu.publisher SEPARATOR ', '
-                    ) AS publishers, 
-                    GROUP_CONCAT(DISTINCT au.author SEPARATOR ', ') AS authors_, 
-                    bc.thumbnail, 
-                    bc.published_date,
-                    r.createdAt 
-                  FROM 
-                    reviews r 
-                    LEFT JOIN book_collections bc ON r.bookId = bc.id 
-                    LEFT JOIN publisher_book_association pba ON pba.bookId = r.bookId 
-                    JOIN publishers pu ON pu.id = pba.publisherId 
-                    LEFT JOIN author_book_association abo ON abo.bookId = r.bookId 
-                    INNER JOIN AUTHORS au ON au.id = abo.authorId  
-                    INNER JOIN users u ON u.id = r.userId
-                    LEFT JOIN rated_books rb ON rb.bookId = r.bookId
-                    AND rb.userId = r.userId
-                    LEFT JOIN book_reading_states brs ON brs.bookId = r.bookId
-                    AND brs.userId = r.userId
-                    LEFT JOIN liked_books lb ON lb.bookId = r.bookId
-                    AND lb.userId = r.userId
-                    INNER JOIN posts p ON p.postId = r.id
-                  WHERE 
-                    r.topicId = ${topic.id} 
-                  GROUP BY 
-                    r.id
-                  ORDER BY 
-                    r.createdAt ${sortBy};`;
-    const thoughtsSql = `SELECT 
-                        MAX(t.id) id,
-                        MAX(t.title) thought_title,
-                        MAX(t.thought) thought,
-                        JSON_ARRAYAGG(ti.image) images,
-                        MAX(p.comment_count) comment_count,
-                        MAX(bc.title) title,
-                        CASE 
-                            WHEN LENGTH(MAX(bc.title)) > 80 
-                            THEN CONCAT(SUBSTRING(MAX(bc.title), 1, 80), '...') 
-                            ELSE MAX(bc.title) 
-                        END AS truncated_title,
-                        MAX(top.topic) topic,
-                        MAX(top.image) AS topic_image,
-                        MAX(u.username) username,
-                        MAX(u.firstname) firstname,
-                        MAX(u.lastname) lastname,
-                        MAX(u.profile_photo) profile_photo,
-                        t.createdAt
-                    FROM 
-                        thoughts t
-                    JOIN 
-                        thought_images ti ON t.id = ti.thoughtId
-                    JOIN 
-                        book_collections bc ON t.bookId = bc.id
-                    JOIN 
-                        topics top ON t.topicId = top.id
-                    JOIN 
-                        users u ON t.userId = u.id
-                    JOIN
-                      posts p ON p.postId = t.id
-                      AND p.post_type = "thought"
-                    WHERE 
-                        top.id = ${topic.id}
-                    GROUP BY 
-                      t.id
-                    ORDER BY 
-                      t.createdAt ${sortBy}`;
-    const quotesSql = `SELECT 
-                    q.id,
-                    q.bookId,
-                    u.id AS userId,
-                    u.username, 
-                    u.firstname, 
-                    u.lastname,
-                    u.profile_photo, 
-                    q.title, 
-                    q.quote,
-                    q.page, 
-                    MAX(p.comment_count) AS comment_count,   
-                    CASE WHEN MAX(
-                      LENGTH(bc.title)
-                    ) > 80 THEN CONCAT(
-                      SUBSTRING(
-                      MAX(bc.title), 
-                      1, 
-                      80
-                          ), 
-                          '...'
-                        ) ELSE MAX(bc.title) END AS truncated_title, 
-                    GROUP_CONCAT(
-                      DISTINCT pu.publisher SEPARATOR ', '
-                    ) AS publishers, 
-                    GROUP_CONCAT(DISTINCT au.author SEPARATOR ', ') AS authors_, 
-                    bc.thumbnail, 
-                    bc.published_date,
-                    q.createdAt 
-                  FROM 
-                    quotes q 
-                    LEFT JOIN book_collections bc ON q.bookId = bc.id 
-                    LEFT JOIN publisher_book_association pba ON pba.bookId = q.bookId 
-                    JOIN publishers pu ON pu.id = pba.publisherId 
-                    LEFT JOIN author_book_association abo ON abo.bookId = q.bookId 
-                    INNER JOIN AUTHORS au ON au.id = abo.authorId  
-                    INNER JOIN users u ON u.id = q.userId
-                    INNER JOIN posts p ON p.postId = q.id
-                    AND p.post_type = "quote"
-                  WHERE 
-                    q.topicId = ${topic.id} 
-                  GROUP BY 
-                    q.id
-                  ORDER BY 
-                    q.createdAt ${sortBy};`;
-
-    if (postType == "all") {
-      const [reviews, thoughts, quotes] = await Promise.all([
-        returnPosts(reviewsSql),
-        returnPosts(thoughtsSql),
-        returnPosts(quotesSql),
-      ]);
-      posts = [...reviews, ...thoughts, ...quotes];
-      posts = posts.sort((a, b) => {
-        return sortBy == "DESC"
-          ? new Date(b.createdAt) - new Date(a.createdAt)
-          : new Date(a.createdAt) - new Date(b.createdAt);
-      });
-    } else if (postType == "review") {
-      posts = await returnPosts(reviewsSql);
-    } else if (postType == "thought") {
-      posts = await returnPosts(thoughtsSql);
-    } else {
-      posts = await returnPosts(quotesSql);
-    }
-
-    logger.log("!!!!!!!!!!!!!!!!!!! \n posts ==> \n", posts);
-    jsonDict["posts"] = posts;
-    res.status(200).json(jsonDict);
-  } catch (error) {
-    logger.log(error);
-    next(error);
-  }
-};
-
 const getReaderBookModalDetails = async (req, res, next) => {
   try {
     const { bookId } = req.params;
@@ -2042,229 +1828,6 @@ const getExploreGenerals = async (req, res, next) => {
   }
 };
 
-const getExploreTopics = async (req, res, next) => {
-  try {
-    const userId = req.session.passport.user;
-    const popularTopicsSql = `SELECT 
-                                t.id, 
-                                t.topic, 
-                                t.image,
-                                t.post_count, 
-                                t.follower_count, 
-                                IF(uta.UserId IS NULL, FALSE, TRUE) AS isFollowing 
-                              FROM 
-                                topics t 
-                                LEFT JOIN user_topic_association uta ON uta.TopicId = t.id 
-                                AND uta.UserId = ${userId} 
-                              ORDER BY 
-                                t.follower_count DESC
-                              LIMIT 10;
-                    `;
-    const popularTopics = await returnRawQuery(popularTopicsSql);
-    logger.log(popularTopics);
-    res.status(200).json({ trendingTopics, popularTopics });
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getExploreBooks = async (req, res, next) => {
-  try {
-    const whatShallIread = "";
-
-    const mostReadLastMonthSql = `SELECT 
-                                    brs.bookId id, 
-                                    MAX(brs.createdAt),
-                                    COUNT(DISTINCT brs.id) people_read, 
-                                    COUNT(DISTINCT lb.id) likes, 
-                                    ROUND(
-                                      AVG(rb.rating), 
-                                      1
-                                    ) rate, 
-                                    CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                                      SUBSTRING(bc.title, 1, 15), 
-                                      '...'
-                                    ) ELSE bc.title END truncatedTitle, 
-                                    bc.title, 
-                                    bc.thumbnail 
-                                  FROM 
-                                    book_reading_states brs 
-                                    LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
-                                    AND lb.is_liked = 1 
-                                    LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
-                                    AND rb.rating IS NOT NULL 
-                                    JOIN book_collections bc ON bc.id = brs.bookId 
-                                  WHERE 
-                                    brs.reading_state = "Read"
-                                    AND brs.createdAt >= DATE_FORMAT(
-                                  CURDATE() - INTERVAL 1 MONTH, 
-                                  '%Y-%m-01'
-                                ) 
-                                AND brs.createdAt < DATE_FORMAT(
-                                  CURDATE(), 
-                                  '%Y-%m-01'
-                                ) 
-                                  GROUP BY 
-                                    brs.bookId  `;
-    const mostReadLastYearSql = `SELECT 
-                                  brs.bookId id, 
-                                  MAX(brs.createdAt),
-                                  COUNT(DISTINCT brs.id) people_read, 
-                                  COUNT(DISTINCT lb.id) likes, 
-                                  ROUND(
-                                    AVG(rb.rating), 
-                                    1
-                                  ) rate, 
-                                  CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                                    SUBSTRING(bc.title, 1, 15), 
-                                    '...'
-                                  ) ELSE bc.title END truncatedTitle, 
-                                  bc.title, 
-                                  bc.thumbnail 
-                                FROM 
-                                  book_reading_states brs 
-                                  LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
-                                  AND lb.is_liked = 1 
-                                  LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
-                                  AND rb.rating IS NOT NULL 
-                                  JOIN book_collections bc ON bc.id = brs.bookId 
-                                WHERE 
-                                  brs.reading_state = "Read"
-                                  AND brs.createdAt >= DATE_FORMAT(
-                                CURDATE() - INTERVAL 1 YEAR, 
-                                '%Y-%m-01'
-                              ) 
-                              AND brs.createdAt < DATE_FORMAT(
-                                CURDATE(), 
-                                '%Y-%m-01'
-                              ) 
-                                GROUP BY 
-                                  brs.bookId
-                      `;
-    const mostLikedSql = `SELECT 
-                            lb.bookId, 
-                            ROUND(
-                              AVG(rating), 
-                              1
-                            ) rate, 
-                            COUNT(DISTINCT brs.id) people_read, 
-                            COUNT(DISTINCT lb.id) likes, 
-                            CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                              SUBSTRING(bc.title, 1, 15), 
-                              '...'
-                            ) ELSE bc.title END truncatedTitle, 
-                            bc.title, 
-                            bc.thumbnail 
-                          FROM 
-                            liked_books lb 
-                            LEFT JOIN rated_books rb ON rb.bookId = lb.bookId 
-                            LEFT JOIN book_reading_states brs ON brs.bookId = lb.bookId 
-                            AND brs.reading_state = "Read" 
-                            JOIN book_collections bc ON bc.id = rb.bookId 
-                          WHERE 
-                            is_liked = 1 
-                          GROUP BY 
-                            lb.bookId;
- `;
-    const mostReadSql = `SELECT 
-                          brs.bookId id, 
-                          COUNT(DISTINCT brs.id) people_read, 
-                          COUNT(DISTINCT lb.id) likes, 
-                          ROUND(
-                            AVG(rb.rating), 
-                            1
-                          ) rate, 
-                          CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                            SUBSTRING(bc.title, 1, 15), 
-                            '...'
-                          ) ELSE bc.title END truncatedTitle, 
-                          bc.title, 
-                          bc.thumbnail 
-                        FROM 
-                          book_reading_states brs 
-                          LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
-                          AND lb.is_liked = 1 
-                          LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
-                          AND rb.rating IS NOT NULL 
-                          JOIN book_collections bc ON bc.id = brs.bookId 
-                        WHERE 
-                          brs.reading_state = "Read" 
-                        GROUP BY 
-                          brs.bookId
-`;
-    const highestRatedSql = `SELECT 
-                              rb.bookId, 
-                              ROUND(
-                                AVG(rating), 
-                                1
-                              ) rate, 
-                              COUNT(DISTINCT brs.id) people_read, 
-                              COUNT(DISTINCT lb.id) likes, 
-                              CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                                SUBSTRING(bc.title, 1, 15), 
-                                '...'
-                              ) ELSE bc.title END truncatedTitle, 
-                              bc.title, 
-                              bc.thumbnail 
-                            FROM 
-                              rated_books rb 
-                              LEFT JOIN liked_books lb ON lb.bookId = rb.bookId 
-                              AND lb.is_liked = 1 
-                              LEFT JOIN book_reading_states brs ON brs.bookId = rb.bookId 
-                              AND brs.reading_state = "Read" 
-                              JOIN book_collections bc ON bc.id = rb.bookId 
-                            WHERE 
-                              rating IS NOT NULL 
-                            GROUP BY 
-                              rb.bookId;`;
-    const [
-      mostRead,
-      mostLiked,
-      highestRated,
-      mostReadLastMonth,
-      mostReadLastYear,
-    ] = await Promise.all([
-      returnRawQuery(mostReadSql),
-      returnRawQuery(mostLikedSql),
-      returnRawQuery(highestRatedSql),
-      returnRawQuery(mostReadLastMonthSql),
-      returnRawQuery(mostReadLastYearSql),
-    ]);
-
-    res.status(200).json({
-      mostRead,
-      mostLiked,
-      highestRated,
-      mostReadLastMonth,
-      mostReadLastYear,
-    });
-  } catch (error) {
-    logger.log(error);
-    next(error);
-  }
-};
-
-const getTrendingTopics = async (req, res, next) => {
-  try {
-    const updated = await returnRawQuery(trendingTopicsSql);
-    logger.log(updated);
-    res.status(200).json(updated);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getTopicCategories = async (req, res, next) => {
-  try {
-    let results = await TopicCategory.findAll();
-    results = results.map((result) => result.toJSON());
-    // logger.log(results);
-    res.status(200).json(results);
-  } catch (error) {
-    next(error);
-  }
-};
-
 const setFollowingState = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
@@ -2288,324 +1851,6 @@ const setFollowingState = async (req, res, next) => {
 
     res.status(200).json({ message: "Success" });
   } catch (error) {
-    next(error);
-  }
-};
-
-const getBookCategories = async (req, res, next) => {
-  try {
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-      throw new Error({ error: result.array() });
-    }
-    const { q, index } = matchedData(req);
-    logger.log("???????????????????????????????");
-    logger.log(index);
-
-    const offset = index == undefined ? "OFFSET 0" : `OFFSET ${index}`;
-    const where = q ? `WHERE c.category LIKE '${q}%'` : "";
-    const bookCategoriesSql = `SELECT 
-                                  * 
-                                FROM 
-                                  (
-                                    SELECT 
-                                      COUNT(cba.id) book_count, 
-                                      categoryId id, 
-                                      c.category 
-                                    FROM 
-                                      category_book_association cba 
-                                      INNER JOIN categories c ON c.id = cba.categoryId 
-                                      ${where}
-                                      GROUP BY 
-                                      categoryId 
-                                    ORDER BY 
-                                      COUNT(cba.id) DESC
-                                  ) temp 
-                                LIMIT 
-                                  50 
-                                ${offset}  
-                                  `;
-    const bookCategories = await returnRawQuery(bookCategoriesSql);
-    res.status(200).json(bookCategories);
-  } catch (error) {
-    next(error);
-  }
-};
-
-const getCategoryBooks = async (req, res, next) => {
-  try {
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-      throw new Error({ error: result.array() });
-    }
-    const { categoryId } = matchedData(req);
-    const category = await Category.findByPk(categoryId);
-    if (!category) {
-      throw new Error("Category not found");
-    }
-
-    const mostReadLastMonthSql = `SELECT 
-                                    * 
-                                  FROM 
-                                    (
-                                      SELECT 
-                                        brs.bookId id, 
-                                        MAX(brs.createdAt), 
-                                        COUNT(DISTINCT brs.id) people_read, 
-                                        COUNT(DISTINCT lb.id) likes, 
-                                        ROUND(
-                                          AVG(rb.rating), 
-                                          1
-                                        ) rate, 
-                                        CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                                          SUBSTRING(bc.title, 1, 15), 
-                                          '...'
-                                        ) ELSE bc.title END truncatedTitle, 
-                                        bc.title, 
-                                        bc.thumbnail 
-                                      FROM 
-                                        book_reading_states brs 
-                                        LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
-                                        AND lb.is_liked = 1 
-                                        LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
-                                        AND rb.rating IS NOT NULL 
-                                        JOIN book_collections bc ON bc.id = brs.bookId 
-                                      WHERE 
-                                        brs.reading_state = "Read" 
-                                        AND brs.createdAt >= DATE_FORMAT(
-                                          CURDATE() - INTERVAL 1 MONTH, 
-                                          '%Y-%m-01'
-                                        ) 
-                                        AND brs.createdAt < DATE_FORMAT(
-                                          CURDATE(), 
-                                          '%Y-%m-01'
-                                        ) 
-                                      GROUP BY 
-                                        brs.bookId
-                                    ) temp 
-                                  WHERE 
-                                    id IN (
-                                      SELECT 
-                                        bookId 
-                                      FROM 
-                                        category_book_association 
-                                      WHERE 
-                                        categoryId = ${categoryId}
-                                    )
-                                  `;
-    const mostReadLastYearSql = `SELECT 
-                                * 
-                              FROM 
-                                (
-                                  SELECT 
-                                    brs.bookId id, 
-                                    MAX(brs.createdAt), 
-                                    COUNT(DISTINCT brs.id) people_read, 
-                                    COUNT(DISTINCT lb.id) likes, 
-                                    ROUND(
-                                      AVG(rb.rating), 
-                                      1
-                                    ) rate, 
-                                    CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                                      SUBSTRING(bc.title, 1, 15), 
-                                      '...'
-                                    ) ELSE bc.title END truncatedTitle, 
-                                    bc.title, 
-                                    bc.thumbnail 
-                                  FROM 
-                                    book_reading_states brs 
-                                    LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
-                                    AND lb.is_liked = 1 
-                                    LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
-                                    AND rb.rating IS NOT NULL 
-                                    JOIN book_collections bc ON bc.id = brs.bookId 
-                                  WHERE 
-                                    brs.reading_state = "Read" 
-                                    AND brs.createdAt >= DATE_FORMAT(
-                                      CURDATE() - INTERVAL 1 YEAR, 
-                                      '%Y-%m-01'
-                                    ) 
-                                    AND brs.createdAt < DATE_FORMAT(
-                                      CURDATE(), 
-                                      '%Y-%m-01'
-                                    ) 
-                                  GROUP BY 
-                                    brs.bookId
-                                ) temp 
-                              WHERE 
-                                id IN (
-                                  SELECT 
-                                    bookId 
-                                  FROM 
-                                    category_book_association 
-                                  WHERE 
-                                    categoryId = ${categoryId}
-                                )
-                              `;
-    const mostLikedSql = `SELECT 
-                        * 
-                      FROM 
-                        (
-                          SELECT 
-                            lb.bookId id, 
-                            ROUND(
-                              AVG(rating), 
-                              1
-                            ) rate, 
-                            COUNT(DISTINCT brs.id) people_read, 
-                            COUNT(DISTINCT lb.id) likes, 
-                            CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                              SUBSTRING(bc.title, 1, 15), 
-                              '...'
-                            ) ELSE bc.title END truncatedTitle, 
-                            bc.title, 
-                            bc.thumbnail 
-                          FROM 
-                            liked_books lb 
-                            LEFT JOIN rated_books rb ON rb.bookId = lb.bookId 
-                            LEFT JOIN book_reading_states brs ON brs.bookId = lb.bookId 
-                            AND brs.reading_state = "Read" 
-                            JOIN book_collections bc ON bc.id = rb.bookId 
-                          WHERE 
-                            is_liked = 1 
-                          GROUP BY 
-                            lb.bookId
-                        ) temp 
-                      WHERE 
-                        id IN (
-                          SELECT 
-                            bookId 
-                          FROM 
-                            category_book_association 
-                          WHERE 
-                            categoryId = ${categoryId}
-                        )
-                      `;
-    const mostReadSql = `SELECT 
-                        * 
-                      FROM 
-                        (
-                          SELECT 
-                            brs.bookId id, 
-                            MAX(brs.createdAt), 
-                            COUNT(DISTINCT brs.id) people_read, 
-                            COUNT(DISTINCT lb.id) likes, 
-                            ROUND(
-                              AVG(rb.rating), 
-                              1
-                            ) rate, 
-                            CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                              SUBSTRING(bc.title, 1, 15), 
-                              '...'
-                            ) ELSE bc.title END truncatedTitle, 
-                            bc.title, 
-                            bc.thumbnail 
-                          FROM 
-                            book_reading_states brs 
-                            LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
-                            AND lb.is_liked = 1 
-                            LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
-                            AND rb.rating IS NOT NULL 
-                            JOIN book_collections bc ON bc.id = brs.bookId 
-                          WHERE 
-                            brs.reading_state = "Read" 
-                          GROUP BY 
-                            brs.bookId
-                        ) temp 
-                      WHERE 
-                        id IN (
-                          SELECT 
-                            bookId 
-                          FROM 
-                            category_book_association 
-                          WHERE 
-                            categoryId = ${categoryId}
-                        )
-                      `;
-    const highestRatedSql = `SELECT 
-                            * 
-                          FROM 
-                            (
-                              SELECT 
-                                rb.bookId id, 
-                                ROUND(
-                                  AVG(rating), 
-                                  1
-                                ) rate, 
-                                COUNT(DISTINCT brs.id) people_read, 
-                                COUNT(DISTINCT lb.id) likes, 
-                                CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                                  SUBSTRING(bc.title, 1, 15), 
-                                  '...'
-                                ) ELSE bc.title END truncatedTitle, 
-                                bc.title, 
-                                bc.thumbnail 
-                              FROM 
-                                rated_books rb 
-                                LEFT JOIN liked_books lb ON lb.bookId = rb.bookId 
-                                AND lb.is_liked = 1 
-                                LEFT JOIN book_reading_states brs ON brs.bookId = rb.bookId 
-                                AND brs.reading_state = "Read" 
-                                JOIN book_collections bc ON bc.id = rb.bookId 
-                              WHERE 
-                                rating IS NOT NULL 
-                              GROUP BY 
-                                rb.bookId
-                            ) temp 
-                          WHERE 
-                            id IN (
-                              SELECT 
-                                bookId 
-                              FROM 
-                                category_book_association 
-                              WHERE 
-                                categoryId = ${categoryId}
-                            )
-                          `;
-    const [
-      mostRead,
-      mostLiked,
-      highestRated,
-      mostReadLastMonth,
-      mostReadLastYear,
-    ] = await Promise.all([
-      returnRawQuery(mostReadSql),
-      returnRawQuery(mostLikedSql),
-      returnRawQuery(highestRatedSql),
-      returnRawQuery(mostReadLastMonthSql),
-      returnRawQuery(mostReadLastYearSql),
-    ]);
-
-    res.status(200).json({
-      mostRead,
-      mostLiked,
-      highestRated,
-      mostReadLastMonth,
-      mostReadLastYear,
-    });
-  } catch (error) {
-    logger.log(error);
-    next(error);
-  }
-};
-
-const getSidebarTopics = async (res, req, next) => {
-  try {
-    const topicsSql = `SELECT 
-                          t.id,
-                          t.topic,
-                          t.image,
-                          t.post_count,t.follower_count
-                        FROM 
-                          topics t 
-                        GROUP BY
-                          t.id
-                        LIMIT 5;
-                      `;
-    const topics = await returnRawQuery(topicsSql);
-    res.status(200).json({ sidebarTopics: topics });
-  } catch (error) {
-    logger.log(error);
     next(error);
   }
 };
@@ -2641,13 +1886,5 @@ export {
   getReaderBookModalDetails,
   getTopicReaders,
   getExploreGenerals,
-  getExploreTopics,
-  getExploreBooks,
-  getTopicCategories,
   setFollowingState,
-  getTrendingTopics,
-  getTopicPosts,
-  getBookCategories,
-  getCategoryBooks,
-  getSidebarTopics,
 };
