@@ -1,7 +1,6 @@
 import React from "react";
 import { Outlet, NavLink, useLoaderData } from "react-router-dom";
 import "../css/explore.css";
-import RightSidebar from "../components/RightSidebar";
 
 const Explore = () => {
   return (
@@ -59,7 +58,6 @@ const Explore = () => {
       </ul>
       <hr className="mt-0 mb-3" />
       <Outlet />
-      <RightSidebar />
     </>
   );
 };

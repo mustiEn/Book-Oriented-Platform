@@ -2,24 +2,23 @@ import React from "react";
 import { Outlet, useLoaderData } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import LeftSidebar from "../components/LeftSidebar";
+import RightSidebar from "../components/RightSidebar";
 
 const Layout = () => {
-  const { reader } = useLoaderData();
-  console.log(reader);
+  const [loggedInReader, sidebarTopics] = useLoaderData();
+  console.log(loggedInReader);
 
   return (
     <>
-      <LeftSidebar pos={"start-0"} loggedInReader={reader} />
-      <div
-        id="content"
-        style={{
-          width: 700 + "px",
-          border: 1 + "px solid white",
-          minHeight: 100 + "vh",
-        }}
-        // className="h-100"
-      >
-        <Outlet context={reader} />
+      <div className="d-flex">
+        <LeftSidebar loggedInReader={loggedInReader} />
+        <div
+          id="MainContent"
+          className="border-end border-opacity-50 border-secondary border-start"
+        >
+          <Outlet context={loggedInReader} />
+        </div>
+        <RightSidebar topics={sidebarTopics} />
       </div>
       <div>
         <Toaster position="top-right" reverseOrder={false} />
@@ -29,12 +28,3 @@ const Layout = () => {
 };
 
 export default Layout;
-
-export const loadLoggedInReader = async () => {
-  const response = await fetch("/api/get-reader-username");
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(response);
-  }
-  return data;
-};

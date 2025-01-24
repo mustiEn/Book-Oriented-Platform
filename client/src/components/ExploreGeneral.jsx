@@ -84,9 +84,9 @@ const ExploreGeneral = () => {
 
   return (
     <>
-      <TopicCategoryLinks topicCategory={topicCategories} />
       <div className="px-2">
-        <div>
+        <TopicCategoryLinks topicCategory={topicCategories} />
+        <div className="my-4">
           <div className="h6">Topics</div>
           <ul>
             {topics.map((topic, i) => (
@@ -95,7 +95,7 @@ const ExploreGeneral = () => {
                   to={`/topic/${encodeURIComponent(topic.topic)}`}
                   className="d-flex align-items-center"
                 >
-                  <div>{i}</div>
+                  {/* <div>{i}</div> */}
                   <div className="d-flex align-items-center ms-2">
                     <img
                       src={`/Topics/${topic.image}`}
@@ -149,7 +149,7 @@ const ExploreGeneral = () => {
             a book and your rates,
           </div>
         </div>
-        <div>
+        <div className="my-4">
           <div className="h6">Book Worms</div>
           <Swiper
             modules={[Pagination, Autoplay]}
@@ -211,7 +211,7 @@ const ExploreGeneral = () => {
             ))}
           </Swiper>
         </div>
-        <div className="my-5">
+        <div>
           <div className="h6">The most liked books</div>
           <Swiper
             modules={[Pagination, Autoplay]}

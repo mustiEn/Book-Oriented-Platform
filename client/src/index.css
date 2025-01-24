@@ -2,7 +2,12 @@
   min-height: 100vh;
   width: 100%;
   display: flex;
-  justify-content: end;
+  justify-content: center;
+}
+
+#MainContent {
+  width: 700px;
+  min-height: 100vh;
 }
 
 * {
@@ -27,7 +32,8 @@ body {
   color: rgba(255, 255, 255, 0.87);
   /* background-color: #242424; */
   /* background-color: rgb(24, 26, 27); */
-  background-color: #121212;
+  /* background-color: #121212; */
+  background-color: #0b0b0b;
 }
 
 footer {

@@ -1,12 +1,10 @@
 import React from "react";
-import { Outlet } from "react-router-dom";
-import RightSidebar from "../components/RightSidebar";
+import { Outlet, useLoaderData } from "react-router-dom";
 
 const BookCategories = () => {
   return (
     <>
       <Outlet />
-      <RightSidebar />
     </>
   );
 };

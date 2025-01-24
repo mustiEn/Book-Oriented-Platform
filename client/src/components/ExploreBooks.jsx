@@ -12,23 +12,25 @@ const ExploreBooks = () => {
   } = useLoaderData();
   return (
     <>
-      <div>
-        <Link className="btn btn-outline-light" to="/book-categories">
-          Book Categories
-        </Link>
-        <Link className="btn btn-outline-light" to="">
-          Authors
-        </Link>
+      <div className="px-2">
+        <div className="d-flex gap-2 my-4">
+          <Link className="btn btn-outline-light" to="/book-categories">
+            Book Categories
+          </Link>
+          <Link className="btn btn-outline-light" to="">
+            Authors
+          </Link>
+        </div>
+        <TopBooks
+          books={[
+            mostRead,
+            mostLiked,
+            highestRated,
+            mostReadLastMonth,
+            mostReadLastYear,
+          ]}
+        />
       </div>
-      <TopBooks
-        books={[
-          mostRead,
-          mostLiked,
-          highestRated,
-          mostReadLastMonth,
-          mostReadLastYear,
-        ]}
-      />
     </>
   );
 };

@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Signup from "./views/Signup";
-import Layout, { loadLoggedInReader } from "./layout/Layout";
+import Layout from "./layout/Layout";
 import Home from "./views/Home";
 import Search from "./views/Search";
 
@@ -50,6 +50,8 @@ import TopicReaders from "./components/TopicReaders.jsx";
 import BookCategories from "./views/BookCategories.jsx";
 import BookCategory from "./components/BookCategory.jsx";
 import BookCategoriesList from "./components/BookCategoriesList.jsx";
+import AdminLayout from "./layout/AdminLayout.jsx";
+import Admin from "./views/Admin.jsx";
 
 const router = createBrowserRouter([
   {
@@ -61,8 +63,18 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      {
+        index: true,
+        element: <Admin />,
+      },
+    ],
+  },
+  {
     element: <Layout />,
-    loader: loadLoggedInReader,
+    loader: Loader.loadInitials,
     children: [
       {
         path: "/home",
@@ -71,6 +83,7 @@ const router = createBrowserRouter([
       {
         path: "/search",
         element: <Search />,
+        loader: Loader.loadSearch,
       },
       {
         path: "/share-review/:bookId",
@@ -90,6 +103,7 @@ const router = createBrowserRouter([
       {
         path: "/topic/:topicName",
         element: <Topic />,
+        // ?bak
         loader: Loader.loadTopic,
         children: [
           {
@@ -226,7 +240,7 @@ const router = createBrowserRouter([
       {
         path: "/book/:bookTitle/:bookId",
         element: <BookDetails />,
-        loader: Loader.loadBookDetailsAndHeader,
+        loader: Loader.loadBookDetails,
         errorElement: <Error />,
         children: [
           {

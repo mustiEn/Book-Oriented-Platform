@@ -6,10 +6,9 @@ import { toast } from "react-hot-toast";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import "../css/topic_category.css";
 import BackNavigation from "../components/BackNavigation";
-import RightSidebar from "../components/RightSidebar";
 
 const CreateTopic = () => {
-  const data = useLoaderData();
+  const topicCategories = useLoaderData();
   const navigate = useNavigate();
   const [categoryCount, setCategoryCount] = useState(0);
   const [topic, setTopic] = useState({
@@ -17,6 +16,7 @@ const CreateTopic = () => {
     // description: "",
     category: [],
   });
+  console.log(useLoaderData());
 
   const returnCategoryClassnames = (param) => {
     let classnames;
@@ -107,7 +107,7 @@ const CreateTopic = () => {
             {categoryCount}/3
           </div>
           <div className="d-flex flex-wrap gap-2 pb-2">
-            {data.map((category) => (
+            {topicCategories.map((category) => (
               <div
                 key={category.id}
                 className={returnCategoryClassnames(category.topic_category)}
@@ -150,7 +150,6 @@ const CreateTopic = () => {
           Share
         </Button>
       </div>
-      <RightSidebar />
     </>
   );
 };

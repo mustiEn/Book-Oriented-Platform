@@ -1,37 +1,26 @@
-#LeftSidebar {
-  position: fixed;
-  top: 0;
+#leftSidebar {
   width: 250px;
   height: 100vh;
-  /* background-color: #0d0a0a; */
   background-color: #121212;
   color: #fff;
   padding: 20px;
-  border-radius: 0 10px 10px 0;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
-#LeftSidebar ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-#LeftSidebar .LeftSidebar-item {
+.left-sidebar-item {
   height: 45px;
 }
 
-#LeftSidebar .LeftSidebar-item:hover {
+.left-sidebar-item:hover {
   background-color: #1a1d23;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
 }
 
-#LeftSidebar ul li {
+#leftSidebar ul li {
   margin-bottom: 10px;
 }
 
-#LeftSidebar ul a {
+#leftSidebar ul a {
   color: #fff;
   text-decoration: none;
   display: block;

@@ -18,9 +18,12 @@ import PostReview from "./PostReview";
 import PostQuote from "./PostQuote";
 import PostThought from "./PostThought";
 import BackNavigation from "./BackNavigation";
+import RightSidebar from "./RightSidebar";
 
 const ReaderPostComments = () => {
-  let { post, comments, user } = useLoaderData();
+  console.log(useLoaderData());
+  const commentsData = useLoaderData();
+  let { post, comments, user } = commentsData;
   const navigate = useNavigate();
   const [commentList, setCommentList] = useState(comments);
   const { postType, postId } = useParams();
@@ -154,7 +157,7 @@ const ReaderPostComments = () => {
             alt=""
           />
           <Form
-            dark-bs-theme="dark"
+            data-bs-theme="dark"
             className="d-flex align-items-end gap-3"
             style={{ width: 80 + "%" }}
             onSubmit={(e) => {

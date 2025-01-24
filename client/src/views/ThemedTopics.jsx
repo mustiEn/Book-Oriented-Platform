@@ -11,14 +11,13 @@ import Button from "react-bootstrap/Button";
 import "../css/themed_topics.css";
 import toast from "react-hot-toast";
 import BackNavigation from "../components/BackNavigation";
-import RightSidebar from "../components/RightSidebar";
 
 const ThemedTopics = () => {
-  const topics = useLoaderData();
+  const themedTopics = useLoaderData();
   const navigate = useNavigate();
   const params = useParams();
   const [followingStates, setFollowingStates] = useState(
-    topics.reduce((acc, curr) => {
+    themedTopics.reduce((acc, curr) => {
       acc[curr.id] = curr.isFollowing;
       return acc;
     }, {})
@@ -69,14 +68,14 @@ const ThemedTopics = () => {
     }
   }, [isTopicFollowed]);
 
-  console.log(topics);
+  console.log(themedTopics);
   console.log(followingStates);
 
   return (
     <>
       <BackNavigation innerHtml={`Topics related to ${params.category}`} />
       <ul className="d-flex flex-column gap-2">
-        {topics.map((topic, i) => (
+        {themedTopics.map((topic, i) => (
           <li key={topic.id} className="themed-topic">
             <Link
               to={`/topic/${encodeURIComponent(topic.topic)}`}
@@ -127,7 +126,6 @@ const ThemedTopics = () => {
           </li>
         ))}
       </ul>
-      <RightSidebar />
     </>
   );
 };

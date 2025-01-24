@@ -524,7 +524,7 @@ const displayReaderProfile = async (req, res, next) => {
         username: username,
       },
     });
-    res.status(200).json({ reader });
+    res.status(200).json(reader);
   } catch (error) {
     next(error);
   }
@@ -718,7 +718,7 @@ const getReaderReviews = async (req, res, next) => {
                         r.title, 
                         r.review, 
                         p.comment_count, 
-                        people_read,
+                        #people_read,
                         rb.rating,
                         lb.is_liked,
                         brs.reading_state, 
@@ -736,7 +736,7 @@ const getReaderReviews = async (req, res, next) => {
                         INNER JOIN (
                           SELECT 
                             r.bookId AS bcId, 
-                            bc.people_read AS people_read, 
+                            #bc.people_read AS people_read, 
                             CASE WHEN MAX(
                               LENGTH(bc.title)
                             ) > 100 THEN CONCAT(
@@ -1116,9 +1116,7 @@ const getLoggedInReader = async (req, res, next) => {
     // user = user.map((element) => element.toJSON());
     user = user.toJSON();
     logger.log(user);
-    res.status(200).json({
-      reader: user,
-    });
+    res.status(200).json(user);
   } catch (error) {
     next(error);
   }
@@ -1323,7 +1321,7 @@ const getReaderPostComments = async (req, res, next) => {
     }
 
     comments = await returnRawQuery(commentsSql);
-    post = JSON.stringify(post);
+    // post = JSON.stringify(post);
     // logger.log(post);
     // logger.log(comments);
     res.status(200).json({
@@ -1585,7 +1583,7 @@ const getTopic = async (req, res, next) => {
     logger.log(topicName);
     logger.log(topicFollowerCount);
 
-    res.status(200).json({ topic });
+    res.status(200).json(topic);
   } catch (error) {
     next(error);
   }
@@ -2575,8 +2573,16 @@ const getCategoryBooks = async (req, res, next) => {
       returnRawQuery(mostReadLastMonthSql),
       returnRawQuery(mostReadLastYearSql),
     ]);
+    logger.log(
+      mostRead,
+      mostLiked,
+      highestRated,
+      mostReadLastMonth,
+      mostReadLastYear
+    );
 
     res.status(200).json({
+      category,
       mostRead,
       mostLiked,
       highestRated,
@@ -2589,7 +2595,7 @@ const getCategoryBooks = async (req, res, next) => {
   }
 };
 
-const getSidebarTopics = async (res, req, next) => {
+const getSidebarTopics = async (req, res, next) => {
   try {
     const topicsSql = `SELECT 
                           t.id,
@@ -2603,7 +2609,8 @@ const getSidebarTopics = async (res, req, next) => {
                         LIMIT 5;
                       `;
     const topics = await returnRawQuery(topicsSql);
-    res.status(200).json({ sidebarTopics: topics });
+    logger.log(topics);
+    res.status(200).json(topics);
   } catch (error) {
     logger.log(error);
     next(error);

@@ -6,7 +6,7 @@ import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import Dropdown from "react-bootstrap/Dropdown";
 
-const LeftSidebar = ({ pos, loggedInReader }) => {
+const LeftSidebar = ({ loggedInReader }) => {
   const navigate = useNavigate();
   const reader = loggedInReader;
   const [show, setShow] = useState(false);
@@ -60,51 +60,54 @@ const LeftSidebar = ({ pos, loggedInReader }) => {
 
   return (
     <>
-      <div id="LeftSidebar" className={`${pos} border-end d-flex flex-column`}>
-        <div id="brandName">My Books</div>
+      <div
+        id="leftSidebar"
+        className="d-flex flex-column position-sticky top-0"
+      >
+        <div id="brandName">BookNest</div>
         <ul className="mt-4">
-          <li className="Leftsidebar-item">
-            <Link className="Leftsidebar-a" to="/">
+          <li className="left-sidebar-item">
+            <Link className="left-sidebar-a" to="/">
               Home
             </Link>
           </li>
-          <li className="Leftsidebar-item">
-            <Link className="Leftsidebar-a" to="/search">
+          <li className="left-sidebar-item">
+            <Link className="left-sidebar-a" to="/search">
               Search
             </Link>
           </li>
-          <li className="Leftsidebar-item">
-            <Link className="Leftsidebar-a" to="/explore">
+          <li className="left-sidebar-item">
+            <Link className="left-sidebar-a" to="/explore">
               Explore
             </Link>
           </li>
-          <li className="Leftsidebar-item">
-            <Link className="Leftsidebar-a" to="/topics">
+          <li className="left-sidebar-item">
+            <Link className="left-sidebar-a" to="/explore/topics">
               Topics
             </Link>
           </li>
-          <li className="Leftsidebar-item">
-            <Link className="Leftsidebar-a" to="/books">
+          <li className="left-sidebar-item">
+            <Link className="left-sidebar-a" to="/explore/books">
               Books
             </Link>
           </li>
-          <li className="Leftsidebar-item">
-            <Link className="Leftsidebar-a" to="/book-categories">
+          <li className="left-sidebar-item">
+            <Link className="left-sidebar-a" to="/book-categories">
               Book Categories
             </Link>
           </li>
-          <li className="Leftsidebar-item">
-            <Link className="Leftsidebar-a" to="/authors">
+          <li className="left-sidebar-item">
+            <Link className="left-sidebar-a" to="/authors">
               Authors
             </Link>
           </li>
-          <li className="Leftsidebar-item">
-            <Link className="Leftsidebar-a" to="#">
+          <li className="left-sidebar-item">
+            <Link className="left-sidebar-a" to="#">
               Contact
             </Link>
           </li>
-          <li className="Leftsidebar-item">
-            <Link className="Leftsidebar-a" to={`/${reader.username}`}>
+          <li className="left-sidebar-item">
+            <Link className="left-sidebar-a" to={`/${reader.username}`}>
               Profile
             </Link>
           </li>
@@ -163,7 +166,7 @@ const LeftSidebar = ({ pos, loggedInReader }) => {
           <ul className="padding-2">
             {loading && books.length === 0 && <FaSpinner />}
             {books.length === 0 && loading === false && search !== "" && (
-              <li className="Leftsidebar-item">No books found</li>
+              <li className="left-sidebar-item">No books found</li>
             )}
             {books.length !== 0 &&
               search !== "" &&

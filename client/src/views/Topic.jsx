@@ -3,12 +3,11 @@ import { NavLink, Outlet, useLoaderData, useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import { FaArrowLeft } from "react-icons/fa6";
 import BackNavigation from "../components/BackNavigation";
-import RightSidebar from "../components/RightSidebar";
 
 const Topic = () => {
-  const { topic } = useLoaderData();
+  const topic = useLoaderData();
   const navigate = useNavigate();
-  // console.log(topic);
+  console.log(useLoaderData());
 
   return (
     <>
@@ -73,7 +72,6 @@ const Topic = () => {
       </ul>
       <hr className="mb-3 mt-0" />
       <Outlet />
-      <RightSidebar />
     </>
   );
 };

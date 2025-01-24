@@ -1,22 +1,19 @@
 import React from "react";
 import { useLoaderData, Outlet } from "react-router-dom";
 import BookDetailsSection from "../components/BookDetailsSection";
-import RightSidebar from "../components/RightSidebar";
 
 const BookDetails = () => {
-  const data = useLoaderData();
-  console.log(data);
+  const [bookDetails, readerBookDetailsHeader] = useLoaderData();
 
   return (
     <>
       <BookDetailsSection
-        bookDetails={data.bookDetails}
-        readerBookDetailsHeader={data.readerBookDetailsHeader}
+        bookDetails={bookDetails}
+        readerBookDetailsHeader={readerBookDetailsHeader}
       />
       <div className="w-100 p-4">
-        <Outlet context={data.bookDetails} />
+        <Outlet context={bookDetails} />
       </div>
-      <RightSidebar />
     </>
   );
 };

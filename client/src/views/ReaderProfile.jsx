@@ -12,9 +12,9 @@ import { Toaster, toast } from "react-hot-toast";
 import { FaCalendar, FaClockRotateLeft } from "react-icons/fa6";
 import Button from "react-bootstrap/Button";
 import "../css/reader_profile.css";
-import RightSidebar from "../components/RightSidebar";
 
 const ReaderProfile = () => {
+  console.log(useLoaderData());
   const reader = useOutletContext();
   const readerProfileData = useLoaderData();
   const regex = /^[a-zA-Z0-9-_]+(\.(jpg|jpeg|png||webp))$/i;
@@ -181,18 +181,17 @@ const ReaderProfile = () => {
         </div>
         <div className="profile-info d-flex flex-column gap-2 px-3 mb-3">
           <div className="fs-4">
-            {readerProfileData.reader.firstname}{" "}
-            {readerProfileData.reader.lastname}
+            {readerProfileData.firstname} {readerProfileData.lastname}
           </div>
           <div className="d-flex gap-3">
             <div style={{ color: "#b6b6b6" }}>
-              @{readerProfileData.reader.username}
+              @{readerProfileData.username}
             </div>
             <div
               style={{ fontSize: 14 + "px", backgroundColor: "#262626" }}
               className="rounded-2 px-2"
             >
-              {readerProfileData.reader.readership}
+              {readerProfileData.readership}
             </div>
           </div>
           <div className="d-flex gap-3">
@@ -201,7 +200,7 @@ const ReaderProfile = () => {
               style={{ color: "#b6b6b6" }}
             >
               <FaCalendar />
-              {moment(readerProfileData.reader.DOB).format("D MMMM YYYY")}
+              {moment(readerProfileData.DOB).format("D MMMM YYYY")}
             </div>
             <div
               className="d-flex align-items-center gap-2"
@@ -209,7 +208,7 @@ const ReaderProfile = () => {
             >
               <FaClockRotateLeft />
               Joined in{" "}
-              {moment(readerProfileData.reader.createdAt).format("MMMM YYYY")}
+              {moment(readerProfileData.createdAt).format("MMMM YYYY")}
             </div>
           </div>
           <div className="d-flex gap-2">
@@ -291,12 +290,11 @@ const ReaderProfile = () => {
       <div className="px-3">
         <Outlet
           context={[
-            moment(readerProfileData.reader.createdAt).format("YYYY"),
+            moment(readerProfileData.createdAt).format("YYYY"),
             reader.username,
           ]}
         />
       </div>
-      <RightSidebar />
     </>
   );
 };

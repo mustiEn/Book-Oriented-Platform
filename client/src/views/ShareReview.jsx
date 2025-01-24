@@ -6,11 +6,10 @@ import slugify from "react-slugify";
 import { toast } from "react-hot-toast";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import RightSidebar from "../components/RightSidebar";
 
 const ShareReview = () => {
   const navigate = useNavigate();
-  const data = useLoaderData();
+  const [book, topicCategories] = useLoaderData();
   const [review, setReview] = useState({
     title: "",
     topic: "",
@@ -27,7 +26,7 @@ const ShareReview = () => {
       toast.error("Please fill all the fields");
       return;
     } else {
-      review.bookId = data.id;
+      review.bookId = book.id;
       const res = await fetch(`/api/share-review`, {
         method: "POST",
         headers: {
@@ -59,14 +58,14 @@ const ShareReview = () => {
       />
       <div id="reviewContainer" className="w-100 p-4">
         <div className="book-details-header w-100 d-flex align-items-center gap-3">
-          {data.thumbnail ? (
-            <img src={data.thumbnail} width={80 + "px"} alt="" />
+          {book.thumbnail ? (
+            <img src={book.thumbnail} width={80 + "px"} alt="" />
           ) : (
             <div>Image not found</div>
           )}
           <div className="d-flex flex-column">
-            <span className="book-title fs-3 ">{data.title}</span>
-            <span className="book-author fs-6 ">{data.authors}</span>
+            <span className="book-title fs-3 ">{book.title}</span>
+            <span className="book-author fs-6 ">{book.authors}</span>
           </div>
         </div>
         <div className="fw-bold fs-5 mt-4">Your Review</div>
@@ -119,7 +118,6 @@ const ShareReview = () => {
           </Button>
         </Form>
       </div>
-      <RightSidebar />
     </>
   );
 };
