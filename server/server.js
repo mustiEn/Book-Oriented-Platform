@@ -12,10 +12,11 @@ import passport from "passport";
 import "./strategies/strategy.js";
 import cookieParser from "cookie-parser";
 import { setupAssociations } from "./models/associations.js";
+import "./crons/index.js";
 
 dotenv.config();
 let port = process.env.PORT || 8081;
-
+// logger.log(job);
 const app = express();
 
 const SequelizeStore = sequelizeStore(session.Store);

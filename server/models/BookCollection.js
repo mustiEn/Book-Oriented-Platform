@@ -20,6 +20,10 @@ export const BookCollection = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
     },
+    people_read: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
     thumbnail: {
       type: DataTypes.STRING({ length: 1000 }),
       allowNull: true,

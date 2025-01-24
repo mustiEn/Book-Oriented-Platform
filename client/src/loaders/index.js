@@ -1,6 +1,16 @@
 import toast from "react-hot-toast";
 
-export const loadTopicCategories = async () => {
+export const loadExplore = async () => {
+  const response = await fetch("/api/get-sidebar-topics");
+  for (const res of response) {
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
+  }
+  const data = await Promise.all([response[0].json(), response[1].json()]);
+};
+
+export const loadExploreGeneral = async () => {
   const response = await Promise.all([
     fetch("/api/get-topic-categories"),
     fetch("/api/get-explore-general"),
@@ -18,13 +28,58 @@ export const loadTopicCategories = async () => {
   return data;
 };
 
-export const loadThemedTopics = async ({ params }) => {
-  const response = await fetch(`/api/get-themed-topics/${params.category}`);
+export const loadExploreTopics = async () => {
+  const response = await Promise.all([
+    fetch("/api/get-topic-categories"),
+    fetch("/api/get-explore-topics"),
+  ]);
+
+  for (const res of response) {
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
+  }
+  const data = await Promise.all([response[0].json(), response[1].json()]);
+  console.log(data);
+
+  return data;
+};
+
+export const loadExploreBooks = async () => {
+  const response = await fetch("/api/get-explore-books");
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(response);
+    throw new Error(data.error);
   }
   console.log(data);
+  return data;
+};
+
+export const loadThemedTopics = async ({ params }) => {
+  const response = await Promise.all([
+    fetch(`/api/get-themed-topics/${params.category}`),
+    fetch("/api/get-sidebar-topics"),
+  ]);
+  for (const res of response) {
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
+  }
+  const data = await Promise.all([response[0].json(), response[1].json()]);
+  return data;
+};
+
+export const loadCreateTopic = async () => {
+  const response = await Promise.all([
+    fetch(`/api/get-topic-categories`),
+    fetch("/api/get-sidebar-topics"),
+  ]);
+  for (const res of response) {
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
+  }
+  const data = await Promise.all([response[0].json(), response[1].json()]);
   return data;
 };
 
@@ -41,18 +96,30 @@ export const loadReaderThoughts = async ({ params }) => {
 
 export const loadTopic = async ({ params }) => {
   const { topicName } = params;
-  const response = await fetch(`/api/get-topic/${topicName}`);
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(response);
+  const response = await Promise.all([
+    fetch(`/api/get-topic/${topicName}`),
+    fetch("/api/get-sidebar-topics"),
+  ]);
+  for (const res of response) {
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
   }
-  // console.log(data);
+  const data = await Promise.all([response[0].json(), response[1].json()]);
+
   return data;
 };
 
-export const loadTopicPosts = async ({ params }) => {
+export const loadTopicPosts = async ({ request, params }) => {
   const { topicName } = params;
-  const response = await fetch(`/api/get-topic-posts/${topicName}`);
+  const q = new URL(request.url);
+  const postType = q.pathname.slice(21) || "all";
+  const search = q.search;
+  console.log(q);
+
+  const response = await fetch(
+    `/api/get-topic-posts/${topicName}/${postType}${search}`
+  );
   const data = await response.json();
   if (!response.ok) {
     throw new Error(response);
@@ -87,6 +154,7 @@ export const loadBookDetailsAndHeader = async ({ params }) => {
     const { bookId } = params;
     const [res1, res2, res3] = await Promise.all([
       fetch(`/api/books/v1/${bookId}`),
+      fetch("/api/get-sidebar-topics"),
       fetch(`/api/get-reader-book-details/${bookId}`),
       fetch(`/api/set-reader-book-record/${bookId}`, {
         method: "POST",
@@ -96,18 +164,14 @@ export const loadBookDetailsAndHeader = async ({ params }) => {
       }),
     ]);
 
-    const data1 = await res1.json();
-    const data2 = await res2.json();
-    if (!res1.ok) {
-      throw new Error(res1);
+    for (const res of response) {
+      if (!res.ok) {
+        throw new Error(res.error);
+      }
     }
-    if (!res2.ok) {
-      throw new Error(res2);
-    }
-    if (!res3.ok) {
-      throw new Error(res3);
-    }
-    return { bookDetails: data1, readerBookDetailsHeader: data2 };
+    const data = await Promise.all([response[0].json(), response[1].json()]);
+    return data;
+    // return { bookDetails: data1, readerBookDetailsHeader: data2 };
   } catch (error) {
     toast.error(error.message);
     console.log(error);
@@ -122,10 +186,13 @@ export const loadReaderProfiles = async ({ request, params }) => {
     `/api/get-reader-profiles/${bookId}/reader?q=${q}`
   );
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(response);
+  for (const res of response) {
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
   }
+  const data = await Promise.all([response[0].json(), response[1].json()]);
+
   return data;
 };
 
@@ -152,7 +219,10 @@ export const loadBookStatistics = async ({ params }) => {
 
 export const loadReaderProfile = async ({ params }) => {
   const { profile: username } = params;
-  const response = await fetch(`/api/${username}/display-reader-profile`);
+  const response = await Promise.all([
+    fetch(`/api/${username}/display-reader-profile`),
+    fetch("/api/get-sidebar-topics"),
+  ]);
   const data = await response.json();
   if (!response.ok) {
     throw new Error(response);
@@ -168,6 +238,22 @@ export const loadReaderComments = async () => {
   }
   console.log(response);
 
+  return data;
+};
+
+export const loadReaderPostComments = async ({ params }) => {
+  const { postType, postId } = params;
+  console.log(postType, postId);
+
+  const response = await Promise.all([
+    fetch(`/api/${postType}/${postId}`),
+    fetch("/api/get-sidebar-topics"),
+  ]);
+  if (!response.ok) {
+    toast.error("Something went wrong");
+    throw new Error(response);
+  }
+  const data = await response.json();
   return data;
 };
 
@@ -224,19 +310,55 @@ export const loadReaderBookshelfOverview = async () => {
 
 export const loadBookDetailsShareReview = async ({ params }) => {
   const { bookId } = params;
-  const res = await fetch(`/api/books/v1/${bookId}`);
-  const data = await res.json();
-  if (!res.ok) {
-    return "Sometinhg went wrong";
+  const res = await Promise.all([
+    fetch(`/api/books/v1/${bookId}`),
+    fetch("/api/get-explore-topics"),
+  ]);
+  for (const res of response) {
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
   }
+  const data = await Promise.all([response[0].json(), response[1].json()]);
   return data;
 };
 
-export const loadExploreGeneral = async () => {
-  const response = await fetch("/api/get-explore-general");
+export const loadBookCategories = async () => {
+  const response = await Promise.all([
+    fetch("/api/get-book-categories"),
+    fetch("/api/get-sidebar-topics"),
+  ]);
+  for (const res of response) {
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
+  }
+  const data = await Promise.all([response[0].json(), response[1].json()]);
+};
+
+export const loadBookCategoriesList = async () => {
+  const response = await fetch("/api/get-book-categories");
+  console.log("book categories");
+
   const data = await response.json();
   if (!response.ok) {
     throw new Error(response);
   }
+  console.log(data);
+
+  return data;
+};
+
+export const loadBookCategory = async ({ params }) => {
+  const { categoryId } = params;
+  console.log("book category", categoryId);
+
+  const response = await fetch(`/api/get-book-category/${categoryId}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(response);
+  }
+  console.log(data);
+
   return data;
 };

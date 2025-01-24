@@ -1,5 +1,6 @@
 import express from "express";
 import * as userController from "../controllers/user.js";
+import { query, body, param } from "express-validator";
 import multer from "multer";
 
 const maxSize = 25 * 1000 * 100;
@@ -27,7 +28,13 @@ router.get(
 );
 router.get("/get-reader-username", userController.getLoggedInReader);
 
-router.post("/share-review", userController.shareReview);
+router.post(
+  "/share-review",
+  body("topic").notEmpty().isString(),
+  userController.shareReview
+);
+
+router.get("/get-sidebar-topics", userController.getSidebarTopics);
 
 router.get("/get-book-reviews/:bookId", userController.getBookReviews);
 
@@ -69,10 +76,32 @@ router.get("/:username/get-reader-thoughts", userController.getReaderThoughts);
 router.get("/:username/get-reader-quotes", userController.getReaderQuotes);
 
 router.get("/get-topic/:topicName", userController.getTopic);
+router.get(
+  "/get-topic-posts/:topicName/:postType",
+  query("sortBy").optional().notEmpty().escape(),
+  userController.getTopicPosts
+);
 router.get("/get-topic-books/:topicName", userController.getTopicBooks);
 router.get("/get-topic-readers/:topicName", userController.getTopicReaders);
 
 router.get("/get-explore-general", userController.getExploreGenerals);
+router.get("/get-explore-topics", userController.getExploreTopics);
+router.get("/get-explore-books", userController.getExploreBooks);
+router.get("/get-trending-topics", userController.getTrendingTopics);
+router.get(
+  "/get-book-category/:categoryId",
+  param("categoryId").notEmpty().isInt(),
+  userController.getCategoryBooks
+);
+router.get(
+  "/get-book-categories",
+  query("q").optional(),
+  query("index").optional().isNumeric(),
+  userController.getBookCategories
+);
+
+router.get("/get-topic-categories", userController.getTopicCategories);
+
 router.post("/set-following-state", userController.setFollowingState);
 
 router.post(
@@ -103,4 +132,5 @@ router.get("/get-themed-topics/:category", userController.getThemedTopics);
 router.get("/:postType/:postId", userController.getReaderPostComments);
 router.post("/send-comment", userController.sendComment);
 router.post("/create-topic", userController.createTopic);
+
 export default router;

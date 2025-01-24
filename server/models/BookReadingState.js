@@ -1,3 +1,5 @@
+import { logger } from "../utils/constants.js";
+import { BookCollection } from "./BookCollection.js";
 import { sequelize } from "./db.js";
 import { DataTypes } from "sequelize";
 
@@ -39,5 +41,29 @@ BookReadingState.addHook("beforeUpdate", (instance, options) => {
   } else {
     instance.starting_date = null;
     instance.finishing_date = null;
+  }
+});
+
+BookReadingState.addHook("afterUpdate", async (instance, options) => {
+  const prev = instance.previous("reading_state");
+  const curr = instance.reading_state;
+  if (prev != "Read" && curr == "Read") {
+    await BookCollection.update(
+      { people_read: sequelize.literal("people_read + 1") },
+      {
+        where: {
+          id: instance.bookId,
+        },
+      }
+    );
+  } else if (prev == "Read" && curr != "Read") {
+    await BookCollection.update(
+      { people_read: sequelize.literal("people_read - 1") },
+      {
+        where: {
+          id: instance.bookId,
+        },
+      }
+    );
   }
 });
