@@ -1,11 +1,29 @@
 import React from "react";
 import { useLoaderData } from "react-router-dom";
+import TopBooks from "./TopBooks";
 
 const BookCategory = () => {
-  const data = useLoaderData();
-  console.log(data);
+  const {
+    mostRead,
+    mostLiked,
+    highestRated,
+    mostReadLastMonth,
+    mostReadLastYear,
+  } = useLoaderData();
 
-  return <div>BookCategory</div>;
+  return (
+    <>
+      <TopBooks
+        books={[
+          mostRead,
+          mostLiked,
+          highestRated,
+          mostReadLastMonth,
+          mostReadLastYear,
+        ]}
+      />
+    </>
+  );
 };
 
 export default BookCategory;

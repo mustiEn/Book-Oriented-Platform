@@ -11,6 +11,7 @@ import Button from "react-bootstrap/Button";
 import "../css/themed_topics.css";
 import toast from "react-hot-toast";
 import BackNavigation from "../components/BackNavigation";
+import RightSidebar from "../components/RightSidebar";
 
 const ThemedTopics = () => {
   const topics = useLoaderData();
@@ -126,6 +127,7 @@ const ThemedTopics = () => {
           </li>
         ))}
       </ul>
+      <RightSidebar />
     </>
   );
 };

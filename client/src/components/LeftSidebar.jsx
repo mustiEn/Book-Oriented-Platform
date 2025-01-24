@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import "../css/sidebar.css";
+import "../css/left_sidebar.css";
 import { Link, useNavigate, useLoaderData } from "react-router-dom";
 import { FaEllipsis } from "react-icons/fa6";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import Dropdown from "react-bootstrap/Dropdown";
 
-const Sidebar = ({ pos, loggedInReader }) => {
+const LeftSidebar = ({ pos, loggedInReader }) => {
   const navigate = useNavigate();
   const reader = loggedInReader;
   const [show, setShow] = useState(false);
@@ -60,51 +60,51 @@ const Sidebar = ({ pos, loggedInReader }) => {
 
   return (
     <>
-      <div id="sidebar" className={`${pos} border-end d-flex flex-column`}>
+      <div id="LeftSidebar" className={`${pos} border-end d-flex flex-column`}>
         <div id="brandName">My Books</div>
         <ul className="mt-4">
-          <li className="sidebar-item">
-            <Link className="sidebar-a" to="/">
+          <li className="Leftsidebar-item">
+            <Link className="Leftsidebar-a" to="/">
               Home
             </Link>
           </li>
-          <li className="sidebar-item">
-            <Link className="sidebar-a" to="/search">
+          <li className="Leftsidebar-item">
+            <Link className="Leftsidebar-a" to="/search">
               Search
             </Link>
           </li>
-          <li className="sidebar-item">
-            <Link className="sidebar-a" to="/explore">
+          <li className="Leftsidebar-item">
+            <Link className="Leftsidebar-a" to="/explore">
               Explore
             </Link>
           </li>
-          <li className="sidebar-item">
-            <Link className="sidebar-a" to="/topics">
+          <li className="Leftsidebar-item">
+            <Link className="Leftsidebar-a" to="/topics">
               Topics
             </Link>
           </li>
-          <li className="sidebar-item">
-            <Link className="sidebar-a" to="/books">
+          <li className="Leftsidebar-item">
+            <Link className="Leftsidebar-a" to="/books">
               Books
             </Link>
           </li>
-          <li className="sidebar-item">
-            <Link className="sidebar-a" to="/book-categories">
+          <li className="Leftsidebar-item">
+            <Link className="Leftsidebar-a" to="/book-categories">
               Book Categories
             </Link>
           </li>
-          <li className="sidebar-item">
-            <Link className="sidebar-a" to="/authors">
+          <li className="Leftsidebar-item">
+            <Link className="Leftsidebar-a" to="/authors">
               Authors
             </Link>
           </li>
-          <li className="sidebar-item">
-            <Link className="sidebar-a" to="#">
+          <li className="Leftsidebar-item">
+            <Link className="Leftsidebar-a" to="#">
               Contact
             </Link>
           </li>
-          <li className="sidebar-item">
-            <Link className="sidebar-a" to={`/${reader.username}`}>
+          <li className="Leftsidebar-item">
+            <Link className="Leftsidebar-a" to={`/${reader.username}`}>
               Profile
             </Link>
           </li>
@@ -163,7 +163,7 @@ const Sidebar = ({ pos, loggedInReader }) => {
           <ul className="padding-2">
             {loading && books.length === 0 && <FaSpinner />}
             {books.length === 0 && loading === false && search !== "" && (
-              <li className="sidebar-item">No books found</li>
+              <li className="Leftsidebar-item">No books found</li>
             )}
             {books.length !== 0 &&
               search !== "" &&
@@ -207,4 +207,4 @@ const Sidebar = ({ pos, loggedInReader }) => {
   );
 };
 
-export default Sidebar;
+export default LeftSidebar;

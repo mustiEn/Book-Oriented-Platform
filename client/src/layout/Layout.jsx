@@ -1,7 +1,7 @@
 import React from "react";
 import { Outlet, useLoaderData } from "react-router-dom";
-import Sidebar from "../components/Sidebar";
 import { Toaster } from "react-hot-toast";
+import LeftSidebar from "../components/LeftSidebar";
 
 const Layout = () => {
   const { reader } = useLoaderData();
@@ -9,7 +9,7 @@ const Layout = () => {
 
   return (
     <>
-      <Sidebar pos={"start-0"} loggedInReader={reader} />
+      <LeftSidebar pos={"start-0"} loggedInReader={reader} />
       <div
         id="content"
         style={{
@@ -21,7 +21,6 @@ const Layout = () => {
       >
         <Outlet context={reader} />
       </div>
-      {/* <Sidebar pos={"end-0"} /> */}
       <div>
         <Toaster position="top-right" reverseOrder={false} />
       </div>

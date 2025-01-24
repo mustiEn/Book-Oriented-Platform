@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import "../css/topic_category.css";
 import BackNavigation from "../components/BackNavigation";
+import RightSidebar from "../components/RightSidebar";
 
 const CreateTopic = () => {
   const data = useLoaderData();
@@ -78,9 +79,6 @@ const CreateTopic = () => {
 
   return (
     <>
-      <div>
-        <ToastContainer />
-      </div>
       <BackNavigation innerHtml={"Create Topic"} />
       <div id="topicContainer" className="w-100 p-4">
         <Form className="d-flex flex-column gap-3 mb-3" data-bs-theme="dark">
@@ -152,6 +150,7 @@ const CreateTopic = () => {
           Share
         </Button>
       </div>
+      <RightSidebar />
     </>
   );
 };

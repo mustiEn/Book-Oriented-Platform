@@ -1,6 +1,7 @@
 import React from "react";
 import { useLoaderData, Outlet } from "react-router-dom";
 import BookDetailsSection from "../components/BookDetailsSection";
+import RightSidebar from "../components/RightSidebar";
 
 const BookDetails = () => {
   const data = useLoaderData();
@@ -15,6 +16,7 @@ const BookDetails = () => {
       <div className="w-100 p-4">
         <Outlet context={data.bookDetails} />
       </div>
+      <RightSidebar />
     </>
   );
 };

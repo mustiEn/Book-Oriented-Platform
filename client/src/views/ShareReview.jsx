@@ -6,6 +6,7 @@ import slugify from "react-slugify";
 import { toast } from "react-hot-toast";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
+import RightSidebar from "../components/RightSidebar";
 
 const ShareReview = () => {
   const navigate = useNavigate();
@@ -118,6 +119,7 @@ const ShareReview = () => {
           </Button>
         </Form>
       </div>
+      <RightSidebar />
     </>
   );
 };

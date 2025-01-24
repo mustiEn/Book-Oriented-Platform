@@ -12,6 +12,7 @@ import { Toaster, toast } from "react-hot-toast";
 import { FaCalendar, FaClockRotateLeft } from "react-icons/fa6";
 import Button from "react-bootstrap/Button";
 import "../css/reader_profile.css";
+import RightSidebar from "../components/RightSidebar";
 
 const ReaderProfile = () => {
   const reader = useOutletContext();
@@ -295,6 +296,7 @@ const ReaderProfile = () => {
           ]}
         />
       </div>
+      <RightSidebar />
     </>
   );
 };

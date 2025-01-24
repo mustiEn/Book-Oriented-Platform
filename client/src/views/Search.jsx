@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { FaSpinner } from "react-icons/fa6";
 import "../css/search.css";
+import RightSidebar from "../components/RightSidebar";
 
 const Search = () => {
   const [search, setSearch] = useState("");
@@ -113,6 +114,7 @@ const Search = () => {
             </li>
           ))}
       </ul>
+      <RightSidebar />
     </>
   );
 };

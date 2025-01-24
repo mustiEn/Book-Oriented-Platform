@@ -23,9 +23,7 @@ import ReaderProfileReviews from "./components/ReaderProfileReviews";
 import BookshelfOverview from "./components/BookshelfOverview";
 import BookshelfBooks from "./components/BookshelfBooks";
 
-import ReaderPostComments, {
-  loadReaderPostComments,
-} from "./components/ReaderPostComments";
+import ReaderPostComments from "./components/ReaderPostComments";
 import ReaderProfileComments from "./components/ReaderProfileComments";
 import ReaderProfileQuotes from "./components/ReaderProfileQuotes";
 import ReaderProfileThoughts from "./components/ReaderProfileThoughts.jsx";
@@ -51,6 +49,7 @@ import TopicPostsAll from "./components/TopicPostsAll.jsx";
 import TopicReaders from "./components/TopicReaders.jsx";
 import BookCategories from "./views/BookCategories.jsx";
 import BookCategory from "./components/BookCategory.jsx";
+import BookCategoriesList from "./components/BookCategoriesList.jsx";
 
 const router = createBrowserRouter([
   {
@@ -66,7 +65,7 @@ const router = createBrowserRouter([
     loader: loadLoggedInReader,
     children: [
       {
-        path: "/",
+        path: "/home",
         element: <Home />,
       },
       {
@@ -81,7 +80,7 @@ const router = createBrowserRouter([
       {
         path: "/create-topic",
         element: <CreateTopic />,
-        loader: Loader.loadTopicCategories,
+        loader: Loader.loadCreateTopic,
       },
       {
         path: "/topic-category/:category",
@@ -134,6 +133,7 @@ const router = createBrowserRouter([
       {
         path: "/explore",
         element: <Explore />,
+        loader: Loader.loadExplore,
         children: [
           {
             index: true,
@@ -204,13 +204,18 @@ const router = createBrowserRouter([
       {
         path: "/:postType/:postId",
         element: <ReaderPostComments />,
-        loader: loadReaderPostComments,
+        loader: Loader.loadReaderPostComments,
       },
       {
         path: "/book-categories",
         element: <BookCategories />,
         loader: Loader.loadBookCategories,
         children: [
+          {
+            index: true,
+            element: <BookCategoriesList />,
+            loader: Loader.loadBookCategoriesList,
+          },
           {
             path: ":categoryId",
             element: <BookCategory />,

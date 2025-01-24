@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import { logger, returnRawQuery } from "../utils/constants.js";
 
-export const trendingTopicsSql = `SELECT 
+export const trendingTopicsSql = `SELECT  
               t.id, 
               t.topic,
               t.image, 

@@ -1,4 +1,4 @@
-#sidebar {
+#LeftSidebar {
   position: fixed;
   top: 0;
   width: 250px;
@@ -11,27 +11,27 @@
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
-#sidebar ul {
+#LeftSidebar ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-#sidebar .sidebar-item {
+#LeftSidebar .LeftSidebar-item {
   height: 45px;
 }
 
-#sidebar .sidebar-item:hover {
+#LeftSidebar .LeftSidebar-item:hover {
   background-color: #1a1d23;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
 }
 
-#sidebar ul li {
+#LeftSidebar ul li {
   margin-bottom: 10px;
 }
 
-#sidebar ul a {
+#LeftSidebar ul a {
   color: #fff;
   text-decoration: none;
   display: block;

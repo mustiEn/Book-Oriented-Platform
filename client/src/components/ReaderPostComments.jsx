@@ -195,16 +195,3 @@ const ReaderPostComments = () => {
 };
 
 export default ReaderPostComments;
-
-export const loadReaderPostComments = async ({ params }) => {
-  const { postType, postId } = params;
-  console.log(postType, postId);
-
-  const response = await fetch(`/api/${postType}/${postId}`);
-  if (!response.ok) {
-    toast.error("Something went wrong");
-    throw new Error(response);
-  }
-  const data = await response.json();
-  return data;
-};
