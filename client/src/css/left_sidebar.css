@@ -1,7 +1,7 @@
 #leftSidebar {
   width: 250px;
   height: 100vh;
-  background-color: #121212;
+  background-color: inherit;
   color: #fff;
   padding: 20px;
 }

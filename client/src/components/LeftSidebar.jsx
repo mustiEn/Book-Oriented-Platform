@@ -67,7 +67,7 @@ const LeftSidebar = ({ loggedInReader }) => {
         <div id="brandName">BookNest</div>
         <ul className="mt-4">
           <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to="/">
+            <Link className="left-sidebar-a" to="/home">
               Home
             </Link>
           </li>

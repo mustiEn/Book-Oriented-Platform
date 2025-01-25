@@ -11,6 +11,8 @@
     "serve": "vite --port 8080"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^3.1.1",
+    "@stripe/stripe-js": "^5.5.0",
     "bootstrap": "^5.3.3",
     "html-react-parser": "^5.1.16",
     "i18n-iso-countries": "^7.12.0",

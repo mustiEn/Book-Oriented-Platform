@@ -20,6 +20,8 @@ import { BookCollection } from "../models/BookCollection.js";
 import { Quote } from "../models/Quote.js";
 import { trendingTopics, trendingTopicsSql } from "../crons/index.js";
 import { Category } from "../models/Category.js";
+import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const shareReview = async (req, res, next) => {
   try {
@@ -2617,7 +2619,37 @@ const getSidebarTopics = async (req, res, next) => {
   }
 };
 
+const createCheckoutSession = async (req, res, next) => {
+  logger.log("???????????");
+  const priceId = "price_1QlBUuHBAbJebqsaXffjAKe8";
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: 1000,
+    currency: "gbp",
+    // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
+    automatic_payment_methods: {
+      enabled: true,
+    },
+  });
+
+  res.send({
+    clientSecret: paymentIntent.client_secret,
+  });
+};
+
+const getSessionStatus = async (req, res, next) => {
+  const session = await stripe.checkout.sessions.retrieve(req.query.session_id);
+  const customer = await stripe.customers.retrieve(session.customer);
+
+  res.send({
+    status: session.status,
+    payment_status: session.payment_status,
+    customer_email: customer.email,
+  });
+};
+
 export {
+  getSessionStatus,
+  createCheckoutSession,
   shareReview,
   getBookReviews,
   setPrivateNote,
