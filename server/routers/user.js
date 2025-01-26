@@ -23,7 +23,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage, limits: { fileSize: maxSize } });
 const router = express.Router();
 router.post("/create-payment-intent", userController.createCheckoutSession);
-router.get("session_status", userController.getSessionStatus);
+router.get("/get-payment-intent", userController.getPaymentIntent);
 
 router.get(
   "/get-reader-book-modal-details/:bookId",

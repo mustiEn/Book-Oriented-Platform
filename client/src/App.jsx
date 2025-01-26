@@ -56,73 +56,18 @@ import Admin from "./views/Admin.jsx";
 
 import * as Loader from "./loaders/index.js";
 import Return from "./components/Return.jsx";
-
-import { loadStripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
-import { useEffect, useState } from "react";
-
-const stripePromise = loadStripe(
-  "pk_test_51Ql7I6HBAbJebqsaIs1iGyq45FEAQKG2PaoCa0MS5xwBSyTuZctrg6xrByrFGTj4nZqsGWM8Q6F2Jfw2KYLeb5XQ00l7RZTTSV"
-);
-
-const appearance = {
-  theme: "night",
-};
-// Enable the skeleton loader UI for optimal loading.
-const loader = "auto";
+import Payment from "./views/Payment.jsx";
+import Completion from "./views/Completion.jsx";
 
 function App() {
-  const [clientSecret, setClientSecret] = useState(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const response = await fetch("/api/create-payment-intent", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-        const { clientSecret } = await response.json();
-        console.log(clientSecret);
-        setClientSecret(clientSecret);
-        return clientSecret;
-      } catch (error) {
-        console.error("Error fetching client secret:", error.message);
-        throw error;
-      }
-    })();
-  }, []);
-
   const router = createBrowserRouter([
     {
-      path: "/home",
-      element: clientSecret ? (
-        <Elements
-          stripe={stripePromise}
-          options={{ clientSecret, appearance, loader }}
-        >
-          <Home />
-        </Elements>
-      ) : (
-        <div>Loading...</div> // Loading or fallback if clientSecret isn't ready
-      ),
+      path: "/payment",
+      element: <Payment />,
     },
     {
-      path: "/complete",
-      element: clientSecret ? (
-        <Elements
-          stripe={stripePromise}
-          options={{ clientSecret, appearance, loader }}
-        >
-          <ExploreGeneral />
-        </Elements>
-      ) : (
-        <div>Loading...</div> // Loading or fallback if clientSecret isn't ready
-      ),
+      path: "/completion",
+      element: <Completion />,
     },
     {
       path: "/signup",
@@ -132,10 +77,10 @@ function App() {
       path: "/login",
       element: <Login />,
     },
-    {
-      path: "/checkout/return",
-      element: <Return />,
-    },
+    // {
+    //   path: "/checkout/return",
+    //   element: <Return />,
+    // },
     {
       path: "/admin",
       element: <AdminLayout />,

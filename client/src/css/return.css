@@ -1,0 +1,49 @@
+.payment-status {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+.status-icon {
+  display: inline-block;
+  padding: 10px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+
+.status-text {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+.details-table {
+  margin: 20px 0;
+}
+
+.TableLabel {
+  font-weight: bold;
+  padding-right: 10px;
+}
+
+.TableContent {
+  text-align: left;
+}
+
+.view-details,
+.retry-button {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background-color: #0055de;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.view-details:hover,
+.retry-button:hover {
+  background-color: #003bb5;
+}

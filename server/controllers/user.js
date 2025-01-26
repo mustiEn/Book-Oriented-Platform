@@ -2625,10 +2625,7 @@ const createCheckoutSession = async (req, res, next) => {
   const paymentIntent = await stripe.paymentIntents.create({
     amount: 1000,
     currency: "gbp",
-    // In the latest version of the API, specifying the `automatic_payment_methods` parameter is optional because Stripe enables its functionality by default.
-    automatic_payment_methods: {
-      enabled: true,
-    },
+    // payment_method_types:"[card]"
   });
 
   res.send({
@@ -2636,19 +2633,18 @@ const createCheckoutSession = async (req, res, next) => {
   });
 };
 
-const getSessionStatus = async (req, res, next) => {
-  const session = await stripe.checkout.sessions.retrieve(req.query.session_id);
-  const customer = await stripe.customers.retrieve(session.customer);
+const getPaymentIntent = async (req, res, next) => {
+  const { paymentIntentId } = req.params;
 
-  res.send({
-    status: session.status,
-    payment_status: session.payment_status,
-    customer_email: customer.email,
-  });
+  if (!paymentIntentId) {
+    return res.status(400).send({ error: "PaymentIntent ID is required" });
+  }
+  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+  res.status(200).send({ clientSecret: paymentIntent.client_secret });
 };
 
 export {
-  getSessionStatus,
+  getPaymentIntent,
   createCheckoutSession,
   shareReview,
   getBookReviews,
