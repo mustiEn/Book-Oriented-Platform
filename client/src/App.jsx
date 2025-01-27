@@ -55,18 +55,14 @@ import AdminLayout from "./layout/AdminLayout.jsx";
 import Admin from "./views/Admin.jsx";
 
 import * as Loader from "./loaders/index.js";
-import Return from "./components/Return.jsx";
 import Payment from "./views/Payment.jsx";
 import Completion from "./views/Completion.jsx";
+import Premium from "./views/Premium.jsx";
 
 function App() {
   const router = createBrowserRouter([
     {
-      path: "/payment",
-      element: <Payment />,
-    },
-    {
-      path: "/completion",
+      path: "/return",
       element: <Completion />,
     },
     {
@@ -77,10 +73,6 @@ function App() {
       path: "/login",
       element: <Login />,
     },
-    // {
-    //   path: "/checkout/return",
-    //   element: <Return />,
-    // },
     {
       path: "/admin",
       element: <AdminLayout />,
@@ -95,14 +87,18 @@ function App() {
       element: <Layout />,
       loader: Loader.loadInitials,
       children: [
-        // {
-        //   path: "/home",
-        //   element: <Home />,
-        // },
+        {
+          path: "/home",
+          element: <Home />,
+        },
         {
           path: "/search",
           element: <Search />,
           loader: Loader.loadSearch,
+        },
+        {
+          path: "/premium",
+          element: <Premium />,
         },
         {
           path: "/share-review/:bookId",

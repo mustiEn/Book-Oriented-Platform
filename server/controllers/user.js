@@ -20,8 +20,11 @@ import { BookCollection } from "../models/BookCollection.js";
 import { Quote } from "../models/Quote.js";
 import { trendingTopics, trendingTopicsSql } from "../crons/index.js";
 import { Category } from "../models/Category.js";
+import Formdata from "form-data";
 import Stripe from "stripe";
+import dotenv from "dotenv";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+dotenv.config();
 
 const shareReview = async (req, res, next) => {
   try {
@@ -2621,30 +2624,61 @@ const getSidebarTopics = async (req, res, next) => {
 
 const createCheckoutSession = async (req, res, next) => {
   logger.log("???????????");
-  const priceId = "price_1QlBUuHBAbJebqsaXffjAKe8";
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: 1000,
-    currency: "gbp",
-    // payment_method_types:"[card]"
+  const { premiumType } = req.body;
+  const priceId =
+    premiumType == "Annual"
+      ? "price_1QlxgDHBAbJebqsa0nRY5sF3"
+      : "price_1QlxhAHBAbJebqsaNsM3sUEk";
+  const session = await stripe.checkout.sessions.create({
+    line_items: [
+      {
+        // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+    mode: "subscription",
+    success_url: `http://localhost:8080/return?success=true`,
+    cancel_url: `http://localhost:8080/return?canceled=true`,
   });
 
   res.send({
-    clientSecret: paymentIntent.client_secret,
+    url: session.url,
   });
 };
 
-const getPaymentIntent = async (req, res, next) => {
-  const { paymentIntentId } = req.params;
+const checkText = async (req, res, next) => {
+  try {
+    const data = new FormData();
+    data.append("text", "I got educated on porn addiction");
+    data.append("lang", "en");
+    data.append("models", "general,self-harm");
+    data.append("mode", "ml");
+    data.append("api_user", 1669829965);
+    data.append("api_secret", "8Hz8wJf7n2jjhoySC4PTNzJW4dLj2ZKf");
+    const response = await fetch(
+      "https://api.sightengine.com/1.0/text/check.json",
+      {
+        method: "POST",
+        body: data,
+      }
+    );
 
-  if (!paymentIntentId) {
-    return res.status(400).send({ error: "PaymentIntent ID is required" });
+    if (!response.ok) {
+      logger.log(res.error);
+      throw new Error(res.error);
+    }
+    const result = await response.json();
+    logger.log(result);
+    res.send(result);
+  } catch (error) {
+    logger.log(error);
+    next(error);
   }
-  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
-  res.status(200).send({ clientSecret: paymentIntent.client_secret });
 };
 
 export {
-  getPaymentIntent,
+  checkText,
   createCheckoutSession,
   shareReview,
   getBookReviews,

@@ -96,9 +96,14 @@ const LeftSidebar = ({ loggedInReader }) => {
               Book Categories
             </Link>
           </li>
-          <li className="left-sidebar-item">
+          {/* <li className="left-sidebar-item">
             <Link className="left-sidebar-a" to="/authors">
               Authors
+            </Link>
+          </li> */}
+          <li className="left-sidebar-item">
+            <Link className="left-sidebar-a" to="/premium">
+              Premium
             </Link>
           </li>
           <li className="left-sidebar-item">

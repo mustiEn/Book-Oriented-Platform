@@ -22,15 +22,14 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage, limits: { fileSize: maxSize } });
 const router = express.Router();
-router.post("/create-payment-intent", userController.createCheckoutSession);
-router.get("/get-payment-intent", userController.getPaymentIntent);
+router.post("/create-checkout-session", userController.createCheckoutSession);
 
 router.get(
   "/get-reader-book-modal-details/:bookId",
   userController.getReaderBookModalDetails
 );
 router.get("/get-reader-username", userController.getLoggedInReader);
-
+router.get("/check", userController.checkText);
 router.post(
   "/share-review",
   body("topic").notEmpty().isString(),

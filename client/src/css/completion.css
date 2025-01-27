@@ -1,0 +1,25 @@
+/* client/src/views/Completion.css */
+.completion-container {
+  text-align: center;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.completion-details {
+  margin-top: 20px;
+}
+
+.go-to-dashboard {
+  margin-top: 30px;
+  padding: 10px 20px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.go-to-dashboard:hover {
+  background-color: #45a049;
+}
