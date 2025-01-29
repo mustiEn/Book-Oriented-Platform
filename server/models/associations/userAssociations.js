@@ -8,8 +8,18 @@ import { RatedBook } from "../RatedBook.js";
 import { Review } from "../Review.js";
 import { Thought } from "../Thought.js";
 import { User } from "../User.js";
+import { UserNotification } from "../UserNotification.js";
 
 export const userAssociations = () => {
+  User.hasMany(UserNotification, {
+    foreignKey: "userId",
+    onDelete: "CASCADE",
+  });
+  UserNotification.belongsTo(User, {
+    foreignKey: "userId",
+    onDelete: "CASCADE",
+  });
+
   User.hasMany(Review, {
     foreignKey: "userId",
     onDelete: "CASCADE",
@@ -60,6 +70,7 @@ export const userAssociations = () => {
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
   });
+
   User.hasMany(LikedBook, {
     foreignKey: "userId",
     onDelete: "CASCADE",
@@ -70,6 +81,7 @@ export const userAssociations = () => {
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
   });
+
   User.hasMany(PrivateNote, {
     foreignKey: "userId",
     onDelete: "CASCADE",
@@ -80,6 +92,7 @@ export const userAssociations = () => {
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
   });
+
   User.hasMany(RatedBook, {
     foreignKey: "userId",
     onDelete: "CASCADE",
@@ -90,6 +103,7 @@ export const userAssociations = () => {
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
   });
+
   User.hasMany(Comment, {
     foreignKey: "userId",
     onDelete: "CASCADE",

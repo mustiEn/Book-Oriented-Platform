@@ -19,6 +19,10 @@ export const Post = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
+    restricted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
   },
   { timestamps: true, indexes: [{ fields: ["post_type"] }] }
 );

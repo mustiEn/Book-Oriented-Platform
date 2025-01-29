@@ -16,7 +16,6 @@ import "./crons/index.js";
 
 dotenv.config();
 let port = process.env.PORT || 8081;
-// logger.log(job);
 const app = express();
 
 const SequelizeStore = sequelizeStore(session.Store);
