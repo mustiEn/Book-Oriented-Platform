@@ -16,14 +16,6 @@ const Premium = () => {
     "Ad-free",
   ];
 
-  useEffect(() => {
-    (async () => {
-      const res = await fetch("/api/check");
-      const data = res.json();
-      console.log(data);
-    })();
-  }, []);
-
   const handleSubmit = async () => {
     try {
       const res = await fetch("/api/create-checkout-session", {

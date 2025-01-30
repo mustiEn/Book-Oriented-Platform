@@ -2,6 +2,7 @@ import express from "express";
 import * as userController from "../controllers/user.js";
 import { query, body, param } from "express-validator";
 import multer from "multer";
+import bodyParser from "body-parser";
 
 const maxSize = 25 * 1000 * 100;
 const storage = multer.diskStorage({
@@ -23,13 +24,18 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage, limits: { fileSize: maxSize } });
 const router = express.Router();
 router.post("/create-checkout-session", userController.createCheckoutSession);
+// router.post(
+//   "/webhook",
+//   bodyParser.raw({ type: "application/json" }),
+//   userController.listenWebhook
+// );
+router.get("/webhook", userController.listenWebhook);
 
 router.get(
   "/get-reader-book-modal-details/:bookId",
   userController.getReaderBookModalDetails
 );
 router.get("/get-reader-username", userController.getLoggedInReader);
-router.get("/check", userController.checkText);
 router.post(
   "/share-review",
   body("topic").notEmpty().isString(),

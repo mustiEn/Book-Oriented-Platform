@@ -1,9 +1,28 @@
 /* client/src/views/Completion.jsx */
-import React from "react";
+import React, { useEffect } from "react";
 import "../css/completion.css"; // Assuming you have a CSS file for styling
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 const Completion = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sessionId = searchParams.get("session_id");
+  const success = searchParams.get("success");
+  console.log(sessionId);
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`/api/webhook?session_id=${sessionId}`);
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.message);
+        }
+        console.log(data);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+  }, []);
+
   return (
     <div className="completion-container">
       <h1>Thank You for Your Purchase!</h1>
@@ -22,7 +41,7 @@ const Completion = () => {
           <li>Receive priority customer support.</li>
         </ul>
       </div>
-      <Link className="go-to-dashboard" to="/home">
+      <Link className="btn btn-success" to="/home">
         Go to Dashboard
       </Link>
     </div>

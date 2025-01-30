@@ -1,3 +1,4 @@
+import { Transaction } from "sequelize";
 import { BookReadingState } from "../BookReadingState.js";
 import { Comment } from "../Comment.js";
 import { LikedBook } from "../LikedBook.js";
@@ -16,6 +17,15 @@ export const userAssociations = () => {
     onDelete: "CASCADE",
   });
   UserNotification.belongsTo(User, {
+    foreignKey: "userId",
+    onDelete: "CASCADE",
+  });
+
+  User.hasMany(Transaction, {
+    foreignKey: "userId",
+    onDelete: "CASCADE",
+  });
+  Transaction.belongsTo(User, {
     foreignKey: "userId",
     onDelete: "CASCADE",
   });

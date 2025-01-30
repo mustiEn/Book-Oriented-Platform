@@ -19,11 +19,14 @@ import { ThoughtImage } from "../models/ThoughtImage.js";
 import { BookCollection } from "../models/BookCollection.js";
 import { Quote } from "../models/Quote.js";
 import { trendingTopics, trendingTopicsSql } from "../crons/index.js";
+import { Transaction } from "../models/Transaction.js";
 import { Category } from "../models/Category.js";
-import Formdata from "form-data";
+import FormData from "form-data";
 import Stripe from "stripe";
+
 import dotenv from "dotenv";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const endpointSecret = "whsec_vmUYv2mO8j3XAOms5YgLJuCWJiDJCVIK";
 dotenv.config();
 
 const shareReview = async (req, res, next) => {
@@ -2623,8 +2626,11 @@ const getSidebarTopics = async (req, res, next) => {
 };
 
 const createCheckoutSession = async (req, res, next) => {
-  logger.log("???????????");
   const { premiumType } = req.body;
+  const userId = req.session.passport.user;
+  const prices = await stripe.prices.list({
+    lookup_keys: [premiumType],
+  });
   const priceId =
     premiumType == "Annual"
       ? "price_1QlxgDHBAbJebqsa0nRY5sF3"
@@ -2632,14 +2638,19 @@ const createCheckoutSession = async (req, res, next) => {
   const session = await stripe.checkout.sessions.create({
     line_items: [
       {
-        // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
         price: priceId,
         quantity: 1,
       },
     ],
+    metadata: {
+      userId: userId,
+    },
     mode: "subscription",
-    success_url: `http://localhost:8080/return?success=true`,
-    cancel_url: `http://localhost:8080/return?canceled=true`,
+    // subscription_data:{
+    //   billin
+    // }
+    success_url: `${process.env.DOMAIN}/return?success=true&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.DOMAIN}/return?canceled=true&session_id={CHECKOUT_SESSION_ID}`,
   });
 
   res.send({
@@ -2647,30 +2658,86 @@ const createCheckoutSession = async (req, res, next) => {
   });
 };
 
-const checkText = async (req, res, next) => {
-  try {
-    const data = new FormData();
-    data.append("text", "I got educated on porn addiction");
-    data.append("lang", "en");
-    data.append("models", "general,self-harm");
-    data.append("mode", "ml");
-    data.append("api_user", 1669829965);
-    data.append("api_secret", "8Hz8wJf7n2jjhoySC4PTNzJW4dLj2ZKf");
-    const response = await fetch(
-      "https://api.sightengine.com/1.0/text/check.json",
-      {
-        method: "POST",
-        body: data,
-      }
-    );
+// const listenWebhook = async (req, res) => {
+//   const event = req.body;
+//   logger.log("event triggered");
 
-    if (!response.ok) {
-      logger.log(res.error);
-      throw new Error(res.error);
-    }
-    const result = await response.json();
-    logger.log(result);
-    res.send(result);
+//   if (endpointSecret) {
+//     // Get the signature sent by Stripe
+//     const signature = req.headers["stripe-signature"];
+//     try {
+//       event = stripe.webhooks.constructEvent(
+//         req.body,
+//         signature,
+//         endpointSecret
+//       );
+//     } catch (err) {
+//       logger.log(`⚠️  Webhook signature verification failed.`, err.message);
+//       return response.sendStatus(400);
+//     }
+//   }
+
+//   // Handle the event
+//   switch (event.type) {
+//     case "checkout_session.completed":
+//       const paymentIntent = event.data.object;
+//       // Then define and call a method to handle the successful payment intent.
+//       // handlePaymentIntentSucceeded(paymentIntent);
+//       logger.log("Event listned,payment success");
+//       break;
+//     // ... handle other event types
+//     default:
+//       logger.log(`Unhandled event type ${event.type}`);
+//   }
+
+//   // Return a res to acknowledge receipt of the event
+//   res.json({ received: true });
+// };
+
+const listenWebhook = async (req, res, next) => {
+  try {
+    const { session_id: checkoutSessionId } = req.query;
+    const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
+    logger.log(checkoutSessionId, session);
+
+    const cardholderName =
+      session.customer_details.name == null
+        ? null
+        : session.customer_details.name;
+    const email =
+      session.customer_details.email == null
+        ? null
+        : session.customer_details.email;
+    const country =
+      session.customer_details.address.country == null
+        ? null
+        : session.customer_details.address.country;
+    const postalCode =
+      session.customer_details.address.postal_code == null
+        ? null
+        : session.customer_details.address.postal_code;
+    const customerId = session.customer == null ? null : session.customer;
+    const subscriptionId =
+      session.subscription == null ? null : session.subscription;
+
+    await Transaction.create({
+      cardholder_name: cardholderName,
+      email: email,
+      country: country,
+      postal_code: postalCode,
+      customer_id: customerId,
+      checkout_session_id: checkoutSessionId,
+      amount_total: session.amount_total,
+      currency: session.currency,
+      mode: session.mode,
+      payment_status: session.payment_status,
+      payment_method_configuration_id:
+        session.payment_method_configuration_details.id,
+      subscription: subscriptionId,
+      userId: session.metadata.userId,
+    });
+
+    res.send({ name: session.customer_details.name });
   } catch (error) {
     logger.log(error);
     next(error);
@@ -2678,7 +2745,7 @@ const checkText = async (req, res, next) => {
 };
 
 export {
-  checkText,
+  listenWebhook,
   createCheckoutSession,
   shareReview,
   getBookReviews,
