@@ -24,12 +24,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage, limits: { fileSize: maxSize } });
 const router = express.Router();
 router.post("/create-checkout-session", userController.createCheckoutSession);
-// router.post(
-//   "/webhook",
-//   bodyParser.raw({ type: "application/json" }),
-//   userController.listenWebhook
-// );
-router.get("/webhook", userController.listenWebhook);
+router.post("/webhook", userController.listenWebhook);
+// router.get("/webhook", userController.listenWebhook);
 
 router.get(
   "/get-reader-book-modal-details/:bookId",

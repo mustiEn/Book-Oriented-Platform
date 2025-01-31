@@ -26,7 +26,7 @@ import Stripe from "stripe";
 
 import dotenv from "dotenv";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const endpointSecret = "whsec_vmUYv2mO8j3XAOms5YgLJuCWJiDJCVIK";
+const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 dotenv.config();
 
 const shareReview = async (req, res, next) => {
@@ -2642,13 +2642,12 @@ const createCheckoutSession = async (req, res, next) => {
         quantity: 1,
       },
     ],
-    metadata: {
-      userId: userId,
+    subscription_data: {
+      metadata: {
+        user_id: userId,
+      },
     },
     mode: "subscription",
-    // subscription_data:{
-    //   billin
-    // }
     success_url: `${process.env.DOMAIN}/return?success=true&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${process.env.DOMAIN}/return?canceled=true&session_id={CHECKOUT_SESSION_ID}`,
   });
@@ -2658,90 +2657,93 @@ const createCheckoutSession = async (req, res, next) => {
   });
 };
 
-// const listenWebhook = async (req, res) => {
-//   const event = req.body;
-//   logger.log("event triggered");
-
-//   if (endpointSecret) {
-//     // Get the signature sent by Stripe
-//     const signature = req.headers["stripe-signature"];
-//     try {
-//       event = stripe.webhooks.constructEvent(
-//         req.body,
-//         signature,
-//         endpointSecret
-//       );
-//     } catch (err) {
-//       logger.log(`⚠️  Webhook signature verification failed.`, err.message);
-//       return response.sendStatus(400);
-//     }
-//   }
-
-//   // Handle the event
-//   switch (event.type) {
-//     case "checkout_session.completed":
-//       const paymentIntent = event.data.object;
-//       // Then define and call a method to handle the successful payment intent.
-//       // handlePaymentIntentSucceeded(paymentIntent);
-//       logger.log("Event listned,payment success");
-//       break;
-//     // ... handle other event types
-//     default:
-//       logger.log(`Unhandled event type ${event.type}`);
-//   }
-
-//   // Return a res to acknowledge receipt of the event
-//   res.json({ received: true });
-// };
-
 const listenWebhook = async (req, res, next) => {
-  try {
-    const { session_id: checkoutSessionId } = req.query;
-    const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
-    logger.log(checkoutSessionId, session);
+  let event = req.body;
+  let paymentIntent;
+  logger.log("event triggered");
 
-    const cardholderName =
-      session.customer_details.name == null
-        ? null
-        : session.customer_details.name;
-    const email =
-      session.customer_details.email == null
-        ? null
-        : session.customer_details.email;
-    const country =
-      session.customer_details.address.country == null
-        ? null
-        : session.customer_details.address.country;
-    const postalCode =
-      session.customer_details.address.postal_code == null
-        ? null
-        : session.customer_details.address.postal_code;
-    const customerId = session.customer == null ? null : session.customer;
-    const subscriptionId =
-      session.subscription == null ? null : session.subscription;
-
-    await Transaction.create({
-      cardholder_name: cardholderName,
-      email: email,
-      country: country,
-      postal_code: postalCode,
-      customer_id: customerId,
-      checkout_session_id: checkoutSessionId,
-      amount_total: session.amount_total,
-      currency: session.currency,
-      mode: session.mode,
-      payment_status: session.payment_status,
-      payment_method_configuration_id:
-        session.payment_method_configuration_details.id,
-      subscription: subscriptionId,
-      userId: session.metadata.userId,
-    });
-
-    res.send({ name: session.customer_details.name });
-  } catch (error) {
-    logger.log(error);
-    next(error);
+  if (endpointSecret) {
+    // Get the signature sent by Stripe
+    const signature = req.headers["stripe-signature"];
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.rawBody,
+        signature,
+        endpointSecret
+      );
+    } catch (err) {
+      logger.log(`⚠️  Webhook signature verification failed.`, err.message);
+      next(err);
+    }
   }
+
+  // Handle the event
+  if (event.type) {
+    if (event.type === "checkout.session.completed") {
+      paymentIntent = event.data.object;
+      logger.log("Event listned,payment success");
+      //       await Transaction.create({
+      //   cardholder_name: paymentIntent.customer_details.name,
+      //   email:paymentIntent.customer_details.email,
+      //   country: paymentIntent.customer_details.address.country,
+      //   postal_code: paymentIntent.customer_details.address.postalCode,
+      //   customer_id: paymentIntent.customer,
+      //   checkout_session_id: paymentIntent.id,
+      //   amount_total: paymentIntent.amount_total,
+      //   currency: paymentIntent.currency,
+      //   mode: paymentIntent.mode,
+      //   payment_status: paymentIntent.payment_status,
+      //   payment_method_configuration_id:
+      //   paymentIntent.payment_method_configuration_details.id,
+      //   subscription_id: paymentIntent.subscription,
+      //   userId: paymentIntent.metadata.userId,
+      // });
+      logger.log("\n", event.data.object);
+    } else if (event.type === "checkout.session.expired") {
+      paymentIntent = event.data.object;
+      // await Transaction.create({
+      //   cardholder_name: paymentIntent.customer_details.name,
+      //   email:paymentIntent.customer_details.email,
+      //   country: paymentIntent.customer_details.address.country,
+      //   postal_code: paymentIntent.customer_details.address.postalCode,
+      //   customer_id: paymentIntent.customer,
+      //   checkout_session_id: paymentIntent.id,
+      //   amount_total: paymentIntent.amount_total,
+      //   currency: paymentIntent.currency,
+      //   mode: paymentIntent.mode,
+      //   payment_status: paymentIntent.payment_status,
+      //   payment_method_configuration_id:
+      //   paymentIntent.payment_method_configuration_details.id,
+      //   subscription_id: paymentIntent.subscription,
+      //   userId: paymentIntent.metadata.userId,
+      // });
+      logger.log("Event listned,checkout expired");
+      logger.log("\n", event.data.object);
+    } else if (event.type === "customer.subscription.updated") {
+      paymentIntent = event.data.object;
+      // await Transaction.create({
+      //   cardholder_name: paymentIntent.customer_details.name,
+      //   email:paymentIntent.customer_details.email,
+      //   country: paymentIntent.customer_details.address.country,
+      //   postal_code: paymentIntent.customer_details.address.postalCode,
+      //   customer_id: paymentIntent.customer,
+      //   checkout_session_id: paymentIntent.id,
+      //   amount_total: paymentIntent.amount_total,
+      //   currency: paymentIntent.currency,
+      //   mode: paymentIntent.mode,
+      //   payment_status: paymentIntent.payment_status,
+      //   payment_method_configuration_id:
+      //   paymentIntent.payment_method_configuration_details.id,
+      //   subscription_id: paymentIntent.subscription,
+      //   userId: paymentIntent.metadata.userId,
+      // });
+      logger.log("Event listned,subscription deleted");
+      logger.log("\n", event.data.object);
+    } else logger.log(`Unhandled event type ${event.type}`);
+  }
+
+  // Return a res to acknowledge receipt of the event
+  res.json({ received: true });
 };
 
 export {

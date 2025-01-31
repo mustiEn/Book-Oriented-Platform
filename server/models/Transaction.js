@@ -4,23 +4,23 @@ import { sequelize } from "./db.js";
 export const Transaction = sequelize.define("transaction", {
   cardholder_name: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   country: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   postal_code: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   customer_id: {
     type: DataTypes.STRING,
-    allowNull: true,
+    allowNull: false,
   },
   checkout_session_id: {
     type: DataTypes.STRING,
@@ -48,6 +48,10 @@ export const Transaction = sequelize.define("transaction", {
   },
   subscription_id: {
     type: DataTypes.STRING,
+    allowNull: false,
+  },
+  expires_at: {
+    type: DataTypes.DATE,
     allowNull: false,
   },
 });

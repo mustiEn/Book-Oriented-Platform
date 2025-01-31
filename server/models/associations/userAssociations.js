@@ -1,4 +1,3 @@
-import { Transaction } from "sequelize";
 import { BookReadingState } from "../BookReadingState.js";
 import { Comment } from "../Comment.js";
 import { LikedBook } from "../LikedBook.js";
@@ -10,6 +9,7 @@ import { Review } from "../Review.js";
 import { Thought } from "../Thought.js";
 import { User } from "../User.js";
 import { UserNotification } from "../UserNotification.js";
+import { Transaction } from "../Transaction.js";
 
 export const userAssociations = () => {
   User.hasMany(UserNotification, {
