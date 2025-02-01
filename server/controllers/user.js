@@ -25,6 +25,7 @@ import FormData from "form-data";
 import Stripe from "stripe";
 
 import dotenv from "dotenv";
+import { Subscription } from "../models/Subscription.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 dotenv.config();
@@ -2626,35 +2627,40 @@ const getSidebarTopics = async (req, res, next) => {
 };
 
 const createCheckoutSession = async (req, res, next) => {
-  const { premiumType } = req.body;
-  const userId = req.session.passport.user;
-  const prices = await stripe.prices.list({
-    lookup_keys: [premiumType],
-  });
-  const priceId =
-    premiumType == "Annual"
-      ? "price_1QlxgDHBAbJebqsa0nRY5sF3"
-      : "price_1QlxhAHBAbJebqsaNsM3sUEk";
-  const session = await stripe.checkout.sessions.create({
-    line_items: [
-      {
-        price: priceId,
-        quantity: 1,
+  try {
+    const { premiumType } = req.body;
+    const userId = req.session.passport.user;
+    const prices = await stripe.prices.list({
+      lookup_keys: [premiumType],
+    });
+    const priceId =
+      premiumType == "Annual"
+        ? "price_1QlxgDHBAbJebqsa0nRY5sF3"
+        : "price_1QlxhAHBAbJebqsaNsM3sUEk";
+    const session = await stripe.checkout.sessions.create({
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      subscription_data: {
+        metadata: {
+          user_id: userId,
+        },
       },
-    ],
-    subscription_data: {
-      metadata: {
-        user_id: userId,
-      },
-    },
-    mode: "subscription",
-    success_url: `${process.env.DOMAIN}/return?success=true&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.DOMAIN}/return?canceled=true&session_id={CHECKOUT_SESSION_ID}`,
-  });
+      mode: "subscription",
+      success_url: `${process.env.DOMAIN}/return?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.DOMAIN}/return?canceled=true&session_id={CHECKOUT_SESSION_ID}`,
+    });
 
-  res.send({
-    url: session.url,
-  });
+    res.send({
+      url: session.url,
+    });
+  } catch (error) {
+    logger.log(error);
+    next(error);
+  }
 };
 
 const listenWebhook = async (req, res, next) => {
@@ -2682,62 +2688,66 @@ const listenWebhook = async (req, res, next) => {
     if (event.type === "checkout.session.completed") {
       paymentIntent = event.data.object;
       logger.log("Event listned,payment success");
-      //       await Transaction.create({
-      //   cardholder_name: paymentIntent.customer_details.name,
-      //   email:paymentIntent.customer_details.email,
-      //   country: paymentIntent.customer_details.address.country,
-      //   postal_code: paymentIntent.customer_details.address.postalCode,
-      //   customer_id: paymentIntent.customer,
-      //   checkout_session_id: paymentIntent.id,
-      //   amount_total: paymentIntent.amount_total,
-      //   currency: paymentIntent.currency,
-      //   mode: paymentIntent.mode,
-      //   payment_status: paymentIntent.payment_status,
-      //   payment_method_configuration_id:
-      //   paymentIntent.payment_method_configuration_details.id,
-      //   subscription_id: paymentIntent.subscription,
-      //   userId: paymentIntent.metadata.userId,
-      // });
       logger.log("\n", event.data.object);
+      await Transaction.create({
+        cardholder_name: paymentIntent.customer_details.name,
+        email: paymentIntent.customer_details.email,
+        country: paymentIntent.customer_details.address.country,
+        postal_code: paymentIntent.customer_details.address.postal_code,
+        customer_id: paymentIntent.customer,
+        checkout_session_id: paymentIntent.id,
+        amount_total: paymentIntent.amount_total,
+        currency: paymentIntent.currency,
+        mode: paymentIntent.mode,
+        payment_status: paymentIntent.payment_status,
+        payment_method_configuration_id:
+          paymentIntent.payment_method_configuration_details.id,
+        subscription_id: paymentIntent.subscription,
+        expires_at: paymentIntent.expires_at,
+        userId: paymentIntent.metadata.user_id,
+      });
     } else if (event.type === "checkout.session.expired") {
-      paymentIntent = event.data.object;
-      // await Transaction.create({
-      //   cardholder_name: paymentIntent.customer_details.name,
-      //   email:paymentIntent.customer_details.email,
-      //   country: paymentIntent.customer_details.address.country,
-      //   postal_code: paymentIntent.customer_details.address.postalCode,
-      //   customer_id: paymentIntent.customer,
-      //   checkout_session_id: paymentIntent.id,
-      //   amount_total: paymentIntent.amount_total,
-      //   currency: paymentIntent.currency,
-      //   mode: paymentIntent.mode,
-      //   payment_status: paymentIntent.payment_status,
-      //   payment_method_configuration_id:
-      //   paymentIntent.payment_method_configuration_details.id,
-      //   subscription_id: paymentIntent.subscription,
-      //   userId: paymentIntent.metadata.userId,
-      // });
       logger.log("Event listned,checkout expired");
+      paymentIntent = event.data.object;
       logger.log("\n", event.data.object);
+      await Transaction.create({
+        cardholder_name: null,
+        email: null,
+        country: null,
+        postal_code: null,
+        customer_id: null,
+        checkout_session_id: paymentIntent.id,
+        amount_total: paymentIntent.amount_total,
+        currency: paymentIntent.currency,
+        mode: paymentIntent.mode,
+        payment_status: paymentIntent.payment_status,
+        payment_method_configuration_id:
+          paymentIntent.payment_method_configuration_details.id,
+        subscription_id: null,
+        expires_at: null,
+        userId: paymentIntent.metadata.user_id,
+      });
     } else if (event.type === "customer.subscription.updated") {
       paymentIntent = event.data.object;
-      // await Transaction.create({
-      //   cardholder_name: paymentIntent.customer_details.name,
-      //   email:paymentIntent.customer_details.email,
-      //   country: paymentIntent.customer_details.address.country,
-      //   postal_code: paymentIntent.customer_details.address.postalCode,
-      //   customer_id: paymentIntent.customer,
-      //   checkout_session_id: paymentIntent.id,
-      //   amount_total: paymentIntent.amount_total,
-      //   currency: paymentIntent.currency,
-      //   mode: paymentIntent.mode,
-      //   payment_status: paymentIntent.payment_status,
-      //   payment_method_configuration_id:
-      //   paymentIntent.payment_method_configuration_details.id,
-      //   subscription_id: paymentIntent.subscription,
-      //   userId: paymentIntent.metadata.userId,
-      // });
-      logger.log("Event listned,subscription deleted");
+      await Subscription.create({
+        cancel_at: paymentIntent.cancel_at,
+        canceled_at: paymentIntent.canceled_at,
+        start_date: paymentIntent.start_date,
+        billing_cycle_anchor: paymentIntent.billing_cycle_anchor,
+        interval: paymentIntent.plan.interval,
+        comment: paymentIntent.cancellation_details.comment,
+        feedback: paymentIntent.cancellation_details.feedback,
+        reason: paymentIntent.cancellation_details.reaosn,
+        subscription_id: paymentIntent.id,
+
+        customer_id: paymentIntent.customer,
+        product_id: paymentIntent.plan.product,
+        amount_total: paymentIntent.plan.amount,
+        currency: paymentIntent.plan.currency,
+        status: paymentIntent.status,
+        userId: paymentIntent.metadata.user_id,
+      });
+      logger.log("Event listned,subscription updated");
       logger.log("\n", event.data.object);
     } else logger.log(`Unhandled event type ${event.type}`);
   }

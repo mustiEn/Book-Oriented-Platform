@@ -3,7 +3,6 @@ import Form from "react-bootstrap/esm/Form";
 import Badge from "react-bootstrap/esm/Badge";
 import Card from "react-bootstrap/Card";
 import { Link, redirect, useNavigate } from "react-router-dom";
-import "../css/premium.css";
 import Button from "react-bootstrap/esm/Button";
 
 const Premium = () => {
@@ -38,44 +37,19 @@ const Premium = () => {
 
   return (
     <>
-      {/* <div> */}
       <h2 className="mt-5 text-center">Upgrade to Premium</h2>
       <p className="text-center">
         Enjoy an enhanced experience and exclusive features
       </p>
       <div className="d-flex flex-column align-items-center">
-        <form action="" className="d-flex gap-2 my-5">
-          <input
-            type="radio"
-            className="btn-check"
-            name="options-base"
-            id="option5"
-            onClick={() =>
-              setPremium((prev) => (prev === "Annual" ? "Monthly" : "Annual"))
-            }
-          />
-          <label
-            className="premium-label btn btn-outline-light"
-            htmlFor="option5"
-          >
+        <div className="d-flex gap-2 my-5">
+          <Button variant="outline-light" onClick={() => setPremium("Monthly")}>
             Annual <Badge bg="success">Best Value</Badge>
-          </label>
-          <input
-            type="radio"
-            className="btn-check"
-            name="options-base"
-            id="option6"
-            onClick={() =>
-              setPremium((prev) => (prev === "Annual" ? "Monthly" : "Annual"))
-            }
-          />
-          <label
-            className="premium-label btn btn-outline-light"
-            htmlFor="option6"
-          >
+          </Button>
+          <Button variant="outline-light" onClick={() => setPremium("Monthly")}>
             Monthly
-          </label>
-        </form>
+          </Button>
+        </div>
         <Card style={{ width: "18rem" }} data-bs-theme="dark">
           <Card.Body>
             <Card.Title>Premium</Card.Title>
@@ -112,7 +86,6 @@ const Premium = () => {
           </Card.Body>
         </Card>
       </div>
-      {/* </div> */}
     </>
   );
 };

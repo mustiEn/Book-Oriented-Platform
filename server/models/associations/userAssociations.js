@@ -10,6 +10,7 @@ import { Thought } from "../Thought.js";
 import { User } from "../User.js";
 import { UserNotification } from "../UserNotification.js";
 import { Transaction } from "../Transaction.js";
+import { Subscription } from "../Subscription.js";
 
 export const userAssociations = () => {
   User.hasMany(UserNotification, {
@@ -28,6 +29,13 @@ export const userAssociations = () => {
   Transaction.belongsTo(User, {
     foreignKey: "userId",
     onDelete: "CASCADE",
+  });
+
+  User.hasMany(Subscription, {
+    foreignKey: "userId",
+  });
+  Subscription.belongsTo(User, {
+    foreignKey: "userId",
   });
 
   User.hasMany(Review, {
