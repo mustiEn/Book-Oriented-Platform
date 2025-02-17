@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   NavLink,
   Outlet,
@@ -8,15 +8,15 @@ import {
   useParams,
 } from "react-router-dom";
 import moment from "moment";
-import { Toaster, toast } from "react-hot-toast";
+import { toast } from "react-hot-toast";
 import { FaCalendar, FaClockRotateLeft } from "react-icons/fa6";
 import Button from "react-bootstrap/Button";
 import "../css/reader_profile.css";
 
 const ReaderProfile = () => {
-  console.log(useLoaderData());
   const reader = useOutletContext();
-  const readerProfileData = useLoaderData();
+  const [readerProfileData, setReaderProfileData] = useState({});
+  const data = useLoaderData();
   const regex = /^[a-zA-Z0-9-_]+(\.(jpg|jpeg|png||webp))$/i;
   const bgRef = useRef(null);
   const ppRef = useRef(null);
@@ -46,7 +46,7 @@ const ReaderProfile = () => {
         throw new Error(data.error);
       }
 
-      toast.success("Profile picture updated successfully");
+      getUpdatedReaderProfile("Profile");
       console.log(data);
     } catch (error) {
       console.log(error);
@@ -65,12 +65,12 @@ const ReaderProfile = () => {
         body: formData,
       });
 
-      const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error);
       }
 
-      toast.success("Background picture updated successfully");
+      const data = await response.json();
+      getUpdatedReaderProfile("Background");
       console.log(data);
     } catch (error) {
       console.log(error);
@@ -78,16 +78,43 @@ const ReaderProfile = () => {
     }
   };
 
+  const getUpdatedReaderProfile = async (photo) => {
+    try {
+      const res = await fetch(
+        `/api/${readerProfileData.username}/display-reader-profile`
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(res.error);
+      }
+      console.log(data);
+      toast.success(`${photo} photo updated successfully`);
+      setReaderProfileData(data);
+    } catch (error) {
+      toast.error(error);
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    setReaderProfileData(data);
+    console.log(`loggedin reader \n ${reader}`);
+    console.log(`readerprofiledata \n ${readerProfileData}`);
+  }, []);
+
   return (
     <>
       <div className="profile-header">
         <div
           style={{
-            backgroundImage: `url("https://r2.1k-cdn.com/sig/size:640/plain/https%3A%2F%2F1k-cdn.com%2Fresimler%2FLogo%2F131_ask-tile3.jpg"
-          )`,
-            height: 230 + "px",
+            backgroundImage:
+              readerProfileData.background_photo == null
+                ? `url("https://r2.1k-cdn.com/sig/size:640/plain/https%3A%2F%2F1k-cdn.com%2Fresimler%2FLogo%2F131_ask-tile3.jpg")`
+                : `url(/Pps_and_Bgs/${readerProfileData.background_photo})`,
+            height: 300 + "px",
             width: 100 + "%",
             backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
           }}
           className="d-flex align-items-center justify-content-center"
         >
@@ -131,11 +158,14 @@ const ReaderProfile = () => {
         >
           <div
             style={{
-              backgroundImage: `url("https://placehold.co/120x120"
-          )`,
+              backgroundImage:
+                readerProfileData.profile_photo == null
+                  ? `url("https://placehold.co/120x120")`
+                  : `url(/Pps_and_Bgs/${readerProfileData.profile_photo})`,
               height: 120 + "px",
               width: 120 + "px",
-              backgroundSize: "cover",
+              backgroundSize: 100 + "%",
+              backgroundRepeat: "no-repeat",
               top: -2 + "rem",
             }}
             className="d-flex align-items-center justify-content-center rounded-circle position-relative"

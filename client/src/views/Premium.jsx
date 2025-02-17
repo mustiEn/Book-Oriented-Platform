@@ -43,10 +43,16 @@ const Premium = () => {
       </p>
       <div className="d-flex flex-column align-items-center">
         <div className="d-flex gap-2 my-5">
-          <Button variant="outline-light" onClick={() => setPremium("Monthly")}>
+          <Button
+            variant={premium == "Annual" ? "light" : "outline-light"}
+            onClick={() => setPremium("Annual")}
+          >
             Annual <Badge bg="success">Best Value</Badge>
           </Button>
-          <Button variant="outline-light" onClick={() => setPremium("Monthly")}>
+          <Button
+            variant={premium == "Monthly" ? "light" : "outline-light"}
+            onClick={() => setPremium("Monthly")}
+          >
             Monthly
           </Button>
         </div>
@@ -80,9 +86,8 @@ const Premium = () => {
               </ul>
             </Card.Text>
             <Button className="btn btn-primary" onClick={handleSubmit}>
-              Card Link
+              Subscribe
             </Button>
-            {/* <Card.Link href="#">Another Link</Card.Link> */}
           </Card.Body>
         </Card>
       </div>

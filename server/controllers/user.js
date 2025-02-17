@@ -524,10 +524,9 @@ const getReaderProfiles = async (req, res, next) => {
 const displayReaderProfile = async (req, res, next) => {
   try {
     const { username } = req.params;
-    const userId = req.session.passport.user;
     const reader = await User.findOne({
       attributes: {
-        exclude: ["password", "updatedAt"],
+        exclude: ["password", "updatedAt", "email"],
       },
       where: {
         username: username,
@@ -1121,10 +1120,41 @@ const getReaderBookshelfOverview = async (req, res, next) => {
 const getLoggedInReader = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
-    let user = await User.findByPk(userId);
-    // user = user.map((element) => element.toJSON());
+    let reviewCountDict = {};
+    const userReviewsSql = `SELECT r.review, cba.categoryId, c.category
+                        FROM
+                            reviews r
+                        JOIN 
+                          category_book_association cba	ON cba.bookId = r.bookId 
+                        JOIN 
+                          categories c ON c.id = cba.categoryId
+                        WHERE 
+                          userId = 6`;
+    const reviewCountPerCategorySql = `SELECT COUNT(r.id) review_count, cba.categoryId, c.category
+                          FROM
+                              reviews r
+                          JOIN 
+                            category_book_association cba	ON cba.bookId = r.bookId 
+                          JOIN 
+                            categories c ON c.id = cba.categoryId
+                          WHERE 
+                            userId = 6
+                          GROUP BY 
+                            cba.categoryId`;
+    const reviewCount = await returnRawQuery(reviewCountPerCategorySql);
+    const userReviewsData = await returnRawQuery(userReviewsSql);
+    const aa = userReviewsData.map((i) => i.review);
+    let user = await User.findByPk(userId, {
+      attributes: ["id", "username", "firstname", "lastname", "profile_photo"],
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    reviewCountDict = { ...reviewCount };
+    logger.log(reviewCountDict);
     user = user.toJSON();
-    logger.log(user);
+    // logger.log(user);
     res.status(200).json(user);
   } catch (error) {
     next(error);

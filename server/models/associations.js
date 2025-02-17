@@ -9,6 +9,7 @@ import { ThoughtImage } from "./ThoughtImage.js";
 import { bookAssociations } from "./associations/bookAssociations.js";
 import { userAssociations } from "./associations/userAssociations.js";
 import { User } from "./User.js";
+import { RestrictedPost } from "./RestrictedPost.js";
 
 export function setupAssociations() {
   bookAssociations();
@@ -67,6 +68,15 @@ export function setupAssociations() {
   });
 
   //& Posts and Users
+
+  Post.hasOne(RestrictedPost, {
+    foreignKey: "postId",
+    onDelete: "CASCADE",
+  });
+  RestrictedPost.belongsTo(Post, {
+    foreignKey: "postId",
+    onDelete: "CASCADE",
+  });
 
   Post.hasMany(Comment, {
     foreignKey: "commentToId",

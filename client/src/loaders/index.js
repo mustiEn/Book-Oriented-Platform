@@ -73,13 +73,13 @@ export const loadThemedTopics = async ({ params }) => {
 };
 
 export const loadCreateTopic = async () => {
-  const response = await fetch(`/api/get-topic-categories`);
+  const res = await fetch(`/api/get-topic-categories`);
 
   if (!res.ok) {
     throw new Error(res.error);
   }
 
-  const data = await response.json();
+  const data = await res.json();
   return data;
 };
 
@@ -217,14 +217,13 @@ export const loadBookStatistics = async ({ params }) => {
 
 export const loadReaderProfile = async ({ params }) => {
   const { profile: username } = params;
-  const response = await fetch(`/api/${username}/display-reader-profile`);
+  const res = await fetch(`/api/${username}/display-reader-profile`);
 
-  for (const res of response) {
-    if (!res.ok) {
-      throw new Error(res.error);
-    }
+  if (!res.ok) {
+    throw new Error(res.error);
   }
-  const data = await response.json();
+
+  const data = await res.json();
   return data;
 };
 

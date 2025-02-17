@@ -11,6 +11,7 @@ import { User } from "../User.js";
 import { UserNotification } from "../UserNotification.js";
 import { Transaction } from "../Transaction.js";
 import { Subscription } from "../Subscription.js";
+import { RestrictedPost } from "../RestrictedPost.js";
 
 export const userAssociations = () => {
   User.hasMany(UserNotification, {
@@ -18,6 +19,15 @@ export const userAssociations = () => {
     onDelete: "CASCADE",
   });
   UserNotification.belongsTo(User, {
+    foreignKey: "userId",
+    onDelete: "CASCADE",
+  });
+
+  User.hasMany(RestrictedPost, {
+    foreignKey: "userId",
+    onDelete: "CASCADE",
+  });
+  RestrictedPost.belongsTo(User, {
     foreignKey: "userId",
     onDelete: "CASCADE",
   });

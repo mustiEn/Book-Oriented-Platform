@@ -13,9 +13,11 @@ import "./strategies/strategy.js";
 import cookieParser from "cookie-parser";
 import { setupAssociations } from "./models/associations.js";
 import "./crons/index.js";
+import { pipeline } from "@huggingface/transformers";
 
 dotenv.config();
 let port = process.env.PORT || 8081;
+export let reviewer;
 const app = express();
 
 const SequelizeStore = sequelizeStore(session.Store);
@@ -44,6 +46,18 @@ try {
   logger.log(error);
 }
 
+try {
+  reviewer = await pipeline(
+    "sentiment-analysis",
+    "Xenova/bert-base-multilingual-uncased-sentiment",
+    {
+      dtype: "q8",
+    }
+  );
+} catch (error) {
+  logger.log(error);
+}
+
 app.use(cookieParser());
 app.use(sessionMiddleware);
 app.use(cors());
@@ -64,6 +78,6 @@ app.use(indexRouter);
 app.use(userRouter);
 app.use(handleError);
 
-app.listen(port, () => {
+app.listen(port, async () => {
   logger.log(`Server is running on port ${port}`);
 });
