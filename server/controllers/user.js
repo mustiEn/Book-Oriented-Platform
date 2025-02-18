@@ -26,6 +26,7 @@ import Stripe from "stripe";
 
 import dotenv from "dotenv";
 import { Subscription } from "../models/Subscription.js";
+import { reviewer } from "../server.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 dotenv.config();
@@ -1120,7 +1121,59 @@ const getReaderBookshelfOverview = async (req, res, next) => {
 const getLoggedInReader = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
+    const summedValsDict = {};
+    let favoriteCategories;
     let reviewCountDict = {};
+    let startIndex = 0;
+    let endIndex = 0;
+    const userBookDataSql = `	SELECT SUM(val) val, categoryId, MAX(category) category FROM (
+      SELECT COUNT(lb.id) val, cba.categoryId, c.category
+      FROM
+          liked_books lb
+      JOIN 
+        category_book_association cba	ON cba.bookId = lb.bookId 
+      JOIN 
+        categories c ON c.id = cba.categoryId
+      WHERE 
+        userId = 6
+      AND 
+        is_liked != 0
+      GROUP BY 
+        cba.categoryId
+        
+      UNION ALL
+      
+      SELECT ROUND(AVG(rb.rating), 1) val, cba.categoryId, c.category
+      FROM
+        rated_books rb
+      JOIN 
+        category_book_association cba	ON cba.bookId = rb.bookId 
+      JOIN 
+        categories c ON c.id = cba.categoryId
+      WHERE 
+        userId = 6
+      AND 
+        rating IS NOT NULL
+      GROUP BY 
+        cba.categoryId
+        
+      UNION ALL
+      
+      SELECT COUNT(brs.id) val, cba.categoryId, c.category
+      FROM
+          book_reading_states brs
+      JOIN 
+        category_book_association cba	ON cba.bookId = brs.bookId 
+      JOIN 
+        categories c ON c.id = cba.categoryId
+      WHERE 
+        userId = 6
+      AND 
+        reading_state != "Did not finish"
+      GROUP BY 
+        cba.categoryId)temp
+      GROUP BY 
+        temp.categoryId`;
     const userReviewsSql = `SELECT r.review, cba.categoryId, c.category
                         FROM
                             reviews r
@@ -1141,18 +1194,48 @@ const getLoggedInReader = async (req, res, next) => {
                             userId = 6
                           GROUP BY 
                             cba.categoryId`;
+    const userBookData = await returnRawQuery(userBookDataSql);
     const reviewCount = await returnRawQuery(reviewCountPerCategorySql);
     const userReviewsData = await returnRawQuery(userReviewsSql);
     const aa = userReviewsData.map((i) => i.review);
     let user = await User.findByPk(userId, {
       attributes: ["id", "username", "firstname", "lastname", "profile_photo"],
     });
+    const result = await reviewer(aa);
 
     if (!user) {
       throw new Error("User not found");
     }
-    reviewCountDict = { ...reviewCount };
+    reviewCountDict = reviewCount;
+    for (const element of reviewCountDict) {
+      endIndex += element.review_count;
+      const reviewStarlabels = result.slice(startIndex, endIndex);
+      const totalVal = reviewStarlabels.reduce((acc, curr) => {
+        return parseInt(curr.label) + acc;
+      }, 0);
+      logger.log(totalVal);
+      element["val"] = (totalVal / element.review_count).toFixed(1);
+      startIndex += element.review_count;
+    }
     logger.log(reviewCountDict);
+    logger.log(userBookData);
+
+    [...reviewCountDict, ...userBookData].map((item) => {
+      if (summedValsDict[item.categoryId]) {
+        summedValsDict[item.categoryId] += Number(item.val);
+      } else {
+        summedValsDict[item.categoryId] = Number(item.val);
+      }
+    });
+    favoriteCategories = Object.entries(summedValsDict).sort(
+      (a, b) => b[1] - a[1]
+    );
+    favoriteCategories =
+      favoriteCategories.length > 2
+        ? favoriteCategories.slice(3)
+        : favoriteCategories;
+    logger.log(summedValsDict);
+    logger.log(favoriteCategories);
     user = user.toJSON();
     // logger.log(user);
     res.status(200).json(user);
