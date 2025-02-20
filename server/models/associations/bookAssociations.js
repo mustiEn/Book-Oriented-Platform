@@ -12,6 +12,7 @@ import { Publisher } from "../Publisher.js";
 import { PublisherBookAssociation } from "../PublisherBookAssociation.js";
 import { Quote } from "../Quote.js";
 import { RatedBook } from "../RatedBook.js";
+import { RecommendedBook } from "../RecommendedBook.js";
 import { Review } from "../Review.js";
 import { Thought } from "../Thought.js";
 import { Topic } from "../Topic.js";
@@ -164,6 +165,24 @@ export const bookAssociations = () => {
   });
   DescriptionBookAssociation.belongsTo(BookDescription, {
     foreignKey: "descriptionId",
+    onDelete: "CASCADE",
+  });
+
+  BookCollection.hasMany(RecommendedBook, {
+    foreignKey: "bookId",
+    onDelete: "CASCADE",
+  });
+  RecommendedBook.belongsTo(BookCollection, {
+    foreignKey: "bookId",
+    onDelete: "CASCADE",
+  });
+
+  Category.hasMany(RecommendedBook, {
+    foreignKey: "categoryId",
+    onDelete: "CASCADE",
+  });
+  RecommendedBook.belongsTo(Category, {
+    foreignKey: "categoryId",
     onDelete: "CASCADE",
   });
 };

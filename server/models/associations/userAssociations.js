@@ -12,6 +12,7 @@ import { UserNotification } from "../UserNotification.js";
 import { Transaction } from "../Transaction.js";
 import { Subscription } from "../Subscription.js";
 import { RestrictedPost } from "../RestrictedPost.js";
+import { RecommendedBook } from "../RecommendedBook.js";
 
 export const userAssociations = () => {
   User.hasMany(UserNotification, {
@@ -19,6 +20,15 @@ export const userAssociations = () => {
     onDelete: "CASCADE",
   });
   UserNotification.belongsTo(User, {
+    foreignKey: "userId",
+    onDelete: "CASCADE",
+  });
+
+  User.hasMany(RecommendedBook, {
+    foreignKey: "userId",
+    onDelete: "CASCADE",
+  });
+  RecommendedBook.belongsTo(User, {
     foreignKey: "userId",
     onDelete: "CASCADE",
   });
