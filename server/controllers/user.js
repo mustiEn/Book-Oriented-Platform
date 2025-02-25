@@ -26,7 +26,6 @@ import Stripe from "stripe";
 
 import dotenv from "dotenv";
 import { Subscription } from "../models/Subscription.js";
-import { reviewer } from "../server.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 dotenv.config();

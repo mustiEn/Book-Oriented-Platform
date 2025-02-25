@@ -16,6 +16,10 @@ const returnRawQuery = (query, queryType) => {
   });
 };
 
+const sum = (a, b) => {
+  return a + b;
+};
+
 // const sendMail = async (recipient, val) => {
 //     try {
 //         let config = {
@@ -42,4 +46,4 @@ const returnRawQuery = (query, queryType) => {
 //     }
 // }
 
-export { logger, returnRawQuery };
+export { logger, returnRawQuery, sum };

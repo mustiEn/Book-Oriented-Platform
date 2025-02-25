@@ -16,9 +16,7 @@ import "./crons/index.js";
 import { pipeline } from "@huggingface/transformers";
 
 dotenv.config();
-let port = process.env.PORT || 8081;
-export let reviewer;
-const app = express();
+export const app = express();
 
 const SequelizeStore = sequelizeStore(session.Store);
 const sessionStore = new SequelizeStore({
@@ -36,27 +34,26 @@ const sessionMiddleware = session({
   },
 });
 
-try {
-  await sequelize.authenticate();
-  setupAssociations();
-  await sequelize.sync();
-  logger.log("Connection has been established successfully.");
-  logger.log("All models were synchronized successfully.");
-} catch (error) {
-  logger.log(error);
-}
+// try {
+//   await sequelize.authenticate();
+//   setupAssociations();
+//   await sequelize.sync();
+//   logger.log("Connection has been established successfully.");
+//   logger.log("All models were synchronized successfully.");
+// } catch (error) {
+//   logger.log(error);
+// }
 
-try {
-  reviewer = await pipeline(
-    "sentiment-analysis",
-    "Xenova/bert-base-multilingual-uncased-sentiment",
-    {
-      dtype: "q8",
-    }
-  );
-} catch (error) {
-  logger.log(error);
-}
+export let reviewer;
+// try {
+//   reviewer = await pipeline(
+//     "sentiment-analysis",
+//     "Xenova/bert-base-multilingual-uncased-sentiment",
+//     { dtype: "fp16" }
+//   );
+// } catch (error) {
+//   logger.log(error);
+// }
 
 app.use(cookieParser());
 app.use(sessionMiddleware);
@@ -77,7 +74,3 @@ app.use(passport.session());
 app.use(indexRouter);
 app.use(userRouter);
 app.use(handleError);
-
-app.listen(port, async () => {
-  logger.log(`Server is running on port ${port}`);
-});

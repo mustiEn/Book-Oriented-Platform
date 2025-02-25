@@ -1,16 +1,8 @@
-import { User } from "../models/User.js";
-import { logger } from "../utils/constants.js";
-import bcrypt from "bcrypt";
 import { matchedData, validationResult } from "express-validator";
-import { Op } from "sequelize";
-import { BookCollection } from "../models/BookCollection.js";
+import { User } from "../models/User.js";
+import { logger, returnRawQuery } from "../utils/constants.js";
+import bcrypt from "bcrypt";
 import Groq from "groq-sdk";
-import { sequelize } from "../models/db.js";
-import { TopicCategory } from "../models/TopicCategory.js";
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_KEY,
-});
 
 const signup = async (req, res, next) => {
   try {
@@ -69,27 +61,37 @@ const signup = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { username, password } = req.body;
+    const result = validationResult(req);
 
+    if (!result.isEmpty()) {
+      throw new Error(result.array());
+    }
+
+    const { username, password } = matchedData(req);
+    console.log("LOGIN", username, password);
     const user = await User.findOne({
       where: {
         username: username,
       },
     });
-    if (!user) {
-      throw new Error("User not found");
-    }
-    if (!bcrypt.compareSync(password, user.password)) {
-      throw new Error("Password is incorrect");
-    }
+    // if (!user) {
+    //   throw new Error("User not found");
+    // }
+    // if (!bcrypt.compareSync(password, user.password)) {
+    //   throw new Error("Password is incorrect");
+    // }
 
-    req.login(user, function (err) {
-      if (err) {
-        return next(err);
-      }
-      res.status(200).json({
-        message: "User logged in successfully",
-      });
+    // req.login(user, function (err) {
+    //   if (err) {
+    //     return next(err);
+    //   }
+    //   return res.status(200).json({
+    //     message: "User logged in successfully",
+    //   });
+    // });
+
+    return res.status(200).json({
+      message: "User logged in successfully",
     });
   } catch (error) {
     next(error);
@@ -97,11 +99,29 @@ const login = async (req, res, next) => {
 };
 
 const bookCollection = async (req, res, next) => {
+  //^ Gets either bookId or query.
+  //^ bookId is used to get a specific book,
+  //^ while query is used to get 20 books based on the query
+
+  const groq = new Groq({
+    apiKey: process.env.GROQ_KEY,
+  });
   try {
-    const { q } = req.query;
-    const { bookId } = req.params;
-    let books;
+    const result = validationResult(req);
+    let data;
+
+    if (!result.isEmpty()) {
+      throw new Error(result.array());
+    }
+
+    const { q, bookId } = matchedData(req);
+
+    console.log(matchedData(req));
+    console.log(q, bookId);
+
     if (bookId) {
+      //& Gets the book with the given bookId
+
       const sql = `SELECT a.*,
                   GROUP_CONCAT(DISTINCT c.author SEPARATOR ', ') AS author,
                   GROUP_CONCAT(DISTINCT e.publisher SEPARATOR ', ') AS publisher,
@@ -125,19 +145,26 @@ const bookCollection = async (req, res, next) => {
                   ON h.bookId=a.id
                   LEFT JOIN descriptions i
                   ON h.descriptionId=i.id
-                  WHERE a.id = "${bookId}"
+                  WHERE a.id = ${bookId}
                   GROUP BY book_key`;
-      const [results] = await sequelize.query(sql);
-      books = results[0];
-      if (books.author !== null) {
+
+      data = await returnRawQuery(sql);
+
+      if (data.length == 0) {
+        throw new Error("Book not found");
+      }
+      if (data[0].author !== null) {
+        //& if author not null, gets some data related to author from groq
+        console.log("author not nulls");
+
         const completion = await groq.chat.completions.create({
           model: "llama3-8b-8192",
           messages: [
             {
               role: "user",
-              content: `Who is or are ${books.author}?
-              This person/people has the following books: ${books.title}.
-             Give your answer as formal as possible 
+              content: `Who is or are ${data[0].author}?
+              This person/people has the following book: ${data[0].title}.
+             Give your answer as formal as possible
              because this will be used in an online book website.
              Answer about this person/people should be about their major, achievements
              and any other relevant information.
@@ -146,18 +173,21 @@ const bookCollection = async (req, res, next) => {
             },
           ],
         });
-        books["author_info"] = completion.choices[0].message?.content;
+
+        data[0]["author_info"] = completion.choices[0].message?.content;
       }
     } else {
+      //& Gets 20 books from the database with the query
+
       const sql = `SELECT book_id,
-                      MAX(book_key) AS book_key,  
+                      MAX(book_key) AS book_key,
                       CASE WHEN MAX(LENGTH(title)) > 100
                         THEN CONCAT(SUBSTRING(MAX(title), 1, 100), '...')
                         ELSE MAX(title) END AS truncatedTitle,
-                      MAX(title) AS title,        
+                      MAX(title) AS title,
                       MAX(thumbnail) AS thumbnail,
-                      GROUP_CONCAT(DISTINCT publisher SEPARATOR ', ') AS publishers, 
-                      GROUP_CONCAT(DISTINCT author SEPARATOR ', ') AS authors FROM 
+                      GROUP_CONCAT(DISTINCT publisher SEPARATOR ', ') AS publishers,
+                      GROUP_CONCAT(DISTINCT author SEPARATOR ', ') AS authors FROM
                       (SELECT bo.id AS book_id, bo.book_key AS book_key, bo.title AS title,
                       bo.thumbnail AS thumbnail,au.author AS author,
                       pu.publisher AS publisher
@@ -194,13 +224,11 @@ const bookCollection = async (req, res, next) => {
                       GROUP BY book_id
                       LIMIT 20
                       `;
-      const [results] = await sequelize.query(sql);
-      books = results;
+
+      data = await returnRawQuery(sql);
     }
 
-    logger.log(books);
-    logger.log(q, bookId);
-    res.status(200).json(books);
+    return res.status(200).json(data);
   } catch (error) {
     next(error);
   }
