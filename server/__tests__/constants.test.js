@@ -1,36 +1,27 @@
-// import { vi, test, expect, describe, beforeAll } from "vitest";
-// import { logger } from "../utils/constants";
-// // import { describe } from "vitest";
+import { vi, test, expect, describe, beforeAll } from "vitest";
+import traceLogger, { returnRawQuery } from "../utils/constants";
 
-// beforeEach(() => {
-//   vi.clearAllMocks();
-// });
+vi.mock("../utils/constants");
 
-// vi.unstable_mockModule("../utils/constants", () => ({
-//   returnRawQuery: vi.fn(),
-// }));
+test.skip("function should work", async () => {
+  const mockResult = [{ id: 1, bookId: 22 }];
+  const mockSql = `SELECT a.* from a`;
+  returnRawQuery.mockResolvedValue(mockResult);
 
-// // vi.unstable_mockModule("sequelize", () => ({
-// //   QueryTypes: {
-// //     SELECT: "SELECT", // Mock QueryTypes
-// //   },
-// // }));
+  const result = await returnRawQuery(mockSql, "QUERY");
 
-// const { returnRawQuery } = await import("../utils/constants");
+  expect(returnRawQuery).toHaveBeenCalled();
+  expect(returnRawQuery).toHaveBeenCalledWith(
+    expect.stringContaining("SELECT"),
+    expect.anything()
+  );
+  expect(result).toEqual(mockResult);
+});
 
-// describe("returnRawQuery", () => {
-//   test("function should work", async () => {
-//     const mockResult = [{ id: 1, bookId: 22 }];
-//     const mockSql = `SELECT a.* from a`;
-//     returnRawQuery.mockResolvedValue(mockResult);
+test("function should work", async () => {
+  const logger = traceLogger.colorConsole();
 
-//     const result = await returnRawQuery(mockSql, "QUERY");
+  logger.log("213123deneme");
 
-//     expect(returnRawQuery).toHaveBeenCalled();
-//     expect(returnRawQuery).toHaveBeenCalledWith(
-//       expect.stringContaining("SELECT"),
-//       expect.anything()
-//     );
-//     expect(result).toEqual(mockResult);
-//   });
-// });
+  expect(logger.log).toHaveBeenCalled();
+});

@@ -4,7 +4,23 @@ import { query, body, param } from "express-validator";
 
 const router = express.Router();
 
-router.post("/signup", indexController.signup);
+router.post(
+  "/signup",
+  [
+    body("username").notEmpty().isString(),
+    body("password").notEmpty().isString(),
+    body("email").notEmpty().isEmail(),
+    body("firstname").notEmpty().isString(),
+    body("lastname").notEmpty().isString(),
+    body("DOB").notEmpty().isDate(),
+    body("gender").custom((val) => {
+      if (val != "Male" && val != "Female")
+        throw new Error("Wrong gender input");
+      return true;
+    }),
+  ],
+  indexController.signup
+);
 
 router.post(
   "/login",

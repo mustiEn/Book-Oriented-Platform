@@ -5,37 +5,45 @@ import bcrypt from "bcrypt";
 import Groq from "groq-sdk";
 
 const signup = async (req, res, next) => {
+  //^ gets user data from the request body,
+  //^ checks if the user already exists in the database,
+  //^ hashes the password,creates a new user in the database,
+  //^ and logs in the user
+
   try {
-    const { email, password, firstname, lastname, username, DOB, gender } =
-      req.body;
-
-    logger.log("signup!!!!!!!!!!!!");
-    // const result = validationResult(req)
-    // if (!result.isEmpty()) {
-    //     logger.log(result.array())
-    //     throw new Error("Something went wrong");
-    // }
-
-    // const emailExist = await User.findOne({
-    //     where: {
-    //         email: email,
-    //     }
-    // })
-
-    // const usernameExist = await User.findOne({
-    //     where: {
-    //         username: username,
-    //     }
-    // })
-
-    // if (emailExist) {
-    //     throw new Error("Email already exists");
-    // }
-    // if (usernameExist) {
-    //     throw new Error("User already exists");
-    // }
-
+    const result = validationResult(req);
     const salt = await bcrypt.genSalt(10);
+
+    logger.log("EXAMPLE LOGGER");
+
+    if (!result.isEmpty()) {
+      throw new Error(result.array());
+    }
+
+    const { email, password, firstname, lastname, username, DOB, gender } =
+      matchedData(req);
+    const emailExist = await User.findOne({
+      where: {
+        email: email,
+      },
+    });
+    const usernameExist = await User.findOne({
+      where: {
+        username: username,
+      },
+    });
+
+    //& checks if email or username already exist
+
+    if (emailExist) {
+      throw new Error("Email already exists");
+    }
+    if (usernameExist) {
+      throw new Error("Username already exists");
+    }
+
+    //& hashes the password using bcrypt and creates the user
+
     const hashedPassword = await bcrypt.hash(password, salt);
     const newUser = await User.create({
       username: username,
@@ -46,7 +54,10 @@ const signup = async (req, res, next) => {
       DOB: DOB,
       gender: gender,
     });
-    req.login(newUser, function (err) {
+
+    //& returns and logs in the created user
+
+    req.login(newUser, (err) => {
       if (err) {
         return next(err);
       }
@@ -60,6 +71,12 @@ const signup = async (req, res, next) => {
 };
 
 const login = async (req, res, next) => {
+  //^ Gets username and password from the request body,
+  //^ then checks if the user exists in the database.
+  //^ If the user exists, it hashes the password and checks if it matches the stored hash.
+  //^ If the password does not match, it returns error.
+  //^ If the password matches, it logs the user in and returns a success message.
+
   try {
     const result = validationResult(req);
 
@@ -68,30 +85,30 @@ const login = async (req, res, next) => {
     }
 
     const { username, password } = matchedData(req);
-    console.log("LOGIN", username, password);
     const user = await User.findOne({
       where: {
         username: username,
       },
     });
-    // if (!user) {
-    //   throw new Error("User not found");
-    // }
-    // if (!bcrypt.compareSync(password, user.password)) {
-    //   throw new Error("Password is incorrect");
-    // }
 
-    // req.login(user, function (err) {
-    //   if (err) {
-    //     return next(err);
-    //   }
-    //   return res.status(200).json({
-    //     message: "User logged in successfully",
-    //   });
-    // });
+    console.log(user);
 
-    return res.status(200).json({
-      message: "User logged in successfully",
+    if (!user) {
+      throw new Error("User not found");
+    }
+    if (!bcrypt.compareSync(password, user.password)) {
+      //& Checks if the password matches the stored hash.
+
+      throw new Error("Password is incorrect");
+    }
+
+    req.login(user, (err) => {
+      if (err) {
+        return next(err);
+      }
+      return res.status(200).json({
+        message: "User logged in successfully",
+      });
     });
   } catch (error) {
     next(error);
@@ -103,10 +120,10 @@ const bookCollection = async (req, res, next) => {
   //^ bookId is used to get a specific book,
   //^ while query is used to get 20 books based on the query
 
-  const groq = new Groq({
-    apiKey: process.env.GROQ_KEY,
-  });
   try {
+    const groq = new Groq({
+      apiKey: process.env.GROQ_KEY,
+    });
     const result = validationResult(req);
     let data;
 

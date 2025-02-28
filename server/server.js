@@ -34,15 +34,15 @@ const sessionMiddleware = session({
   },
 });
 
-// try {
-//   await sequelize.authenticate();
-//   setupAssociations();
-//   await sequelize.sync();
-//   logger.log("Connection has been established successfully.");
-//   logger.log("All models were synchronized successfully.");
-// } catch (error) {
-//   logger.log(error);
-// }
+try {
+  await sequelize.authenticate();
+  setupAssociations();
+  await sequelize.sync();
+  logger.log("Connection has been established successfully.");
+  logger.log("All models were synchronized successfully.");
+} catch (error) {
+  logger.log(error);
+}
 
 export let reviewer;
 // try {

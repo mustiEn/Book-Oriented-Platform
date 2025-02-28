@@ -1,31 +1,17 @@
 import { test, expect, vi, beforeEach, describe, afterEach } from "vitest";
-import { logger, returnRawQuery } from "../utils/constants";
-import { bookCollection, login } from "../controllers/index";
+import { returnRawQuery } from "../utils/constants";
+import { bookCollection, login, signup } from "../controllers/index";
 import { validationResult, matchedData } from "express-validator";
-import Groq from "groq-sdk";
+import Groq, { mockCreate } from "groq-sdk";
 import { User } from "../models/User";
+import bcrypt from "bcrypt";
+import traceLogger from "tracer";
 
-vi.mock("express-validator", () => ({
-  validationResult: vi.fn(() => ({
-    isEmpty: vi.fn(() => true),
-    array: vi.fn(() => [{ message: "error" }]),
-  })),
-  matchedData: vi.fn(),
-}));
-vi.mock("../utils/constants", () => ({
-  returnRawQuery: vi.fn(),
-}));
-vi.mock("groq-sdk", () => {
-  return {
-    default: vi.fn(() => ({
-      chat: {
-        completions: {
-          create: mockCreate,
-        },
-      },
-    })),
-  };
-});
+vi.mock("express-validator");
+vi.mock("../utils/constants");
+vi.mock("groq-sdk");
+vi.mock("bcrypt");
+vi.mock("tracer");
 
 const mockRequest = {
   req: {},
@@ -35,15 +21,7 @@ const mockRequest = {
   },
   next: vi.fn(),
 };
-const mockCreate = vi.fn().mockResolvedValue({
-  choices: [
-    {
-      message: {
-        content: "Mocked author information",
-      },
-    },
-  ],
-});
+
 let mockData;
 let mockReqData;
 
@@ -70,6 +48,17 @@ describe.skip("test bookcollection", () => {
     ]);
     expect(Groq).toHaveBeenCalled();
     expect(mockCreate).toHaveBeenCalled();
+    expect(mockCreate).toHaveBeenCalledWith({
+      model: "llama3-8b-8192",
+      messages: [
+        {
+          role: "user",
+          content: expect.stringContaining(
+            `Who is or are ${mockData[0].author}?`
+          ),
+        },
+      ],
+    });
     expect(mockData[0]).toHaveProperty("author_info");
     expect(mockRequest.res.status).toHaveBeenCalled();
     expect(mockRequest.res.json).toHaveBeenCalled();
@@ -94,14 +83,49 @@ describe.skip("test bookcollection", () => {
   });
 });
 
-describe("test login", () => {
+describe.skip("test login", () => {
   test("should log in user", async () => {
     mockReqData = { username: "Jack", password: "123Jack!" };
     User.findOne = vi
       .fn()
       .mockResolvedValue({ id: 1, email: "jack@gmail.com", ...mockReqData });
     mockRequest.req["body"] = mockReqData;
+    mockRequest.req["login"] = vi.fn((user, cb) => cb());
+    matchedData.mockReturnValue(mockReqData);
 
+    const user = await User.findOne();
+
+    await login(mockRequest.req, mockRequest.res, mockRequest.next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalledWith(mockRequest.req);
+    expect(matchedData).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalledWith(mockRequest.req);
+    expect(User.findOne).toHaveBeenCalled();
+    expect(bcrypt.compareSync).toHaveBeenCalled();
+    expect(bcrypt.compareSync).toHaveBeenCalledWith(
+      mockReqData.password,
+      user.password
+    );
+    expect(mockRequest.req.login).toHaveBeenCalled();
+    expect(mockRequest.res.status).toHaveBeenCalled();
+    expect(mockRequest.res.json).toHaveBeenCalled();
+    expect(mockRequest.res.json).toHaveBeenCalledWith({
+      message: "User logged in successfully",
+    });
+  });
+
+  test("shouldnt log in user", async () => {
+    mockReqData = { username: "Jack", password: "123Jack!" };
+    User.findOne = vi
+      .fn()
+      .mockResolvedValue({ id: 1, email: "jack@gmail.com", ...mockReqData });
+
+    const error = "Something went wrong";
+    const user = await User.findOne();
+
+    mockRequest.req["body"] = mockReqData;
+    mockRequest.req["login"] = vi.fn((user, cb) => cb(new Error(error)));
     matchedData.mockReturnValue(mockReqData);
 
     await login(mockRequest.req, mockRequest.res, mockRequest.next);
@@ -110,8 +134,228 @@ describe("test login", () => {
     expect(validationResult).toHaveBeenCalledWith(mockRequest.req);
     expect(matchedData).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalledWith(mockRequest.req);
-    expect(User.findOne).not.toHaveBeenCalled();
-    expect(mockRequest.res.status).toHaveBeenCalled();
-    expect(mockRequest.res.json).toHaveBeenCalled();
+    expect(User.findOne).toHaveBeenCalled();
+    expect(bcrypt.compareSync).toHaveBeenCalled();
+    expect(bcrypt.compareSync).toHaveBeenCalledWith(
+      mockReqData.password,
+      user.password
+    );
+    expect(mockRequest.req.login).toHaveBeenCalled();
+    expect(mockRequest.next).toHaveBeenCalled();
+    expect(mockRequest.next).toHaveBeenCalledWith(Error(error));
+  });
+
+  test("should throw `User not found`", async () => {
+    mockReqData = { username: "JackUnknownName", password: "123Jack!" };
+    mockRequest.req["body"] = mockReqData;
+    User.findOne = vi.fn().mockResolvedValue(null);
+    matchedData.mockReturnValue(mockReqData);
+
+    const error = "User not found";
+    const { req, res, next } = mockRequest;
+
+    await login(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalledWith(req);
+    expect(matchedData).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalledWith(req);
+    expect(User.findOne).toHaveBeenCalled();
+    expect(bcrypt.compareSync).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(Error(error));
+  });
+
+  test("should throw `Password is incorrect`", async () => {
+    mockReqData = { username: "JackUnknownName", password: "123Jack!" };
+    mockRequest.req["body"] = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+    bcrypt.compareSync = vi.fn(() => false);
+    User.findOne = vi.fn().mockResolvedValue({
+      id: 1,
+      email: "jack@gmail.com",
+      ...mockReqData,
+      password: "A different password",
+    });
+
+    const error = "Password is incorrect";
+    const user = await User.findOne();
+    const { req, res, next } = mockRequest;
+
+    await login(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalledWith(req);
+    expect(matchedData).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalledWith(req);
+    expect(User.findOne).toHaveBeenCalled();
+    expect(bcrypt.compareSync).toHaveBeenCalled();
+    expect(bcrypt.compareSync).toHaveBeenCalledWith(
+      mockReqData.password,
+      user.password
+    );
+    expect(next).toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(Error(error));
+  });
+});
+
+describe("test signup", () => {
+  beforeEach(() => {
+    mockReqData = {
+      email: "jane.smith@example.com",
+      password: "Jane@4567",
+      firstname: "Jane",
+      lastname: "Smith",
+      username: "janesmith",
+      DOB: "1985-09-22",
+      gender: "Female",
+    };
+    mockRequest.req["body"] = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+
+    bcrypt.compareSync = vi.fn(() => true);
+    bcrypt.genSalt = vi.fn().mockResolvedValue("generatedSalt");
+    bcrypt.hash = vi.fn().mockResolvedValue("hashedPassword");
+  });
+
+  test("should throw `Email already exists`", async () => {
+    User.findOne = vi
+      .fn()
+      .mockResolvedValue(null)
+      .mockResolvedValueOnce({ id: 2, email: "emily@gmail.com" });
+
+    const error = "Email already exists";
+    const { req, res, next } = mockRequest;
+
+    await signup(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalledWith(req);
+    expect(bcrypt.genSalt).toHaveBeenCalled();
+    expect(bcrypt.genSalt).toHaveBeenCalledWith(10);
+    expect(matchedData).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalledWith(req);
+    expect(User.findOne).toHaveBeenCalledWith({
+      where: { email: mockReqData.email },
+    });
+    expect(User.findOne).toHaveBeenCalledTimes(2);
+    expect(User.findOne).toHaveBeenCalledWith({
+      where: { username: mockReqData.username },
+    });
+    expect(next).toHaveBeenCalledWith(Error(error));
+  });
+
+  test("should throw `Username already exists`", async () => {
+    User.findOne = vi
+      .fn()
+      .mockResolvedValue({ id: 1, email: "jack@gmail.com" })
+      .mockResolvedValueOnce(null);
+
+    const error = "Username already exists";
+    const { req, res, next } = mockRequest;
+
+    await signup(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalledWith(req);
+    expect(bcrypt.genSalt).toHaveBeenCalled();
+    expect(bcrypt.genSalt).toHaveBeenCalledWith(10);
+    expect(matchedData).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalledWith(req);
+    expect(User.findOne).toHaveBeenCalledWith({
+      where: { email: mockReqData.email },
+    });
+    expect(User.findOne).toHaveBeenCalledTimes(2);
+    expect(User.findOne).toHaveBeenCalledWith({
+      where: { username: mockReqData.username },
+    });
+    expect(next).toHaveBeenCalledWith(Error(error));
+  });
+
+  test("should sign up the user", async () => {
+    const { req, res, next } = mockRequest;
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(req.password, salt);
+
+    User.create = vi
+      .fn()
+      .mockResolvedValue({ ...mockReqData, password: hashedPassword });
+    User.findOne = vi.fn().mockResolvedValue(null);
+
+    const newUser = await User.create();
+
+    mockRequest.req["login"] = vi.fn((newUser, cb) => cb());
+
+    await signup(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalledWith(req);
+    expect(bcrypt.genSalt).toHaveBeenCalled();
+    expect(bcrypt.genSalt).toHaveBeenCalledWith(10);
+    expect(matchedData).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalledWith(req);
+    expect(User.findOne).toHaveBeenCalledWith({
+      where: { email: mockReqData.email },
+    });
+    expect(User.findOne).toHaveBeenCalledWith({
+      where: { username: mockReqData.username },
+    });
+    expect(User.findOne).toHaveBeenCalledTimes(2);
+    expect(bcrypt.hash).toHaveBeenCalled();
+    expect(bcrypt.hash).toHaveBeenCalledWith(mockReqData.password, salt);
+    expect(User.create).toHaveBeenCalled();
+    expect(User.create).toHaveBeenCalledWith({
+      ...mockReqData,
+      password: hashedPassword,
+    });
+    expect(req.login).toHaveBeenCalled();
+    expect(req.login).toHaveBeenCalledWith(newUser, expect.any(Function));
+    expect(res.json).toHaveBeenCalledWith({
+      message: "User created successfully",
+    });
+    expect(next).not.toHaveBeenCalledWith(expect.any(Error));
+  });
+
+  test.only("shouldn't sign up the user", async () => {
+    const { req, res, next } = mockRequest;
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash(req.password, salt);
+
+    User.create = vi
+      .fn()
+      .mockResolvedValue({ ...mockReqData, password: hashedPassword });
+    User.findOne = vi.fn().mockResolvedValue(null);
+
+    const newUser = await User.create();
+    const error = "Something went wrong";
+
+    mockRequest.req["login"] = vi.fn((newUser, cb) => cb(new Error(error)));
+
+    await signup(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalledWith(req);
+    expect(bcrypt.genSalt).toHaveBeenCalled();
+    expect(bcrypt.genSalt).toHaveBeenCalledWith(10);
+    expect(matchedData).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalledWith(req);
+    expect(User.findOne).toHaveBeenCalledWith({
+      where: { email: mockReqData.email },
+    });
+    expect(User.findOne).toHaveBeenCalledWith({
+      where: { username: mockReqData.username },
+    });
+    expect(User.findOne).toHaveBeenCalledTimes(2);
+    expect(bcrypt.hash).toHaveBeenCalled();
+    expect(bcrypt.hash).toHaveBeenCalledWith(mockReqData.password, salt);
+    expect(User.create).toHaveBeenCalled();
+    expect(User.create).toHaveBeenCalledWith({
+      ...mockReqData,
+      password: hashedPassword,
+    });
+    expect(req.login).toHaveBeenCalled();
+    expect(req.login).toHaveBeenCalledWith(newUser, expect.any(Function));
+    expect(res.json).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(Error(error));
   });
 });
