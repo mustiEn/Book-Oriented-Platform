@@ -1,17 +1,15 @@
 import { test, expect, vi, beforeEach, describe, afterEach } from "vitest";
-import { returnRawQuery } from "../utils/constants";
+import { logger, returnRawQuery } from "../utils/constants";
 import { bookCollection, login, signup } from "../controllers/index";
 import { validationResult, matchedData } from "express-validator";
 import Groq, { mockCreate } from "groq-sdk";
 import { User } from "../models/User";
 import bcrypt from "bcrypt";
-import traceLogger from "tracer";
 
 vi.mock("express-validator");
 vi.mock("../utils/constants");
 vi.mock("groq-sdk");
 vi.mock("bcrypt");
-vi.mock("tracer");
 
 const mockRequest = {
   req: {},
@@ -30,7 +28,7 @@ afterEach(async () => {
   mockRequest.req = {};
 });
 
-describe.skip("test bookcollection", () => {
+describe("test bookcollection", () => {
   test("should get req param `bookId` and add `author data` if data exists", async () => {
     mockData = [{ author: "jack", title: "abc" }];
     mockReqData = { bookId: 1 };
@@ -39,9 +37,10 @@ describe.skip("test bookcollection", () => {
     matchedData.mockReturnValue(mockReqData);
     returnRawQuery.mockResolvedValue(mockData);
 
-    await bookCollection(mockRequest.req, mockRequest.res, mockRequest.next);
+    const { req, res, next } = mockRequest;
+    await bookCollection(req, res, next);
 
-    expect(validationResult).toHaveBeenCalledWith(mockRequest.req);
+    expect(validationResult).toHaveBeenCalledWith(req);
     expect(returnRawQuery).toHaveBeenCalled();
     await expect(returnRawQuery()).resolves.toMatchObject([
       { author: "jack", title: "abc" },
@@ -60,8 +59,8 @@ describe.skip("test bookcollection", () => {
       ],
     });
     expect(mockData[0]).toHaveProperty("author_info");
-    expect(mockRequest.res.status).toHaveBeenCalled();
-    expect(mockRequest.res.json).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
   });
 
   test("should get req query `q` and return data", async () => {
@@ -72,84 +71,86 @@ describe.skip("test bookcollection", () => {
     matchedData.mockReturnValue(mockReqData);
     returnRawQuery.mockResolvedValue(mockData);
 
-    await bookCollection(mockRequest.req, mockRequest.res, mockRequest.next);
+    const { req, res, next } = mockRequest;
+
+    await bookCollection(req, res, next);
 
     expect(validationResult).toHaveBeenCalled();
-    expect(validationResult).toHaveBeenCalledWith(mockRequest.req);
+    expect(validationResult).toHaveBeenCalledWith(req);
     expect(returnRawQuery).toHaveBeenCalled();
     await expect(returnRawQuery()).resolves.toMatchObject(mockData);
-    expect(mockRequest.res.status).toHaveBeenCalled();
-    expect(mockRequest.res.json).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
   });
 });
 
-describe.skip("test login", () => {
-  test("should log in user", async () => {
+describe("test login", () => {
+  beforeEach(() => {
     mockReqData = { username: "Jack", password: "123Jack!" };
+    mockRequest.req["body"] = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+  });
+
+  test("should log in user", async () => {
     User.findOne = vi
       .fn()
       .mockResolvedValue({ id: 1, email: "jack@gmail.com", ...mockReqData });
-    mockRequest.req["body"] = mockReqData;
+    bcrypt.compareSync = vi.fn(() => true);
     mockRequest.req["login"] = vi.fn((user, cb) => cb());
-    matchedData.mockReturnValue(mockReqData);
 
     const user = await User.findOne();
+    const { req, res, next } = mockRequest;
 
-    await login(mockRequest.req, mockRequest.res, mockRequest.next);
+    await login(req, res, next);
 
     expect(validationResult).toHaveBeenCalled();
-    expect(validationResult).toHaveBeenCalledWith(mockRequest.req);
+    expect(validationResult).toHaveBeenCalledWith(req);
     expect(matchedData).toHaveBeenCalled();
-    expect(matchedData).toHaveBeenCalledWith(mockRequest.req);
+    expect(matchedData).toHaveBeenCalledWith(req);
     expect(User.findOne).toHaveBeenCalled();
     expect(bcrypt.compareSync).toHaveBeenCalled();
     expect(bcrypt.compareSync).toHaveBeenCalledWith(
       mockReqData.password,
       user.password
     );
-    expect(mockRequest.req.login).toHaveBeenCalled();
-    expect(mockRequest.res.status).toHaveBeenCalled();
-    expect(mockRequest.res.json).toHaveBeenCalled();
-    expect(mockRequest.res.json).toHaveBeenCalledWith({
+    expect(req.login).toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({
       message: "User logged in successfully",
     });
   });
 
   test("shouldnt log in user", async () => {
-    mockReqData = { username: "Jack", password: "123Jack!" };
     User.findOne = vi
       .fn()
       .mockResolvedValue({ id: 1, email: "jack@gmail.com", ...mockReqData });
+    bcrypt.compareSync = vi.fn(() => true);
+    mockRequest.req["login"] = vi.fn((user, cb) => cb(new Error(error)));
 
     const error = "Something went wrong";
     const user = await User.findOne();
+    const { req, res, next } = mockRequest;
 
-    mockRequest.req["body"] = mockReqData;
-    mockRequest.req["login"] = vi.fn((user, cb) => cb(new Error(error)));
-    matchedData.mockReturnValue(mockReqData);
-
-    await login(mockRequest.req, mockRequest.res, mockRequest.next);
+    await login(req, res, next);
 
     expect(validationResult).toHaveBeenCalled();
-    expect(validationResult).toHaveBeenCalledWith(mockRequest.req);
+    expect(validationResult).toHaveBeenCalledWith(req);
     expect(matchedData).toHaveBeenCalled();
-    expect(matchedData).toHaveBeenCalledWith(mockRequest.req);
+    expect(matchedData).toHaveBeenCalledWith(req);
     expect(User.findOne).toHaveBeenCalled();
     expect(bcrypt.compareSync).toHaveBeenCalled();
     expect(bcrypt.compareSync).toHaveBeenCalledWith(
       mockReqData.password,
       user.password
     );
-    expect(mockRequest.req.login).toHaveBeenCalled();
-    expect(mockRequest.next).toHaveBeenCalled();
-    expect(mockRequest.next).toHaveBeenCalledWith(Error(error));
+    expect(req.login).toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(Error(error));
   });
 
   test("should throw `User not found`", async () => {
-    mockReqData = { username: "JackUnknownName", password: "123Jack!" };
-    mockRequest.req["body"] = mockReqData;
     User.findOne = vi.fn().mockResolvedValue(null);
-    matchedData.mockReturnValue(mockReqData);
 
     const error = "User not found";
     const { req, res, next } = mockRequest;
@@ -167,9 +168,6 @@ describe.skip("test login", () => {
   });
 
   test("should throw `Password is incorrect`", async () => {
-    mockReqData = { username: "JackUnknownName", password: "123Jack!" };
-    mockRequest.req["body"] = mockReqData;
-    matchedData.mockReturnValue(mockReqData);
     bcrypt.compareSync = vi.fn(() => false);
     User.findOne = vi.fn().mockResolvedValue({
       id: 1,
@@ -316,10 +314,11 @@ describe("test signup", () => {
     expect(next).not.toHaveBeenCalledWith(expect.any(Error));
   });
 
-  test.only("shouldn't sign up the user", async () => {
+  test("shouldn't sign up the user", async () => {
     const { req, res, next } = mockRequest;
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(req.password, salt);
+    const error = "Something went wrong";
 
     User.create = vi
       .fn()
@@ -327,8 +326,6 @@ describe("test signup", () => {
     User.findOne = vi.fn().mockResolvedValue(null);
 
     const newUser = await User.create();
-    const error = "Something went wrong";
-
     mockRequest.req["login"] = vi.fn((newUser, cb) => cb(new Error(error)));
 
     await signup(req, res, next);
@@ -337,6 +334,7 @@ describe("test signup", () => {
     expect(validationResult).toHaveBeenCalledWith(req);
     expect(bcrypt.genSalt).toHaveBeenCalled();
     expect(bcrypt.genSalt).toHaveBeenCalledWith(10);
+    expect(logger.log).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalledWith(req);
     expect(User.findOne).toHaveBeenCalledWith({

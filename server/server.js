@@ -3,8 +3,8 @@ import cors from "cors";
 import { logger } from "./utils/constants.js";
 import { sequelize } from "./models/db.js";
 import dotenv from "dotenv";
-import indexRouter from "./routers/index.js";
 import userRouter from "./routers/user.js";
+import indexRouter from "./routers/index.js";
 import { handleError } from "./middlewares/error_handler.js";
 import session from "express-session";
 import sequelizeStore from "connect-session-sequelize";
@@ -43,17 +43,6 @@ try {
 } catch (error) {
   logger.log(error);
 }
-
-export let reviewer;
-// try {
-//   reviewer = await pipeline(
-//     "sentiment-analysis",
-//     "Xenova/bert-base-multilingual-uncased-sentiment",
-//     { dtype: "fp16" }
-//   );
-// } catch (error) {
-//   logger.log(error);
-// }
 
 app.use(cookieParser());
 app.use(sessionMiddleware);

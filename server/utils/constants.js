@@ -16,6 +16,22 @@ const returnRawQuery = (query, queryType) => {
   });
 };
 
+// utils/reviewer.js
+let reviewer;
+
+const initializeReviewer = async () => {
+  try {
+    reviewer = await pipeline(
+      "sentiment-analysis",
+      "Xenova/bert-base-multilingual-uncased-sentiment",
+      { dtype: "fp16" }
+    );
+    console.log("Reviewer initialized successfully.");
+  } catch (error) {
+    console.log("Failed to initialize reviewer:", error);
+  }
+};
+
 const sum = (a, b) => {
   return a + b;
 };
@@ -46,4 +62,4 @@ const sum = (a, b) => {
 //     }
 // }
 
-export { logger, returnRawQuery, sum };
+export { logger, returnRawQuery, sum, reviewer, initializeReviewer };

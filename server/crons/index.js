@@ -4,9 +4,8 @@ import dotenv from "dotenv";
 import { Post } from "../models/Post.js";
 import { RestrictedPost } from "../models/RestrictedPost.js";
 import { RecommendedBook } from "../models/RecommendedBook.js";
-import { reviewer } from "../server.js";
+import { reviewer } from "../utils/constants.js";
 dotenv.config();
-
 
 //? RESTRICTION
 

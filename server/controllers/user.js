@@ -30,17 +30,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 dotenv.config();
 
-const shareReview = async (req, res, next) => {
+export const shareReview = async (req, res, next) => {
   try {
-    const { review, title, bookId } = req.body;
+    const userId = req.session.passport.user;
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      logger.log(result.array());
-      return res.status(400).json({ error: result.array() });
+      throw new Error(result.array());
     }
 
-    const { topic: topicName } = matchedData(req);
+    const { topic: topicName, title, review, bookId } = matchedData(req);
     const topic = await Topic.findOne({
       where: {
         topic: topicName,
@@ -51,15 +50,15 @@ const shareReview = async (req, res, next) => {
       throw new Error("Topic not found");
     }
 
-    const reviewRecord = await Review.create({
+    await Review.create({
       title,
       review,
       topicId: topic.id,
       bookId,
-      userId: req.session.passport.user,
+      userId,
     });
-    logger.log(reviewRecord);
-    res.status(200).json({
+
+    return res.status(200).json({
       message: "Review added successfully",
     });
   } catch (error) {
@@ -123,10 +122,14 @@ const getBookReviews = async (req, res, next) => {
 
 const setPrivateNote = async (req, res, next) => {
   try {
-    const { privateNote } = req.body;
-    const { bookId } = req.params;
     const userId = req.session.passport.user;
+    const result = validationResult(req);
 
+    if (!result.isEmpty()) {
+      throw new Error(result.array());
+    }
+
+    const { privateNote, bookId } = matchedData(req);
     const userPrivateNote = await PrivateNote.findOne({
       where: {
         bookId: bookId,
@@ -311,9 +314,7 @@ const getReaderBookDetailsAndHeader = async (req, res, next) => {
                                 ON a.userId = d.userId
                                 WHERE a.bookId=${bookId}
                                 AND a.userId=${userId}`;
-    const [readerBookRecord] = await sequelize.query(readerBookRecordSql, {
-      type: QueryTypes.SELECT,
-    });
+    const readerBookRecord = await returnRawQuery(readerBookRecordSql);
 
     readerBookRecord.rating =
       readerBookRecord.rating == null ? 0 : readerBookRecord.rating;
@@ -446,12 +447,8 @@ const getBookStatistics = async (req, res, next) => {
                             AND bookId=${bookId}) t) j`;
 
     const [readers, bookStatistics] = await Promise.all([
-      sequelize.query(readersSql, {
-        type: QueryTypes.SELECT,
-      }),
-      sequelize.query(bookStatisticsSql, {
-        type: QueryTypes.SELECT,
-      }),
+      returnRawQuery(readersSql),
+      returnRawQuery(bookStatisticsSql),
     ]);
 
     for (const x of ageRangeArr) {
@@ -478,8 +475,6 @@ const getReaderProfiles = async (req, res, next) => {
     const { bookId } = req.params;
     let { q } = req.query;
     q = q.replaceAll("-", " ");
-    logger.log(q);
-    logger.log(bookId);
     let readerProfilesSql;
 
     if (q !== "Liked") {
@@ -520,7 +515,7 @@ const getReaderProfiles = async (req, res, next) => {
     next(error);
   }
 };
-
+// 5656
 const displayReaderProfile = async (req, res, next) => {
   try {
     const { username } = req.params;

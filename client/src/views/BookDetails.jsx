@@ -8,7 +8,7 @@ const BookDetails = () => {
   return (
     <>
       <BookDetailsSection
-        bookDetails={bookDetails}
+        bookDetails={bookDetails[0]}
         readerBookDetailsHeader={readerBookDetailsHeader}
       />
       <div className="w-100 p-4">

@@ -1,6 +1,7 @@
 import express from "express";
 import * as indexController from "../controllers/index.js";
 import { query, body, param } from "express-validator";
+import { isUserActive } from "../middlewares/user_session_checker.js";
 
 const router = express.Router();
 
@@ -33,6 +34,7 @@ router.post(
 
 router.get(
   "/books/v1/:bookId?",
+  isUserActive,
   [query("q").optional().isString(), param("bookId").optional().isInt()],
   indexController.bookCollection
 );

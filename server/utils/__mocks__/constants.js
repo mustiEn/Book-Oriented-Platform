@@ -1,10 +1,7 @@
 import { vi } from "vitest";
+import traceLogger from "../../__mocks__/tracer";
 
 const returnRawQuery = vi.fn();
-const traceLogger = {
-  colorConsole: vi.fn(() => ({
-    log: vi.fn((val) => console.log(val)),
-  })),
-};
+const logger = traceLogger.colorConsole();
 
-export { returnRawQuery, traceLogger as default };
+export { returnRawQuery, logger };

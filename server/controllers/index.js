@@ -14,7 +14,7 @@ const signup = async (req, res, next) => {
     const result = validationResult(req);
     const salt = await bcrypt.genSalt(10);
 
-    logger.log("EXAMPLE LOGGER");
+    logger.log("!");
 
     if (!result.isEmpty()) {
       throw new Error(result.array());
@@ -91,8 +91,6 @@ const login = async (req, res, next) => {
       },
     });
 
-    console.log(user);
-
     if (!user) {
       throw new Error("User not found");
     }
@@ -133,9 +131,6 @@ const bookCollection = async (req, res, next) => {
 
     const { q, bookId } = matchedData(req);
 
-    console.log(matchedData(req));
-    console.log(q, bookId);
-
     if (bookId) {
       //& Gets the book with the given bookId
 
@@ -172,7 +167,6 @@ const bookCollection = async (req, res, next) => {
       }
       if (data[0].author !== null) {
         //& if author not null, gets some data related to author from groq
-        console.log("author not nulls");
 
         const completion = await groq.chat.completions.create({
           model: "llama3-8b-8192",

@@ -3,6 +3,7 @@ import * as userController from "../controllers/user.js";
 import { query, body, param } from "express-validator";
 import multer from "multer";
 import bodyParser from "body-parser";
+import { isUserActive } from "../middlewares/user_session_checker.js";
 
 const maxSize = 25 * 1000 * 100;
 const storage = multer.diskStorage({
@@ -23,98 +24,187 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage, limits: { fileSize: maxSize } });
 const router = express.Router();
-router.post("/create-checkout-session", userController.createCheckoutSession);
+
+router.post(
+  "/create-checkout-session",
+  isUserActive,
+  userController.createCheckoutSession
+);
 router.post("/webhook", userController.listenWebhook);
-// router.get("/webhook", userController.listenWebhook);
 
 router.get(
   "/get-reader-book-modal-details/:bookId",
+  isUserActive,
   userController.getReaderBookModalDetails
 );
-router.get("/get-reader-username", userController.getLoggedInReader);
+router.get(
+  "/get-reader-username",
+  isUserActive,
+  userController.getLoggedInReader
+);
 router.post(
   "/share-review",
-  body("topic").notEmpty().isString(),
+  isUserActive,
+  [
+    body("topic").notEmpty().isString(),
+    body("review").notEmpty().isString(),
+    body("title").notEmpty().isString(),
+    body("bookId").notEmpty().isInt(),
+  ],
   userController.shareReview
 );
 
-router.get("/get-sidebar-topics", userController.getSidebarTopics);
+router.get(
+  "/get-sidebar-topics",
+  isUserActive,
+  userController.getSidebarTopics
+);
 
-router.get("/get-book-reviews/:bookId", userController.getBookReviews);
+router.get(
+  "/get-book-reviews/:bookId",
+  isUserActive,
+  userController.getBookReviews
+);
 
-router.post("/set-private-note/:bookId", userController.setPrivateNote);
+router.post(
+  "/set-private-note/:bookId",
+  isUserActive,
+  [body("privateNote").notEmpty(), param("bookId").notEmpty().isInt()],
+  userController.setPrivateNote
+);
 
-router.post("/set-reading-state/:bookId", userController.setReadingState);
+router.post(
+  "/set-reading-state/:bookId",
+  isUserActive,
+  userController.setReadingState
+);
 
-router.post("/set-book-liked/:bookId", userController.setBookLiked);
+router.post(
+  "/set-book-liked/:bookId",
+  isUserActive,
+  userController.setBookLiked
+);
 
-router.post("/set-book-rate/:bookId", userController.setBookRate);
+router.post("/set-book-rate/:bookId", isUserActive, userController.setBookRate);
 
 router.get(
   "/get-reader-book-details/:bookId",
+  isUserActive,
   userController.getReaderBookDetailsAndHeader
 );
 
 router.post(
   "/set-reader-book-record/:bookId",
+  isUserActive,
   userController.setUserBookRecord
 );
 
-router.get("/get-book-statistics/:bookId", userController.getBookStatistics);
+router.get(
+  "/get-book-statistics/:bookId",
+  isUserActive,
+  userController.getBookStatistics
+);
 
 router.get(
   "/get-reader-profiles/:bookId/reader",
   //* WHY READER SINgLE
+  isUserActive,
   userController.getReaderProfiles
 );
 
 router.get(
   "/:username/display-reader-profile",
+  isUserActive,
   userController.displayReaderProfile
 );
 
-router.get("/profile/books", userController.filterReaderBooks);
+router.get("/profile/books", isUserActive, userController.filterReaderBooks);
 
-router.get("/:username/get-reader-reviews", userController.getReaderReviews);
-router.get("/:username/get-reader-thoughts", userController.getReaderThoughts);
-router.get("/:username/get-reader-quotes", userController.getReaderQuotes);
+router.get(
+  "/:username/get-reader-reviews",
+  isUserActive,
+  userController.getReaderReviews
+);
+router.get(
+  "/:username/get-reader-thoughts",
+  isUserActive,
+  userController.getReaderThoughts
+);
+router.get(
+  "/:username/get-reader-quotes",
+  isUserActive,
+  userController.getReaderQuotes
+);
 
-router.get("/get-topic/:topicName", userController.getTopic);
+router.get("/get-topic/:topicName", isUserActive, userController.getTopic);
 router.get(
   "/get-topic-posts/:topicName/:postType",
+  isUserActive,
   query("sortBy").optional().notEmpty().escape(),
   userController.getTopicPosts
 );
-router.get("/get-topic-books/:topicName", userController.getTopicBooks);
-router.get("/get-topic-readers/:topicName", userController.getTopicReaders);
+router.get(
+  "/get-topic-books/:topicName",
+  isUserActive,
+  userController.getTopicBooks
+);
+router.get(
+  "/get-topic-readers/:topicName",
+  isUserActive,
+  userController.getTopicReaders
+);
 
-router.get("/get-explore-general", userController.getExploreGenerals);
-router.get("/get-explore-topics", userController.getExploreTopics);
-router.get("/get-explore-books", userController.getExploreBooks);
-router.get("/get-trending-topics", userController.getTrendingTopics);
+router.get(
+  "/get-explore-general",
+  isUserActive,
+  userController.getExploreGenerals
+);
+router.get(
+  "/get-explore-topics",
+  isUserActive,
+  userController.getExploreTopics
+);
+router.get("/get-explore-books", isUserActive, userController.getExploreBooks);
+router.get(
+  "/get-trending-topics",
+  isUserActive,
+  userController.getTrendingTopics
+);
 router.get(
   "/get-book-category/:categoryId",
+  isUserActive,
   param("categoryId").notEmpty().isInt(),
   userController.getCategoryBooks
 );
 router.get(
   "/get-book-categories",
+  isUserActive,
   query("q").optional(),
   query("index").optional().isNumeric(),
   userController.getBookCategories
 );
 
-router.get("/get-topic-categories", userController.getTopicCategories);
+router.get(
+  "/get-topic-categories",
+  isUserActive,
+  userController.getTopicCategories
+);
 
-router.post("/set-following-state", userController.setFollowingState);
+router.post(
+  "/set-following-state",
+  isUserActive,
+  userController.setFollowingState
+);
 
 router.post(
   "/update-reader-book-dates/:bookId",
+  isUserActive,
   userController.updateReaderBookDates
 );
 
 router.post(
   "/update-reader-page-number/:bookId",
+  isUserActive,
   userController.updateReaderPageNumber
 );
 
@@ -124,17 +214,31 @@ router.post(
     { name: "bgImage", maxCount: 1 },
     { name: "ppImage", maxCount: 1 },
   ]),
+  isUserActive,
   userController.uploadImage
 );
 
 router.get(
   "/profile/bookshelf/get-bookshelf-overview",
+  isUserActive,
   userController.getReaderBookshelfOverview
 );
-router.get("/get-reader-comments/:index", userController.getReaderComments);
-router.get("/get-themed-topics/:category", userController.getThemedTopics);
-router.get("/:postType/:postId", userController.getReaderPostComments);
-router.post("/send-comment", userController.sendComment);
-router.post("/create-topic", userController.createTopic);
+router.get(
+  "/get-reader-comments/:index",
+  isUserActive,
+  userController.getReaderComments
+);
+router.get(
+  "/get-themed-topics/:category",
+  isUserActive,
+  userController.getThemedTopics
+);
+router.get(
+  "/:postType/:postId",
+  isUserActive,
+  userController.getReaderPostComments
+);
+router.post("/send-comment", isUserActive, userController.sendComment);
+router.post("/create-topic", isUserActive, userController.createTopic);
 
 export default router;

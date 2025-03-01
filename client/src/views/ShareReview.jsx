@@ -9,14 +9,15 @@ import Button from "react-bootstrap/Button";
 
 const ShareReview = () => {
   const navigate = useNavigate();
-  const [book, topicCategories] = useLoaderData();
+  const [bookData, topicCategories] = useLoaderData();
   const [review, setReview] = useState({
     title: "",
     topic: "",
     review: "",
   });
+  const book = bookData[0];
 
-  // console.log(data);
+  console.log(book);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,6 +28,8 @@ const ShareReview = () => {
       return;
     } else {
       review.bookId = book.id;
+      console.log(review);
+
       const res = await fetch(`/api/share-review`, {
         method: "POST",
         headers: {
@@ -83,7 +86,7 @@ const ShareReview = () => {
               }}
             >
               <option value="--" hidden></option>
-              <option value="Edebiyat">Edebiyat</option>
+              <option value="Literature">Literature</option>
               <option value="History">History</option>
             </Form.Select>
           </Form.Group>

@@ -25,6 +25,7 @@ const BookDetailsSection = ({ bookDetails, readerBookDetailsHeader }) => {
   const navigate = useNavigate();
   const navigation = useNavigation();
   const bookPageCount = { [bookDetails.id]: bookDetails.page_count };
+  console.log(bookDetails);
 
   const ref = useRef({
     effect1: false,
