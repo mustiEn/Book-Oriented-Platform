@@ -334,7 +334,6 @@ describe("test signup", () => {
     expect(validationResult).toHaveBeenCalledWith(req);
     expect(bcrypt.genSalt).toHaveBeenCalled();
     expect(bcrypt.genSalt).toHaveBeenCalledWith(10);
-    expect(logger.log).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalledWith(req);
     expect(User.findOne).toHaveBeenCalledWith({

@@ -217,6 +217,8 @@ export const loadBookStatistics = async ({ params }) => {
 
 export const loadReaderProfile = async ({ params }) => {
   const { profile: username } = params;
+  console.log(username);
+
   const res = await fetch(`/api/${username}/display-reader-profile`);
 
   if (!res.ok) {

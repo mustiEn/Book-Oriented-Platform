@@ -14,8 +14,6 @@ const signup = async (req, res, next) => {
     const result = validationResult(req);
     const salt = await bcrypt.genSalt(10);
 
-    logger.log("!");
-
     if (!result.isEmpty()) {
       throw new Error(result.array());
     }

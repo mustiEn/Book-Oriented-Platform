@@ -1,6 +1,6 @@
 import express from "express";
 import * as userController from "../controllers/user.js";
-import { query, body, param } from "express-validator";
+import { query, body, param, check } from "express-validator";
 import multer from "multer";
 import bodyParser from "body-parser";
 import { isUserActive } from "../middlewares/user_session_checker.js";
@@ -115,6 +115,7 @@ router.get(
 router.get(
   "/:username/display-reader-profile",
   isUserActive,
+  check("username").notEmpty(),
   userController.displayReaderProfile
 );
 
@@ -123,6 +124,7 @@ router.get("/profile/books", isUserActive, userController.filterReaderBooks);
 router.get(
   "/:username/get-reader-reviews",
   isUserActive,
+  check("username").notEmpty(),
   userController.getReaderReviews
 );
 router.get(

@@ -30,7 +30,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 dotenv.config();
 
-export const shareReview = async (req, res, next) => {
+const shareReview = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
@@ -374,7 +374,12 @@ const setUserBookRecord = async (req, res, next) => {
 
 const getBookStatistics = async (req, res, next) => {
   try {
-    const { bookId } = req.params;
+    const result = validationResult(req);
+
+    if (result.array()) throw new Error(result.array());
+
+    const { bookId } = matchedData;
+
     const readerAgeRange = {};
     const ageRangeArr = [
       [0, 18],
@@ -515,10 +520,14 @@ const getReaderProfiles = async (req, res, next) => {
     next(error);
   }
 };
-// 5656
+
 const displayReaderProfile = async (req, res, next) => {
   try {
-    const { username } = req.params;
+    const result = validationResult(req);
+
+    if (!result.array()) throw new Error(result.array());
+
+    const { username } = matchedData(req);
     const reader = await User.findOne({
       attributes: {
         exclude: ["password", "updatedAt", "email"],
@@ -535,7 +544,11 @@ const displayReaderProfile = async (req, res, next) => {
 
 const filterReaderBooks = async (req, res, next) => {
   try {
-    const { q, sort, category, author, year } = req.query;
+    const result = validationResult(req);
+
+    if (!result.array()) throw new Error(result.array());
+
+    const { q, sort, category, author, year } = matchedData(req);
     const userId = req.session.passport.user;
     const querySortDict = {
       1: ["title", "ASC"],
@@ -631,13 +644,6 @@ const filterReaderBooks = async (req, res, next) => {
     const readerBooksMerged = [];
 
     let booksPerAuthorSql, booksPerCategorySql, readerBooksSql, bookRatingsSql;
-    logger.log(req.query);
-
-    logger.log(q);
-    logger.log(sort);
-    logger.log(category);
-    logger.log(author);
-    logger.log(year);
 
     if (q == "Liked") {
       readerBooksSql = returnReaderBooks("liked_books", "is_liked = '1'");
@@ -702,13 +708,17 @@ const filterReaderBooks = async (req, res, next) => {
 
 const getReaderReviews = async (req, res, next) => {
   try {
-    const { username } = req.params;
+    const result = validationResult(req);
+
+    if (!result.array()) throw new Error(result.array());
+
+    const { username } = matchedData(req);
     const user = await User.findOne({
       where: {
         username: username,
       },
     });
-    logger.log(user.toJSON());
+
     if (!user) {
       throw new Error("User not found");
     }
@@ -765,11 +775,11 @@ const getReaderReviews = async (req, res, next) => {
                             INNER JOIN AUTHORS au ON au.id = aubo.authorId 
                              
                           WHERE 
-                            r.userId = ${user.toJSON().id} 
+                            r.userId = ${user.id} 
                           GROUP BY 
                             r.bookId
                         ) temp2 ON temp2.bcId = r.bookId 
-                        AND r.userId = ${user.toJSON().id}
+                        AND r.userId = ${user.id}
                         LEFT JOIN rated_books rb ON rb.bookId = r.bookId
                         AND rb.userId = r.userId
                         LEFT JOIN book_reading_states brs ON brs.bookId = r.bookId
@@ -783,7 +793,8 @@ const getReaderReviews = async (req, res, next) => {
                         `;
 
     const readerReviews = await returnRawQuery(reviewsSql);
-    logger.log(readerReviews);
+    console.log(readerReviews);
+
     res.status(200).json({
       readerReviews,
     });
@@ -794,17 +805,21 @@ const getReaderReviews = async (req, res, next) => {
 
 const getReaderQuotes = async (req, res, next) => {
   try {
-    const { username } = req.params;
-    const userId = req.session.passport.user;
+    const result = validationResult(req);
+
+    if (!result.array()) throw new Error(result.array());
+
+    const { username } = matchedData(req);
     const user = await User.findOne({
       where: {
         username: username,
       },
     });
-    logger.log(user.toJSON());
+
     if (!user) {
       throw new Error("User not found");
     }
+
     const quotesSql = `SELECT 
                         q.id, 
                         q.bookId, 
@@ -869,7 +884,7 @@ const getReaderQuotes = async (req, res, next) => {
                         `;
 
     const readerQuotes = await returnRawQuery(quotesSql);
-    logger.log(readerQuotes);
+
     res.status(200).json({
       readerQuotes,
     });
@@ -879,19 +894,24 @@ const getReaderQuotes = async (req, res, next) => {
 };
 
 const getReaderThoughts = async (req, res, next) => {
-  const { username } = req.params;
-  let thoughtsMerged;
-  const userId = req.session.passport.user;
-  const user = await User.findOne({
-    where: {
-      username: username,
-    },
-  });
-  logger.log(user.toJSON());
-  if (!user) {
-    throw new Error("User not found");
-  }
-  const thoughtsSql = `SELECT 
+  try {
+    const result = validationResult(req);
+
+    if (!result.array()) throw new Error(result.array());
+
+    const { username } = matchedData(req);
+
+    const user = await User.findOne({
+      where: {
+        username: username,
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const thoughtsSql = `SELECT 
                           MAX(t.id) id,
                           MAX(t.title) title,
                           MAX(t.thought) thought,
@@ -924,18 +944,24 @@ const getReaderThoughts = async (req, res, next) => {
                         AND p.post_type = "thought"
                       WHERE 
                           u.id = ${userId};`;
-  const thoughts = await returnRawQuery(thoughtsSql);
-  logger.log(thoughts);
-  res.status(200).json({ thoughts });
+    const thoughts = await returnRawQuery(thoughtsSql);
+
+    res.status(200).json({ thoughts });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const updateReaderBookDates = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
-    const { bookId } = req.params;
-    logger.log(bookId, userId);
-    const { startingDate, finishingDate } = req.body;
-    const readerBookRecord = await BookReadingState.update(
+    const result = validationResult(req);
+
+    if (!result.array()) throw new Error(result.array());
+
+    const { bookId, startingDate, finishingDate } = matchedData(req);
+
+    await BookReadingState.update(
       { starting_date: startingDate, finishing_date: finishingDate },
       {
         where: {
@@ -944,6 +970,7 @@ const updateReaderBookDates = async (req, res, next) => {
         },
       }
     );
+
     res.status(200).json({
       message: "Book record updated",
     });
@@ -976,9 +1003,9 @@ const updateReaderPageNumber = async (req, res, next) => {
 
 const uploadImage = async (req, res, next) => {
   try {
-    const filePath = "../client/public/Pps_and_Bgs";
     const userId = req.session.passport.user;
-    let imageValues;
+    const filePath = "../client/public/Pps_and_Bgs";
+    let imageValues = [];
     let imageColumnName;
 
     for (const key in req.files) {
@@ -989,14 +1016,16 @@ const uploadImage = async (req, res, next) => {
       imageValues[0].fieldname == "ppImage"
         ? "profile_photo"
         : "background_photo";
-    const userImage = await User.findOne({
+
+    let userImage = await User.findOne({
       attributes: [imageColumnName],
       where: {
         id: userId,
       },
     });
 
-    logger.log("current ==> ", userImage.toJSON());
+    userImage = userImage.toJSON();
+
     await User.update(
       {
         [imageColumnName]: imageValues[0].filename,
@@ -1008,18 +1037,20 @@ const uploadImage = async (req, res, next) => {
       }
     );
 
-    if (userImage[[imageColumnName]] != null) {
+    if (userImage[imageColumnName] != null) {
       if (fs.existsSync(filePath)) {
-        fs.rm(filePath + `/${userImage[[imageColumnName]]}`, (err) => {
+        fs.rm(filePath + `/${userImage[imageColumnName]}`, (err) => {
           if (err) {
-            logger.log(err);
             throw new Error("No such image exists");
           }
-          logger.log("File deleted successfully", userImage[[imageColumnName]]);
+
+          // console.log("File deleted successfully", userImage[imageColumnName]);
         });
       } else {
-        throw new Error("No such path exists");
+        throw new Error("No such file exists");
       }
+    } else {
+      throw new Error("Invalid data");
     }
 
     res.status(200).json({
