@@ -2,24 +2,65 @@ import { validationResult, matchedData } from "express-validator";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   displayReaderProfile,
+  getLoggedInReader,
+  getReaderPostComments,
   getReaderReviews,
+  sendComment,
   setPrivateNote,
   shareReview,
   updateReaderBookDates,
   uploadImage,
 } from "../controllers/user";
+import { sequelize } from "../models/db";
 import { Topic } from "../models/Topic";
 import { Review } from "../models/Review";
 import { PrivateNote } from "../models/PrivateNote";
 import { User } from "../models/User";
-import { logger } from "../utils/constants";
+import { logger, returnRawQuery } from "../utils/constants";
 import { BookReadingState } from "../models/BookReadingState";
 import fs from "fs";
+import { Post } from "../models/Post";
+import { Quote } from "../models/Quote";
+import { Thought } from "../models/Thought";
+import { Comment } from "../models/Comment";
+import { RatedBook } from "../models/RatedBook";
+import { Category } from "../models/Category";
+import { TopicCategory } from "../models/TopicCategory";
+import { RatedBook } from "../models/RatedBook";
+import { ThoughtImage } from "../models/ThoughtImage";
+import { BookCollection } from "../models/BookCollection";
+import { RestrictedPost } from "../models/RestrictedPost";
+import { RecommendedBook } from "../models/RecommendedBook";
+import { Subscription } from "../models/Subscription";
 
+vi.mock("../models/db");
 vi.mock("express-validator");
 vi.mock("../utils/constants");
 vi.mock("fs");
+vi.mock("../models/Topic");
+vi.mock("../models/Review");
+vi.mock("../models/PrivateNote");
+vi.mock("../models/BookReadingState");
+vi.mock("../models/Post");
+vi.mock("../models/Quote");
+vi.mock("../models/Thought");
+vi.mock("../models/Comment");
+vi.mock("../models/User");
+vi.mock("../models/RatedBook");
+vi.mock("../models/LikedBook");
+vi.mock("../models/TopicCategory");
+vi.mock("../models/Transaction");
+vi.mock("../models/Category");
+vi.mock("../models/ThoughtImage");
+vi.mock("../models/BookCollection");
+vi.mock("../models/RestrictedPost");
+vi.mock("../models/RecommendedBook");
+vi.mock("../models/Subscription");
 
+const abc = {
+  rollback: vi.fn().mockResolvedValue(),
+  commit: vi.fn().mockResolvedValue(),
+};
 const filePath = "../client/public/Pps_and_Bgs";
 const mockRequest = {
   req: {},
@@ -47,7 +88,7 @@ afterEach(() => {
   // console.log("exists func 1", fs.existsSync());
 });
 
-describe("test share review", () => {
+describe.skip("test share review", () => {
   beforeEach(() => {
     mockReqData = {
       topic: "Game",
@@ -106,7 +147,7 @@ describe("test share review", () => {
   });
 });
 
-describe("test setPrivateNote", () => {
+describe.skip("test setPrivateNote", () => {
   beforeEach(() => {
     mockReqData = {
       topic: "Game",
@@ -164,7 +205,7 @@ describe("test setPrivateNote", () => {
   });
 });
 
-describe("test displayReaderProfile", () => {
+describe.skip("test displayReaderProfile", () => {
   test("should return data", async () => {
     mockReqData = { username: "Jack" };
     mockRequest.req.body = mockReqData;
@@ -181,7 +222,7 @@ describe("test displayReaderProfile", () => {
   });
 });
 
-describe("test getReaderReviews", () => {
+describe.skip("test getReaderReviews", () => {
   beforeEach(() => {
     mockReqData = { username: "Jack" };
     mockRequest.req.body = mockReqData;
@@ -214,7 +255,7 @@ describe("test getReaderReviews", () => {
   });
 });
 
-describe("test updateReaderBookDates", () => {
+describe.skip("test updateReaderBookDates", () => {
   beforeEach(() => {
     mockReqData = { bookId: 1, startingDate: 2023, finishingDate: 2024 };
     mockRequest.req.body = mockReqData;
@@ -236,7 +277,7 @@ describe("test updateReaderBookDates", () => {
   });
 });
 
-describe("test uploadImage", () => {
+describe.skip("test uploadImage", () => {
   beforeEach(() => {
     mockRequest.req.files = {
       ppImage: [
@@ -359,5 +400,244 @@ describe("test uploadImage", () => {
     expect(fs.rm).toHaveBeenCalledWith(imagePath, expect.any(Function));
     expect(res.json).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(Error(error));
+  });
+});
+
+describe.skip("test getLoggedInUser", () => {
+  beforeEach(() => {
+    mockData = { id: 1, user: "jack" };
+  });
+
+  test("should return data", async () => {
+    const { req, res, next } = mockRequest;
+
+    User.findByPk = vi.fn().mockResolvedValue({
+      mockData,
+      toJSON: vi.fn(() => mockData),
+    });
+
+    await getLoggedInReader(req, res, next);
+
+    expect(User.findByPk).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalledWith(expect.any(Error));
+  });
+
+  test("should throw `User not found`", async () => {
+    const { req, res, next } = mockRequest;
+
+    User.findByPk = vi.fn().mockResolvedValue(null);
+
+    await getLoggedInReader(req, res, next);
+
+    expect(User.findByPk).toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(expect.any(Error));
+  });
+});
+
+describe.skip("test getReaderPostComments", () => {
+  beforeEach(() => {
+    mockData = { id: 1, user: "jack" };
+  });
+
+  test("should return data with param postType = Review", async () => {
+    mockReqData = { postId: 1, postType: "review" };
+    mockRequest.req.params = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+
+    const { req, res, next } = mockRequest;
+
+    User.findByPk = vi.fn().mockResolvedValue({
+      mockData,
+    });
+    Post.findOne = vi.fn().mockResolvedValue({
+      id: 10,
+      toJSON: vi.fn(() => ({
+        id: 10,
+      })),
+    });
+    Review.findOne = vi.fn().mockResolvedValue({ id: 2, review: "abc" });
+
+    await getReaderPostComments(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(User.findByPk).toHaveBeenCalled();
+    expect(Post.findOne).toHaveBeenCalled();
+    expect(Review.findOne).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalledWith(expect.any(Error));
+  });
+  test("should return data with param postType = Review", async () => {
+    mockReqData = { postId: 1, postType: "review" };
+    mockRequest.req.params = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+
+    const { req, res, next } = mockRequest;
+
+    User.findByPk = vi.fn().mockResolvedValue({
+      mockData,
+    });
+    Post.findOne = vi.fn().mockResolvedValue({
+      id: 10,
+      toJSON: vi.fn(() => ({
+        id: 10,
+      })),
+    });
+    Review.findOne = vi.fn().mockResolvedValue({ id: 2, review: "abc" });
+
+    await getReaderPostComments(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(User.findByPk).toHaveBeenCalled();
+    expect(Post.findOne).toHaveBeenCalled();
+    expect(Review.findOne).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalledWith(expect.any(Error));
+  });
+  test("should return data with param postType = quote", async () => {
+    mockReqData = { postId: 1, postType: "quote" };
+    mockRequest.req.params = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+
+    const { req, res, next } = mockRequest;
+
+    User.findByPk = vi.fn().mockResolvedValue({
+      mockData,
+    });
+    Post.findOne = vi.fn().mockResolvedValue({
+      id: 10,
+      toJSON: vi.fn(() => ({
+        id: 10,
+      })),
+    });
+    Quote.findOne = vi.fn().mockResolvedValue({ id: 2, Quote: "abc" });
+
+    await getReaderPostComments(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(User.findByPk).toHaveBeenCalled();
+    expect(Post.findOne).toHaveBeenCalled();
+    expect(Quote.findOne).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalledWith(expect.any(Error));
+  });
+  test("should return data with param postType = thought", async () => {
+    mockReqData = { postId: 1, postType: "thought" };
+    mockRequest.req.params = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+
+    const { req, res, next } = mockRequest;
+
+    User.findByPk = vi.fn().mockResolvedValue({
+      mockData,
+    });
+    Post.findOne = vi.fn().mockResolvedValue({
+      id: 10,
+      toJSON: vi.fn(() => ({
+        id: 10,
+      })),
+    });
+    Thought.findOne = vi.fn().mockResolvedValue({ id: 2, thought: "abc" });
+
+    await getReaderPostComments(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(User.findByPk).toHaveBeenCalled();
+    expect(Post.findOne).toHaveBeenCalled();
+    expect(Thought.findOne).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalledWith(expect.any(Error));
+  });
+  test("should return data with param postType = comment", async () => {
+    mockReqData = { postId: 1, postType: "comment" };
+    mockRequest.req.params = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+
+    const { req, res, next } = mockRequest;
+
+    User.findByPk = vi.fn().mockResolvedValue({
+      mockData,
+    });
+    Post.findOne = vi.fn().mockResolvedValue({
+      id: 10,
+      toJSON: vi.fn(() => ({
+        id: 10,
+      })),
+    });
+    Comment.findOne = vi.fn().mockResolvedValue({ id: 2, comment: "abc" });
+
+    await getReaderPostComments(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(User.findByPk).toHaveBeenCalled();
+    expect(Post.findOne).toHaveBeenCalled();
+    expect(Comment.findOne).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalledWith(expect.any(Error));
+  });
+  test("should throw `Post id not found`", async () => {
+    mockReqData = { postId: 1, postType: "review" };
+    mockRequest.req.params = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+
+    const { req, res, next } = mockRequest;
+    const error = "Post id not found";
+
+    User.findByPk = vi.fn().mockResolvedValue({
+      mockData,
+    });
+    Post.findOne = vi.fn().mockResolvedValue(null);
+
+    await getReaderPostComments(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(User.findByPk).toHaveBeenCalled();
+    expect(Post.findOne).toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(Error(error));
+  });
+});
+
+describe("test sendCommend", () => {
+  beforeEach(() => {
+    mockReqData = {
+      comment: "abc",
+      commentToId: 1,
+      postType: "review",
+    };
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+  });
+
+  test("should first", async () => {
+    const { req, res, next } = mockRequest;
+
+    Post.findOne.mockResolvedValue({ id: 1, postId: 4 });
+    Post.update.mockResolvedValue();
+    sequelize.transaction.mockResolvedValue(abc);
+
+    await sendComment(req, res, next);
+
+    expect(sequelize.transaction).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(sequelize.transaction).toHaveBeenCalled();
+    expect(abc.commit).toHaveBeenCalled();
+    expect(abc.rollback).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
   });
 });

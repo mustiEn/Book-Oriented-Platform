@@ -238,9 +238,19 @@ router.get(
 router.get(
   "/:postType/:postId",
   isUserActive,
+  [param("postType").notEmpty().isString(), param("postId").notEmpty().isInt()],
   userController.getReaderPostComments
 );
-router.post("/send-comment", isUserActive, userController.sendComment);
+router.post(
+  "/send-comment",
+  isUserActive,
+  [
+    body("comment").notEmpty().isString(),
+    body("commentToId").notEmpty().isInt(),
+    body("postType").notEmpty().isInt(),
+  ],
+  userController.sendComment
+);
 router.post("/create-topic", isUserActive, userController.createTopic);
 
 export default router;

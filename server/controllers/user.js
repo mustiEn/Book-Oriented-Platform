@@ -5,7 +5,7 @@ import { Op, QueryTypes, Sequelize } from "sequelize";
 import { Review } from "../models/Review.js";
 import { User } from "../models/User.js";
 import moment from "moment";
-import { sequelize } from "../models/db.js";
+import { sequelize } from "../models/db";
 import { PrivateNote } from "../models/PrivateNote.js";
 import { LikedBook } from "../models/LikedBook.js";
 import { RatedBook } from "../models/RatedBook.js";
@@ -1153,8 +1153,9 @@ const getLoggedInReader = async (req, res, next) => {
     if (!user) {
       throw new Error("User not found");
     }
+
     user = user.toJSON();
-    // logger.log(user);
+
     res.status(200).json(user);
   } catch (error) {
     next(error);
@@ -1163,8 +1164,13 @@ const getLoggedInReader = async (req, res, next) => {
 
 const getReaderPostComments = async (req, res, next) => {
   try {
-    const { postType, postId: fkPostId } = req.params;
-    logger.log(postType, fkPostId);
+    const result = validationResult(req);
+    let comments, post;
+
+    if (!result.isEmpty()) throw new Error(result.array());
+
+    const { postType, postId: fkPostId } = matchedData(req);
+
     const userId = req.session.passport.user;
     const user = await User.findByPk(userId, {
       attributes: ["profile_photo"],
@@ -1176,6 +1182,11 @@ const getReaderPostComments = async (req, res, next) => {
         post_type: postType,
       },
     });
+
+    if (!pkPostId) {
+      throw new Error("Post id not found");
+    }
+
     const commentsSql = `SELECT p.id,u.username,u.firstname,u.lastname,
                           te.comment,te.createdAt,p.comment_count
                           FROM posts p
@@ -1189,11 +1200,6 @@ const getReaderPostComments = async (req, res, next) => {
                           AND p.post_type="comment"
                           INNER JOIN users u
                           ON u.id=te.userId`;
-    let comments, post;
-
-    if (!pkPostId) {
-      throw new Error("Post id not found");
-    }
 
     if (postType == "review") {
       post = await Review.findOne({
@@ -1360,9 +1366,6 @@ const getReaderPostComments = async (req, res, next) => {
     }
 
     comments = await returnRawQuery(commentsSql);
-    // post = JSON.stringify(post);
-    // logger.log(post);
-    // logger.log(comments);
     res.status(200).json({
       post,
       comments,
@@ -1376,7 +1379,11 @@ const getReaderPostComments = async (req, res, next) => {
 const sendComment = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
-    const { comment, commentToId, postType } = req.body;
+    const result = validationResult(req);
+
+    if (!result.isEmpty()) throw new Error(result.array());
+
+    const { comment, commentToId, postType } = matchedData(req);
     const userId = req.session.passport.user;
     const commentsSql = `SELECT p.id,u.username,u.firstname,u.lastname,
                           te.comment,te.createdAt,p.comment_count
@@ -1397,6 +1404,7 @@ const sendComment = async (req, res, next) => {
         id: commentToId,
       },
     });
+
     if (!userId) {
       throw new Error("User not logged in");
     }
@@ -1443,11 +1451,11 @@ const sendComment = async (req, res, next) => {
         transaction: t,
       }
     );
+
     await t.commit();
 
     const comments = await returnRawQuery(commentsSql);
 
-    logger.log(comments);
     res.status(200).json({
       success: "comment sent",
       comments,
