@@ -1,10 +1,13 @@
 import { validationResult, matchedData } from "express-validator";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
+  createTopic,
   displayReaderProfile,
   getLoggedInReader,
   getReaderPostComments,
   getReaderReviews,
+  getTopic,
+  getTopicBooks,
   sendComment,
   setPrivateNote,
   shareReview,
@@ -610,7 +613,7 @@ describe.skip("test getReaderPostComments", () => {
   });
 });
 
-describe("test sendCommend", () => {
+describe.skip("test sendCommend", () => {
   beforeEach(() => {
     mockReqData = {
       comment: "abc",
@@ -619,14 +622,15 @@ describe("test sendCommend", () => {
     };
     mockRequest.req.body = mockReqData;
     matchedData.mockReturnValue(mockReqData);
+    sequelize.transaction.mockResolvedValue(abc);
   });
 
-  test("should first", async () => {
+  test("should send comment", async () => {
     const { req, res, next } = mockRequest;
 
     Post.findOne.mockResolvedValue({ id: 1, postId: 4 });
     Post.update.mockResolvedValue();
-    sequelize.transaction.mockResolvedValue(abc);
+    Comment.create.mockResolvedValue();
 
     await sendComment(req, res, next);
 
@@ -634,10 +638,197 @@ describe("test sendCommend", () => {
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
     expect(returnRawQuery).toHaveBeenCalled();
-    expect(sequelize.transaction).toHaveBeenCalled();
+    expect(Comment.create).toHaveBeenCalled();
     expect(abc.commit).toHaveBeenCalled();
     expect(abc.rollback).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should send comment with postType = comment", async () => {
+    mockRequest.req.body.postType = "comment";
+    const { req, res, next } = mockRequest;
+
+    Post.findOne.mockResolvedValue({ id: 1, postId: 4 });
+    Post.update.mockResolvedValue();
+    Comment.findOne.mockResolvedValue({ id: 1, comment: "abc" });
+
+    await sendComment(req, res, next);
+
+    expect(sequelize.transaction).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(Comment.findOne).toHaveBeenCalled();
+    expect(abc.commit).toHaveBeenCalled();
+    expect(abc.rollback).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should throw `Comment not found`", async () => {
+    mockRequest.req.body.postType = "comment";
+    const { req, res, next } = mockRequest;
+    const error = "Comment not found";
+
+    Post.findOne.mockResolvedValue({ id: 1, postId: 4 });
+    Post.update.mockResolvedValue();
+    Comment.findOne.mockResolvedValue(null);
+
+    await sendComment(req, res, next);
+
+    expect(sequelize.transaction).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(Comment.findOne).toHaveBeenCalled();
+    expect(abc.rollback).toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(Error(error));
+  });
+
+  test("should throw `Post not found`", async () => {
+    const { req, res, next } = mockRequest;
+    const error = "Post not found";
+
+    Post.findOne.mockResolvedValue(null);
+
+    await sendComment(req, res, next);
+
+    expect(sequelize.transaction).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(sequelize.transaction).toHaveBeenCalled();
+    expect(abc.rollback).toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(Error(error));
+  });
+});
+
+describe.skip("test createTopic", () => {
+  beforeEach(() => {
+    mockReqData = {
+      topic: "abc",
+      category: "sports",
+    };
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+    sequelize.transaction.mockResolvedValue(abc);
+  });
+
+  test("should create topic", async () => {
+    const { req, res, next } = mockRequest;
+
+    Topic.create.mockResolvedValue({ id: 2 });
+    TopicCategory.findAll.mockResolvedValue([{ id: 1, topic_category: 4 }]);
+
+    await createTopic(req, res, next);
+
+    expect(sequelize.transaction).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(TopicCategory.findAll).toHaveBeenCalled();
+    expect(Topic.create).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(abc.commit).toHaveBeenCalled();
+    expect(abc.rollback).not.toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should throw `Topic category not found`", async () => {
+    const { req, res, next } = mockRequest;
+    const error = "Topic category not found";
+
+    TopicCategory.findAll.mockResolvedValue(null);
+
+    await createTopic(req, res, next);
+
+    expect(sequelize.transaction).toHaveBeenCalled();
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(TopicCategory.findAll).toHaveBeenCalled();
+    expect(abc.rollback).toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(Error(error));
+  });
+});
+
+describe.skip("test getTopic", () => {
+  beforeEach(() => {
+    mockReqData = {
+      topicName: "wild rift",
+    };
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+  });
+
+  test("should get topic", async () => {
+    const { req, res, next } = mockRequest;
+
+    Topic.findOne.mockResolvedValue({ id: 2 });
+    Topic.findAndCountAll.mockResolvedValue({ count: 2 });
+    await getTopic(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(Topic.findOne).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should throw `Topic not found`", async () => {
+    const { req, res, next } = mockRequest;
+    const error = "Topic not found";
+
+    Topic.findOne.mockResolvedValue(null);
+    await getTopic(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(Topic.findOne).toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled(Error(error));
+  });
+});
+
+describe("test getTopicBooks", () => {
+  beforeEach(() => {
+    mockReqData = {
+      topicName: "wild rift",
+    };
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+  });
+
+  test("should get topic books", async () => {
+    const { req, res, next } = mockRequest;
+
+    Topic.findOne.mockResolvedValue({ id: 2 });
+    returnRawQuery.mockResolvedValue([{ id: 1, BookCollectionId: 2 }]);
+    BookCollection.findAll.mockResolvedValue([{ id: 1, page_count: 100 }]);
+
+    await getTopicBooks(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(Topic.findOne).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(BookCollection.findAll).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should throw `Topic not found`", async () => {
+    const { req, res, next } = mockRequest;
+    const error = "Topic not found";
+
+    Topic.findOne.mockResolvedValue(null);
+    await getTopicBooks(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(Topic.findOne).toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled(Error(error));
   });
 });

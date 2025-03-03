@@ -6,4 +6,5 @@ export const Topic = {
   create: vi.fn(),
   update: vi.fn(),
   findByPk: vi.fn(),
+  findAndCountAll: vi.fn(),
 };

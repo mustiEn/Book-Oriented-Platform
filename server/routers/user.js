@@ -138,16 +138,25 @@ router.get(
   userController.getReaderQuotes
 );
 
-router.get("/get-topic/:topicName", isUserActive, userController.getTopic);
+router.get(
+  "/get-topic/:topicName",
+  isUserActive,
+  param("topicName").notEmpty().isString(),
+  userController.getTopic
+);
 router.get(
   "/get-topic-posts/:topicName/:postType",
   isUserActive,
-  query("sortBy").optional().notEmpty().escape(),
+  [
+    param("topicName").notEmpty().isString(),
+    query("sortBy").optional().notEmpty().escape(),
+  ],
   userController.getTopicPosts
 );
 router.get(
   "/get-topic-books/:topicName",
   isUserActive,
+  [param("topicName").notEmpty().isString()],
   userController.getTopicBooks
 );
 router.get(
@@ -251,6 +260,11 @@ router.post(
   ],
   userController.sendComment
 );
-router.post("/create-topic", isUserActive, userController.createTopic);
+router.post(
+  "/create-topic",
+  isUserActive,
+  [body("topic").notEmpty().isString(), body("category").notEmpty().isString()],
+  userController.createTopic
+);
 
 export default router;

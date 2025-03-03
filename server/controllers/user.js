@@ -5,7 +5,7 @@ import { Op, QueryTypes, Sequelize } from "sequelize";
 import { Review } from "../models/Review.js";
 import { User } from "../models/User.js";
 import moment from "moment";
-import { sequelize } from "../models/db";
+import { sequelize } from "../models/db.js";
 import { PrivateNote } from "../models/PrivateNote.js";
 import { LikedBook } from "../models/LikedBook.js";
 import { RatedBook } from "../models/RatedBook.js";
@@ -1405,9 +1405,6 @@ const sendComment = async (req, res, next) => {
       },
     });
 
-    if (!userId) {
-      throw new Error("User not logged in");
-    }
     if (!post) {
       throw new Error("Post not found");
     }
@@ -1451,7 +1448,6 @@ const sendComment = async (req, res, next) => {
         transaction: t,
       }
     );
-
     await t.commit();
 
     const comments = await returnRawQuery(commentsSql);
@@ -1469,8 +1465,6 @@ const sendComment = async (req, res, next) => {
 const getReaderComments = async (req, res, next) => {
   try {
     const { index } = req.params;
-    logger.log("!!!!!!!!!!!!!!!!!!!!!!!!1!!");
-    logger.log(index);
     const commentsSql = `SELECT te.post_id,
                           te.post_type,
                           u.username,
@@ -1548,8 +1542,7 @@ const getThemedTopics = async (req, res, next) => {
                             WHERE 
                               topicCategoryId = ${topicCategory.id};
                             `;
-    let [themedTopics] = await sequelize.query(themedTopicsSql);
-    logger.log(themedTopics);
+    let themedTopics = await returnRawQuery(themedTopicsSql);
     res.status(200).json(themedTopics);
   } catch (error) {
     next(error);
@@ -1560,18 +1553,21 @@ const createTopic = async (req, res, next) => {
   const t = await sequelize.transaction();
   try {
     const colorList = ["#095109", "#000", "#710c0c", "#875802", "#00006d"];
-    const { topic, category } = req.body;
     const image = colorList[Math.floor(Math.random() * colorList.length)];
+    const result = validationResult(req);
 
-    const topicCategoryIds = (
-      await TopicCategory.findAll({
-        where: {
-          topic_category: category,
-        },
-      })
-    ).map((item) => item.id);
-    // logger.log(image);
-    //     logger.log(topicCategoryIds);
+    if (!result.isEmpty()) throw new Error(result.array());
+
+    const { topic, category } = matchedData(req);
+    const topicCategory = await TopicCategory.findAll({
+      where: {
+        topic_category: category,
+      },
+    });
+
+    if (!topicCategory) throw new Error("Topic category not found");
+
+    const topicCategoryIds = topicCategory.map((i) => i.id);
     const newTopic = await Topic.create(
       {
         topic: topic,
@@ -1582,7 +1578,7 @@ const createTopic = async (req, res, next) => {
     const sql = `INSERT INTO topic_category_association (createdAt,updatedAt,TopicId,topicCategoryId)
                 VALUES (NOW(), NOW(), :topicId, :topicCategoryId);`;
     const queries = topicCategoryIds.map((element) => {
-      return sequelize.query(sql, {
+      return returnRawQuery(sql, {
         replacements: {
           topicId: newTopic.id,
           topicCategoryId: element,
@@ -1604,17 +1600,24 @@ const createTopic = async (req, res, next) => {
 
 const getTopic = async (req, res, next) => {
   try {
-    const { topicName } = req.params;
+    const result = validationResult(req);
     let topic;
+
+    if (!result.isEmpty()) throw new Error(result.array());
+
+    const { topicName } = matchedData(req);
+
     topic = await Topic.findOne({
       where: {
         topic: topicName,
       },
       raw: true,
     });
-    if (!Topic) {
+
+    if (!topic) {
       throw new Error("Topic not found");
     }
+
     const { count: topicFollowerCount } = await Topic.findAndCountAll({
       include: {
         model: User,
@@ -1626,9 +1629,8 @@ const getTopic = async (req, res, next) => {
         topic: topicName,
       },
     });
+
     topic = { ...topic, ...{ topicFollowerCount: topicFollowerCount } };
-    logger.log(topicName);
-    logger.log(topicFollowerCount);
 
     res.status(200).json(topic);
   } catch (error) {
@@ -1638,36 +1640,41 @@ const getTopic = async (req, res, next) => {
 
 const getTopicBooks = async (req, res, next) => {
   try {
-    const { topicName } = req.params;
+    const result = validationResult(req);
+
+    if (!result.isEmpty()) throw new Error(result.array());
+
+    const { topicName } = matchedData(req);
     const topic = await Topic.findOne({
       where: {
         topic: topicName,
       },
       raw: true,
     });
+
     if (!topic) {
       throw new Error("Topic not found");
     }
-    logger.log(topic);
-    const topicBooks = await Topic.findAll({
-      include: {
-        model: BookCollection,
-        attributes: [],
-        required: true,
-        through: {
-          attributes: ["BookCollectionId"],
-          where: {
-            TopicId: topic.id,
-          },
-        },
-      },
-      raw: true,
-    });
-    const topicBookIds = topicBooks.map(
-      (item) =>
-        item["Book_Collections.topic_book_associations.BookCollectionId"]
-    );
 
+    const topicBooksSql = ` SELECT 
+                                t.*, 
+                                tba.BookCollectionId
+                              FROM 
+                                topics t
+                              INNER JOIN 
+                                topic_book_associations tba 
+                              ON 
+                                t.id = tba.TopicId
+                              INNER JOIN 
+                                book_collections bc 
+                              ON 
+                                tba.BookCollectionId = bc.id
+                              WHERE 
+                                tba.TopicId = ${topic.id}
+                                `;
+    const topicBooks = await returnRawQuery(topicBooksSql);
+    logger.log(topicBooks);
+    const topicBookIds = topicBooks.map((item) => item.BookCollectionId);
     const books = await BookCollection.findAll({
       attributes: [
         "id",
@@ -1727,15 +1734,10 @@ const getTopicBooks = async (req, res, next) => {
       },
       raw: true,
     });
-
     const bookPageCounts = books.reduce((acc, curr) => {
       acc[curr.id] = curr.page_count;
       return acc;
     }, {});
-
-    logger.log(books);
-    logger.log(topicBookIds);
-    logger.log(bookPageCounts);
 
     res.status(200).json({ books, bookPageCounts });
   } catch (error) {

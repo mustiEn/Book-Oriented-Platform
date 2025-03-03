@@ -64,7 +64,7 @@ export const loadExploreBooks = async () => {
 export const loadThemedTopics = async ({ params }) => {
   const response = await fetch(`/api/get-themed-topics/${params.category}`);
 
-  if (!res.ok) {
+  if (!response.ok) {
     throw new Error(res.error);
   }
 
@@ -98,7 +98,7 @@ export const loadTopic = async ({ params }) => {
   const { topicName } = params;
   const response = await fetch(`/api/get-topic/${topicName}`);
 
-  if (!res.ok) {
+  if (!response.ok) {
     throw new Error(res.error);
   }
 
