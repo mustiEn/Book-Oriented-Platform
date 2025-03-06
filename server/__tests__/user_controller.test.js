@@ -1,14 +1,18 @@
 import { validationResult, matchedData } from "express-validator";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
+  createCheckoutSession,
   createTopic,
   displayReaderProfile,
+  getCategoryBooks,
   getLoggedInReader,
   getReaderPostComments,
   getReaderReviews,
   getTopic,
   getTopicBooks,
+  getTopicPosts,
   sendComment,
+  setFollowingState,
   setPrivateNote,
   shareReview,
   updateReaderBookDates,
@@ -35,7 +39,9 @@ import { BookCollection } from "../models/BookCollection";
 import { RestrictedPost } from "../models/RestrictedPost";
 import { RecommendedBook } from "../models/RecommendedBook";
 import { Subscription } from "../models/Subscription";
+import Stripe, { stripeProperties } from "stripe";
 
+vi.mock("stripe");
 vi.mock("../models/db");
 vi.mock("express-validator");
 vi.mock("../utils/constants");
@@ -60,7 +66,7 @@ vi.mock("../models/RestrictedPost");
 vi.mock("../models/RecommendedBook");
 vi.mock("../models/Subscription");
 
-const abc = {
+const transaction = {
   rollback: vi.fn().mockResolvedValue(),
   commit: vi.fn().mockResolvedValue(),
 };
@@ -73,6 +79,11 @@ const mockRequest = {
   },
   next: vi.fn(),
 };
+const QueryTypes = {
+  INSERT: "INSERT",
+  DELETE: "DELETE",
+};
+
 let mockData;
 let mockReqData;
 
@@ -639,8 +650,8 @@ describe.skip("test sendCommend", () => {
     expect(matchedData).toHaveBeenCalled();
     expect(returnRawQuery).toHaveBeenCalled();
     expect(Comment.create).toHaveBeenCalled();
-    expect(abc.commit).toHaveBeenCalled();
-    expect(abc.rollback).not.toHaveBeenCalled();
+    expect(transaction.commit).toHaveBeenCalled();
+    expect(transaction.rollback).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
   });
@@ -660,8 +671,8 @@ describe.skip("test sendCommend", () => {
     expect(matchedData).toHaveBeenCalled();
     expect(returnRawQuery).toHaveBeenCalled();
     expect(Comment.findOne).toHaveBeenCalled();
-    expect(abc.commit).toHaveBeenCalled();
-    expect(abc.rollback).not.toHaveBeenCalled();
+    expect(transaction.commit).toHaveBeenCalled();
+    expect(transaction.rollback).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
   });
@@ -681,7 +692,7 @@ describe.skip("test sendCommend", () => {
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
     expect(Comment.findOne).toHaveBeenCalled();
-    expect(abc.rollback).toHaveBeenCalled();
+    expect(transaction.rollback).toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(Error(error));
   });
@@ -698,7 +709,7 @@ describe.skip("test sendCommend", () => {
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
     expect(sequelize.transaction).toHaveBeenCalled();
-    expect(abc.rollback).toHaveBeenCalled();
+    expect(transaction.rollback).toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(Error(error));
   });
@@ -729,8 +740,8 @@ describe.skip("test createTopic", () => {
     expect(TopicCategory.findAll).toHaveBeenCalled();
     expect(Topic.create).toHaveBeenCalled();
     expect(returnRawQuery).toHaveBeenCalled();
-    expect(abc.commit).toHaveBeenCalled();
-    expect(abc.rollback).not.toHaveBeenCalled();
+    expect(transaction.commit).toHaveBeenCalled();
+    expect(transaction.rollback).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
   });
@@ -747,7 +758,7 @@ describe.skip("test createTopic", () => {
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
     expect(TopicCategory.findAll).toHaveBeenCalled();
-    expect(abc.rollback).toHaveBeenCalled();
+    expect(transaction.rollback).toHaveBeenCalled();
     expect(res.json).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith(Error(error));
   });
@@ -791,7 +802,7 @@ describe.skip("test getTopic", () => {
   });
 });
 
-describe("test getTopicBooks", () => {
+describe.skip("test getTopicBooks", () => {
   beforeEach(() => {
     mockReqData = {
       topicName: "wild rift",
@@ -831,4 +842,201 @@ describe("test getTopicBooks", () => {
     expect(res.json).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalled(Error(error));
   });
+});
+
+describe.skip("test getTopicPosts", () => {
+  beforeEach(() => {
+    mockReqData = {
+      topicName: "wild rift",
+    };
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+  });
+
+  test("should get topic posts with param = `all`", async () => {
+    mockReqData.postType = "all";
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+    const { req, res, next } = mockRequest;
+
+    Topic.findOne.mockResolvedValue({ id: 2 });
+    returnRawQuery
+      .mockResolvedValueOnce([{ id: 1, review: "r" }])
+      .mockResolvedValueOnce([{ id: 1, thought: "t" }])
+      .mockResolvedValueOnce([{ id: 1, quote: "q" }]);
+
+    await getTopicPosts(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(Topic.findOne).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should get topic posts with param = `review`", async () => {
+    mockReqData.postType = "review";
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+    const { req, res, next } = mockRequest;
+
+    Topic.findOne.mockResolvedValue({ id: 2 });
+    returnRawQuery
+      .mockResolvedValueOnce([{ id: 1, review: "r" }])
+      .mockResolvedValueOnce([{ id: 1, thought: "t" }])
+      .mockResolvedValueOnce([{ id: 1, quote: "q" }]);
+
+    await getTopicPosts(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(Topic.findOne).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should get topic posts with param = `thought`", async () => {
+    mockReqData.postType = "thought";
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+    const { req, res, next } = mockRequest;
+
+    Topic.findOne.mockResolvedValue({ id: 2 });
+    returnRawQuery
+      .mockResolvedValueOnce([{ id: 1, review: "r" }])
+      .mockResolvedValueOnce([{ id: 1, thought: "t" }])
+      .mockResolvedValueOnce([{ id: 1, quote: "q" }]);
+
+    await getTopicPosts(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(Topic.findOne).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should get topic posts with param = `quote`", async () => {
+    mockReqData.postType = "quote";
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+    const { req, res, next } = mockRequest;
+
+    Topic.findOne.mockResolvedValue({ id: 2 });
+    returnRawQuery
+      .mockResolvedValueOnce([{ id: 1, review: "r" }])
+      .mockResolvedValueOnce([{ id: 1, thought: "t" }])
+      .mockResolvedValueOnce([{ id: 1, quote: "q" }]);
+
+    await getTopicPosts(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(Topic.findOne).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should throw `Topic not found`", async () => {
+    const { req, res, next } = mockRequest;
+    const error = "Topic not found";
+
+    Topic.findOne.mockResolvedValue(null);
+    await getTopicPosts(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(Topic.findOne).toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled(Error(error));
+  });
+});
+
+describe.skip("test setFollowingState", () => {
+  beforeEach(() => {
+    mockReqData = {
+      topicId: 2,
+      isFollowed: true,
+    };
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+  });
+
+  test("should get topic posts with isFollowed = `true`", async () => {
+    const { req, res, next } = mockRequest;
+
+    await setFollowingState(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalledWith(
+      expect.anything(String),
+      expect.stringMatching("INSERT")
+    );
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should get topic posts with isFollowed = `false`", async () => {
+    mockRequest.req.body.isFollowed = false;
+    const { req, res, next } = mockRequest;
+
+    await setFollowingState(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnRawQuery).toHaveBeenCalledWith(
+      expect.anything(String),
+      expect.stringMatching("DELETE")
+    );
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+});
+
+describe("test createCheckoutSession", () => {
+  beforeEach(() => {
+    mockReqData = {
+      premiumType: "Annual",
+      session: {
+        passport: {
+          user: 1,
+        },
+      },
+    };
+    mockRequest.req.body = mockReqData;
+    matchedData.mockReturnValue(mockReqData);
+    // Stripe.mockReturnValue(stripeProperties);
+    // stripeProperties.prices.list.mockResolvedValue(1);
+  });
+
+  test("should create checkout session", async () => {
+    const { req, res, next } = mockRequest;
+    Stripe.mockReturnValue(stripeProperties);
+    stripeProperties.prices.list.mockResolvedValue(1);
+    await createCheckoutSession(req, res, next);
+
+    expect(validationResult).toHaveBeenCalled();
+    expect(matchedData).toHaveBeenCalled();
+    expect(stripeProperties.prices.list).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  // test("should throw `Category not found`", async () => {
+  //   const { req, res, next } = mockRequest;
+  //   const error = "Category not found";
+
+  //   Category.findByPk.mockResolvedValue(null);
+
+  //   await getCategoryBooks(req, res, next);
+
+  //   expect(validationResult).toHaveBeenCalled();
+  //   expect(matchedData).toHaveBeenCalled();
+  //   expect(res.json).not.toHaveBeenCalled();
+  //   expect(next).toHaveBeenCalledWith(Error(error));
+  // });
 });

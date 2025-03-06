@@ -1747,9 +1747,18 @@ const getTopicBooks = async (req, res, next) => {
 
 const getTopicPosts = async (req, res, next) => {
   try {
-    const { topicName, postType } = req.params;
     const jsonDict = {};
     const result = validationResult(req);
+    let posts;
+
+    if (!result.isEmpty()) {
+      return res.status(400).json({ error: result.array() });
+    }
+
+    let { sortBy, topicName, postType } = matchedData(req);
+    console.log(postType);
+
+    sortBy = sortBy != undefined ? "ASC" : "DESC";
     const topic = await Topic.findOne({
       attributes: ["id"],
       where: {
@@ -1757,18 +1766,8 @@ const getTopicPosts = async (req, res, next) => {
       },
       raw: true,
     });
-    const returnPosts = async (sql) => {
-      const result = await returnRawQuery(sql);
-      return result;
-    };
-    let posts;
 
-    if (!result.isEmpty()) {
-      return res.status(400).json({ error: result.array() });
-    }
-
-    let { sortBy } = matchedData(req);
-    sortBy = sortBy != undefined ? "ASC" : "DESC";
+    if (!topic) throw new Error("Topic not found");
 
     const reviewsSql = `SELECT 
                     r.id,
@@ -1909,10 +1908,12 @@ const getTopicPosts = async (req, res, next) => {
 
     if (postType == "all") {
       const [reviews, thoughts, quotes] = await Promise.all([
-        returnPosts(reviewsSql),
-        returnPosts(thoughtsSql),
-        returnPosts(quotesSql),
+        returnRawQuery(reviewsSql),
+        returnRawQuery(thoughtsSql),
+        returnRawQuery(quotesSql),
       ]);
+      console.log(reviews, thoughts, quotes);
+
       posts = [...reviews, ...thoughts, ...quotes];
       posts = posts.sort((a, b) => {
         return sortBy == "DESC"
@@ -1920,14 +1921,14 @@ const getTopicPosts = async (req, res, next) => {
           : new Date(a.createdAt) - new Date(b.createdAt);
       });
     } else if (postType == "review") {
-      posts = await returnPosts(reviewsSql);
+      posts = await returnRawQuery(reviewsSql);
     } else if (postType == "thought") {
-      posts = await returnPosts(thoughtsSql);
-    } else {
-      posts = await returnPosts(quotesSql);
+      posts = await returnRawQuery(thoughtsSql);
+    } else if (postType == "quote") {
+      posts = await returnRawQuery(quotesSql);
     }
 
-    logger.log("!!!!!!!!!!!!!!!!!!! \n posts ==> \n", posts);
+    // logger.log("!!!!!!!!!!!!!!!!!!! \n posts ==> \n", posts);
     jsonDict["posts"] = posts;
     res.status(200).json(jsonDict);
   } catch (error) {
@@ -1938,7 +1939,13 @@ const getTopicPosts = async (req, res, next) => {
 
 const getReaderBookModalDetails = async (req, res, next) => {
   try {
-    const { bookId } = req.params;
+    const result = validationResult(req);
+
+    if (!result.isEmpty()) {
+      return res.status(400).json({ error: result.array() });
+    }
+
+    let { bookId } = matchedData(req);
     const userId = req.session.passport.user;
     const readerBookModalDetails = await BookCollection.findAll({
       attributes: ["id", "page_count"],
@@ -1978,15 +1985,21 @@ const getReaderBookModalDetails = async (req, res, next) => {
 
 const getTopicReaders = async (req, res, next) => {
   try {
-    const { topicName } = req.params;
+    const result = validationResult(req);
+
+    if (!result.array()) throw new Error(result.array());
+
+    const { topicName } = matchedData(req);
     const topic = await Topic.findOne({
       where: {
         topic: topicName,
       },
     });
+
     if (!topic) {
       throw new Error("Topic not found");
     }
+
     const topicReadersSql = `SELECT 
                                     u.id, 
                                     u.username, 
@@ -2003,7 +2016,7 @@ const getTopicReaders = async (req, res, next) => {
                                     TopicId = 2
                                   GROUP BY
                                     u.id
-`;
+                                `;
     const topicReaders = await returnRawQuery(topicReadersSql);
     logger.log(topicReaders);
     res.status(200).json(topicReaders);
@@ -2108,6 +2121,7 @@ const getExploreTopics = async (req, res, next) => {
                               LIMIT 10;
                     `;
     const popularTopics = await returnRawQuery(popularTopicsSql);
+
     logger.log(popularTopics);
     res.status(200).json({ trendingTopics, popularTopics });
   } catch (error) {
@@ -2243,7 +2257,7 @@ const getExploreBooks = async (req, res, next) => {
                             is_liked = 1 
                           GROUP BY 
                             lb.bookId;
- `;
+                            `;
     const mostReadSql = `SELECT 
                           brs.bookId id, 
                           COUNT(DISTINCT brs.id) people_read, 
@@ -2269,7 +2283,7 @@ const getExploreBooks = async (req, res, next) => {
                           brs.reading_state = "Read" 
                         GROUP BY 
                           brs.bookId
-`;
+                            `;
     const highestRatedSql = `SELECT 
                               rb.bookId, 
                               ROUND(
@@ -2349,17 +2363,20 @@ const getTopicCategories = async (req, res, next) => {
 const setFollowingState = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
-    const { topicId, isFollowed } = req.body;
-    logger.log(topicId, isFollowed);
-    if (!userId) {
-      throw new Error("User not logged in");
-    }
+    const result = validationResult(req);
+
+    if (!result.array()) throw new Error(result.array());
+
+    const { topicId, isFollowed } = matchedData(req);
+    console.log(topicId, isFollowed);
+
     const sqlUpdate = `INSERT INTO user_topic_association 
                         (createdAt,updatedAt,TopicId, UserId)
                         VALUES (NOW(), NOW(), ${topicId}, ${userId})`;
     const sqlDelete = `DELETE FROM user_topic_association  
                         WHERE UserId = ${userId} 
-                        AND TopicId = ${topicId}`;
+                        AND TopicId = ${topicId}
+    `;
 
     if (isFollowed) {
       await returnRawQuery(sqlUpdate, QueryTypes.INSERT);
@@ -2376,13 +2393,12 @@ const setFollowingState = async (req, res, next) => {
 const getBookCategories = async (req, res, next) => {
   try {
     const result = validationResult(req);
+
     if (!result.isEmpty()) {
       throw new Error({ error: result.array() });
     }
-    const { q, index } = matchedData(req);
-    logger.log("???????????????????????????????");
-    logger.log(index);
 
+    const { q, index } = matchedData(req);
     const offset = index == undefined ? "OFFSET 0" : `OFFSET ${index}`;
     const where = q ? `WHERE c.category LIKE '${q}%'` : "";
     const bookCategoriesSql = `SELECT 
@@ -2407,6 +2423,7 @@ const getBookCategories = async (req, res, next) => {
                                 ${offset}  
                                   `;
     const bookCategories = await returnRawQuery(bookCategoriesSql);
+
     res.status(200).json(bookCategories);
   } catch (error) {
     next(error);
@@ -2416,11 +2433,14 @@ const getBookCategories = async (req, res, next) => {
 const getCategoryBooks = async (req, res, next) => {
   try {
     const result = validationResult(req);
+
     if (!result.isEmpty()) {
       throw new Error({ error: result.array() });
     }
+
     const { categoryId } = matchedData(req);
     const category = await Category.findByPk(categoryId);
+
     if (!category) {
       throw new Error("Category not found");
     }
@@ -2656,13 +2676,6 @@ const getCategoryBooks = async (req, res, next) => {
       returnRawQuery(mostReadLastMonthSql),
       returnRawQuery(mostReadLastYearSql),
     ]);
-    logger.log(
-      mostRead,
-      mostLiked,
-      highestRated,
-      mostReadLastMonth,
-      mostReadLastYear
-    );
 
     res.status(200).json({
       category,
@@ -2692,7 +2705,7 @@ const getSidebarTopics = async (req, res, next) => {
                         LIMIT 5;
                       `;
     const topics = await returnRawQuery(topicsSql);
-    logger.log(topics);
+
     res.status(200).json(topics);
   } catch (error) {
     logger.log(error);
@@ -2702,11 +2715,22 @@ const getSidebarTopics = async (req, res, next) => {
 
 const createCheckoutSession = async (req, res, next) => {
   try {
-    const { premiumType } = req.body;
+    const result = validationResult(req);
+
+    if (!result.isEmpty()) {
+      throw new Error({ error: result.array() });
+    }
+
+    const { premiumType } = matchedData(req);
+    console.log(premiumType);
+
     const userId = req.session.passport.user;
+    console.log(1);
+
     const prices = await stripe.prices.list({
       lookup_keys: [premiumType],
     });
+    console.log(2);
     const priceId =
       premiumType == "Annual"
         ? "price_1QlxgDHBAbJebqsa0nRY5sF3"

@@ -28,6 +28,7 @@ const router = express.Router();
 router.post(
   "/create-checkout-session",
   isUserActive,
+  body("premiumType").notEmpty().isString(),
   userController.createCheckoutSession
 );
 router.post("/webhook", userController.listenWebhook);
@@ -35,6 +36,7 @@ router.post("/webhook", userController.listenWebhook);
 router.get(
   "/get-reader-book-modal-details/:bookId",
   isUserActive,
+  param("bookId").notEmpty().isInt(),
   userController.getReaderBookModalDetails
 );
 router.get(
@@ -149,6 +151,7 @@ router.get(
   isUserActive,
   [
     param("topicName").notEmpty().isString(),
+    param("postType").notEmpty().isString(),
     query("sortBy").optional().notEmpty().escape(),
   ],
   userController.getTopicPosts
@@ -204,6 +207,7 @@ router.get(
 router.post(
   "/set-following-state",
   isUserActive,
+  [body("isFollowed").notEmpty().isInt(), body("topicId").notEmpty().isInt()],
   userController.setFollowingState
 );
 
