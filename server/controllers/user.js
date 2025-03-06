@@ -23,10 +23,9 @@ import { Transaction } from "../models/Transaction.js";
 import { Category } from "../models/Category.js";
 import FormData from "form-data";
 import Stripe from "stripe";
-
 import dotenv from "dotenv";
 import { Subscription } from "../models/Subscription.js";
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 dotenv.config();
 
@@ -71,7 +70,7 @@ const getBookReviews = async (req, res, next) => {
   try {
     const { bookId } = req.params;
     const totalRatingSql = `SELECT ROUND(AVG(rating),1) AS rate,
-                        COUNT(*) AS total_people_rated
+    COUNT(*) AS total_people_rated
                         FROM rated_books
                         WHERE bookId=52
                         `;
@@ -2716,6 +2715,7 @@ const getSidebarTopics = async (req, res, next) => {
 const createCheckoutSession = async (req, res, next) => {
   try {
     const result = validationResult(req);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     if (!result.isEmpty()) {
       throw new Error({ error: result.array() });
@@ -2725,12 +2725,9 @@ const createCheckoutSession = async (req, res, next) => {
     console.log(premiumType);
 
     const userId = req.session.passport.user;
-    console.log(1);
-
     const prices = await stripe.prices.list({
       lookup_keys: [premiumType],
     });
-    console.log(2);
     const priceId =
       premiumType == "Annual"
         ? "price_1QlxgDHBAbJebqsa0nRY5sF3"
@@ -2752,7 +2749,7 @@ const createCheckoutSession = async (req, res, next) => {
       cancel_url: `${process.env.DOMAIN}/return?canceled=true&session_id={CHECKOUT_SESSION_ID}`,
     });
 
-    res.send({
+    return res.send({
       url: session.url,
     });
   } catch (error) {
@@ -2762,9 +2759,9 @@ const createCheckoutSession = async (req, res, next) => {
 };
 
 const listenWebhook = async (req, res, next) => {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   let event = req.body;
   let paymentIntent;
-  logger.log("event triggered");
 
   if (endpointSecret) {
     // Get the signature sent by Stripe
@@ -2776,7 +2773,7 @@ const listenWebhook = async (req, res, next) => {
         endpointSecret
       );
     } catch (err) {
-      logger.log(`⚠️  Webhook signature verification failed.`, err.message);
+      logger.log(`Webhook signature verification failed.`, err.message);
       next(err);
     }
   }

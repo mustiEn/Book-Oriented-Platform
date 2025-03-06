@@ -76,6 +76,7 @@ const mockRequest = {
   res: {
     status: vi.fn(() => mockRequest.res),
     json: vi.fn(() => mockRequest.res),
+    send: vi.fn(),
   },
   next: vi.fn(),
 };
@@ -102,7 +103,7 @@ afterEach(() => {
   // console.log("exists func 1", fs.existsSync());
 });
 
-describe.skip("test share review", () => {
+describe("test share review", () => {
   beforeEach(() => {
     mockReqData = {
       topic: "Game",
@@ -161,7 +162,7 @@ describe.skip("test share review", () => {
   });
 });
 
-describe.skip("test setPrivateNote", () => {
+describe("test setPrivateNote", () => {
   beforeEach(() => {
     mockReqData = {
       topic: "Game",
@@ -219,7 +220,7 @@ describe.skip("test setPrivateNote", () => {
   });
 });
 
-describe.skip("test displayReaderProfile", () => {
+describe("test displayReaderProfile", () => {
   test("should return data", async () => {
     mockReqData = { username: "Jack" };
     mockRequest.req.body = mockReqData;
@@ -236,7 +237,7 @@ describe.skip("test displayReaderProfile", () => {
   });
 });
 
-describe.skip("test getReaderReviews", () => {
+describe("test getReaderReviews", () => {
   beforeEach(() => {
     mockReqData = { username: "Jack" };
     mockRequest.req.body = mockReqData;
@@ -269,7 +270,7 @@ describe.skip("test getReaderReviews", () => {
   });
 });
 
-describe.skip("test updateReaderBookDates", () => {
+describe("test updateReaderBookDates", () => {
   beforeEach(() => {
     mockReqData = { bookId: 1, startingDate: 2023, finishingDate: 2024 };
     mockRequest.req.body = mockReqData;
@@ -291,7 +292,7 @@ describe.skip("test updateReaderBookDates", () => {
   });
 });
 
-describe.skip("test uploadImage", () => {
+describe("test uploadImage", () => {
   beforeEach(() => {
     mockRequest.req.files = {
       ppImage: [
@@ -417,7 +418,7 @@ describe.skip("test uploadImage", () => {
   });
 });
 
-describe.skip("test getLoggedInUser", () => {
+describe("test getLoggedInUser", () => {
   beforeEach(() => {
     mockData = { id: 1, user: "jack" };
   });
@@ -450,7 +451,7 @@ describe.skip("test getLoggedInUser", () => {
   });
 });
 
-describe.skip("test getReaderPostComments", () => {
+describe("test getReaderPostComments", () => {
   beforeEach(() => {
     mockData = { id: 1, user: "jack" };
   });
@@ -624,7 +625,7 @@ describe.skip("test getReaderPostComments", () => {
   });
 });
 
-describe.skip("test sendCommend", () => {
+describe("test sendCommend", () => {
   beforeEach(() => {
     mockReqData = {
       comment: "abc",
@@ -633,7 +634,7 @@ describe.skip("test sendCommend", () => {
     };
     mockRequest.req.body = mockReqData;
     matchedData.mockReturnValue(mockReqData);
-    sequelize.transaction.mockResolvedValue(abc);
+    sequelize.transaction.mockResolvedValue(transaction);
   });
 
   test("should send comment", async () => {
@@ -715,7 +716,7 @@ describe.skip("test sendCommend", () => {
   });
 });
 
-describe.skip("test createTopic", () => {
+describe("test createTopic", () => {
   beforeEach(() => {
     mockReqData = {
       topic: "abc",
@@ -723,7 +724,7 @@ describe.skip("test createTopic", () => {
     };
     mockRequest.req.body = mockReqData;
     matchedData.mockReturnValue(mockReqData);
-    sequelize.transaction.mockResolvedValue(abc);
+    sequelize.transaction.mockResolvedValue(transaction);
   });
 
   test("should create topic", async () => {
@@ -764,7 +765,7 @@ describe.skip("test createTopic", () => {
   });
 });
 
-describe.skip("test getTopic", () => {
+describe("test getTopic", () => {
   beforeEach(() => {
     mockReqData = {
       topicName: "wild rift",
@@ -802,7 +803,7 @@ describe.skip("test getTopic", () => {
   });
 });
 
-describe.skip("test getTopicBooks", () => {
+describe("test getTopicBooks", () => {
   beforeEach(() => {
     mockReqData = {
       topicName: "wild rift",
@@ -844,7 +845,7 @@ describe.skip("test getTopicBooks", () => {
   });
 });
 
-describe.skip("test getTopicPosts", () => {
+describe("test getTopicPosts", () => {
   beforeEach(() => {
     mockReqData = {
       topicName: "wild rift",
@@ -953,7 +954,7 @@ describe.skip("test getTopicPosts", () => {
   });
 });
 
-describe.skip("test setFollowingState", () => {
+describe("test setFollowingState", () => {
   beforeEach(() => {
     mockReqData = {
       topicId: 2,
@@ -1009,20 +1010,18 @@ describe("test createCheckoutSession", () => {
     };
     mockRequest.req.body = mockReqData;
     matchedData.mockReturnValue(mockReqData);
-    // Stripe.mockReturnValue(stripeProperties);
-    // stripeProperties.prices.list.mockResolvedValue(1);
   });
 
   test("should create checkout session", async () => {
     const { req, res, next } = mockRequest;
-    Stripe.mockReturnValue(stripeProperties);
-    stripeProperties.prices.list.mockResolvedValue(1);
+
     await createCheckoutSession(req, res, next);
 
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
     expect(stripeProperties.prices.list).toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalled();
+    expect(stripeProperties.checkout.sessions.create).toHaveBeenCalled();
+    expect(res.send).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
   });
 
