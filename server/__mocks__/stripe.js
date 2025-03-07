@@ -13,6 +13,16 @@ const stripeProperties = {
       }),
     },
   },
+  webhooks: {
+    constructEvent: vi.fn(() => {
+      return {
+        type: "",
+        data: {
+          object: {},
+        },
+      };
+    }),
+  },
 };
 const Stripe = vi.fn(() => stripeProperties);
 

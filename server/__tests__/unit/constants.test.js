@@ -1,5 +1,5 @@
 import { vi, test, expect, describe, beforeAll } from "vitest";
-import { logger, returnRawQuery } from "../utils/constants";
+import { logger, returnRawQuery } from "../../utils/constants";
 import traceLogger from "tracer";
 
 vi.mock("../utils/constants");

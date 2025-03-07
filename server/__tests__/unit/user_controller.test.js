@@ -11,60 +11,61 @@ import {
   getTopic,
   getTopicBooks,
   getTopicPosts,
+  listenWebhook,
   sendComment,
   setFollowingState,
   setPrivateNote,
   shareReview,
   updateReaderBookDates,
   uploadImage,
-} from "../controllers/user";
-import { sequelize } from "../models/db";
-import { Topic } from "../models/Topic";
-import { Review } from "../models/Review";
-import { PrivateNote } from "../models/PrivateNote";
-import { User } from "../models/User";
-import { logger, returnRawQuery } from "../utils/constants";
-import { BookReadingState } from "../models/BookReadingState";
+} from "../../controllers/user";
+import { sequelize } from "../../models/db";
+import { Topic } from "../../models/Topic";
+import { Review } from "../../models/Review";
+import { PrivateNote } from "../../models/PrivateNote";
+import { User } from "../../models/User";
+import { logger, returnRawQuery } from "../../utils/constants";
+import { BookReadingState } from "../../models/BookReadingState";
 import fs from "fs";
-import { Post } from "../models/Post";
-import { Quote } from "../models/Quote";
-import { Thought } from "../models/Thought";
-import { Comment } from "../models/Comment";
-import { RatedBook } from "../models/RatedBook";
-import { Category } from "../models/Category";
-import { TopicCategory } from "../models/TopicCategory";
-import { RatedBook } from "../models/RatedBook";
-import { ThoughtImage } from "../models/ThoughtImage";
-import { BookCollection } from "../models/BookCollection";
-import { RestrictedPost } from "../models/RestrictedPost";
-import { RecommendedBook } from "../models/RecommendedBook";
-import { Subscription } from "../models/Subscription";
+import { Post } from "../../models/Post";
+import { Quote } from "../../models/Quote";
+import { Thought } from "../../models/Thought";
+import { Comment } from "../../models/Comment";
+import { Category } from "../../models/Category";
+import { TopicCategory } from "../../models/TopicCategory";
+import { RatedBook } from "../../models/RatedBook";
+import { ThoughtImage } from "../../models/ThoughtImage";
+import { BookCollection } from "../../models/BookCollection";
+import { RestrictedPost } from "../../models/RestrictedPost";
+import { RecommendedBook } from "../../models/RecommendedBook";
+import { Subscription } from "../../models/Subscription";
 import Stripe, { stripeProperties } from "stripe";
+import { Transaction } from "../../models/Transaction";
 
 vi.mock("stripe");
-vi.mock("../models/db");
+vi.mock("../../models/db");
 vi.mock("express-validator");
-vi.mock("../utils/constants");
+vi.mock("../../utils/constants");
 vi.mock("fs");
-vi.mock("../models/Topic");
-vi.mock("../models/Review");
-vi.mock("../models/PrivateNote");
-vi.mock("../models/BookReadingState");
-vi.mock("../models/Post");
-vi.mock("../models/Quote");
-vi.mock("../models/Thought");
-vi.mock("../models/Comment");
-vi.mock("../models/User");
-vi.mock("../models/RatedBook");
-vi.mock("../models/LikedBook");
-vi.mock("../models/TopicCategory");
-vi.mock("../models/Transaction");
-vi.mock("../models/Category");
-vi.mock("../models/ThoughtImage");
-vi.mock("../models/BookCollection");
-vi.mock("../models/RestrictedPost");
-vi.mock("../models/RecommendedBook");
-vi.mock("../models/Subscription");
+vi.mock("../../models/Topic");
+vi.mock("../../models/Review");
+vi.mock("../../models/PrivateNote");
+vi.mock("../../models/BookReadingState");
+vi.mock("../../models/Post");
+vi.mock("../../models/Quote");
+vi.mock("../../models/Thought");
+vi.mock("../../models/Comment");
+vi.mock("../../models/User");
+vi.mock("../../models/RatedBook");
+vi.mock("../../models/LikedBook");
+vi.mock("../../models/TopicCategory");
+vi.mock("../../models/Transaction");
+vi.mock("../../models/Category");
+vi.mock("../../models/ThoughtImage");
+vi.mock("../../models/BookCollection");
+vi.mock("../../models/RestrictedPost");
+vi.mock("../../models/RecommendedBook");
+vi.mock("../../models/Subscription");
 
 const transaction = {
   rollback: vi.fn().mockResolvedValue(),
@@ -80,11 +81,6 @@ const mockRequest = {
   },
   next: vi.fn(),
 };
-const QueryTypes = {
-  INSERT: "INSERT",
-  DELETE: "DELETE",
-};
-
 let mockData;
 let mockReqData;
 
@@ -1024,18 +1020,130 @@ describe("test createCheckoutSession", () => {
     expect(res.send).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
   });
+});
 
-  // test("should throw `Category not found`", async () => {
-  //   const { req, res, next } = mockRequest;
-  //   const error = "Category not found";
+describe("test listenWebhook", () => {
+  beforeEach(() => {
+    mockReqData = {
+      id: "evt_1Example12345",
+      object: "event",
+    };
+    mockRequest.req.body = mockReqData;
+    mockRequest.req.headers = { "stripe-signature": "signature123" };
+    mockRequest.req.rawBody = "rawBodyData";
+  });
 
-  //   Category.findByPk.mockResolvedValue(null);
+  test("should listen webhook with event = `checkout.session.completed`", async () => {
+    const { req, res, next } = mockRequest;
 
-  //   await getCategoryBooks(req, res, next);
+    Transaction.create.mockResolvedValue({ id: 1 });
+    stripeProperties.webhooks.constructEvent.mockReturnValueOnce({
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          customer_details: {
+            name: "John Doe",
+            email: "john.doe@example.com",
+            address: {
+              country: "US",
+              postal_code: "12345",
+            },
+          },
+          customer: "cus_123",
+          id: "cs_test_123",
+          amount_total: 1000,
+          currency: "usd",
+          mode: "payment",
+          payment_status: "paid",
+          payment_method_configuration_details: {
+            id: "pm_123",
+          },
+          subscription: "sub_123",
+          expires_at: 1234567890,
+          metadata: {
+            user_id: "user_123",
+          },
+        },
+      },
+    });
 
-  //   expect(validationResult).toHaveBeenCalled();
-  //   expect(matchedData).toHaveBeenCalled();
-  //   expect(res.json).not.toHaveBeenCalled();
-  //   expect(next).toHaveBeenCalledWith(Error(error));
-  // });
+    await listenWebhook(req, res, next);
+
+    expect(stripeProperties.webhooks.constructEvent).toHaveBeenCalled();
+    expect(Transaction.create).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should listen webhook with event = `checkout.session.expired`", async () => {
+    const { req, res, next } = mockRequest;
+
+    Transaction.create.mockResolvedValue({ id: 2 });
+    stripeProperties.webhooks.constructEvent.mockReturnValue({
+      type: "checkout.session.expired",
+      data: {
+        object: {
+          id: "cs_test_456",
+          amount_total: 2000,
+          currency: "usd",
+          mode: "payment",
+          payment_status: "expired",
+          payment_method_configuration_details: {
+            id: "pm_456",
+          },
+          metadata: {
+            user_id: "user_456",
+          },
+        },
+      },
+    });
+
+    await listenWebhook(req, res, next);
+
+    expect(stripeProperties.webhooks.constructEvent).toHaveBeenCalled();
+    expect(Transaction.create).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  test("should listen webhook with event = `customer.subscription.updated`", async () => {
+    const { req, res, next } = mockRequest;
+
+    stripeProperties.webhooks.constructEvent.mockReturnValue({
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          cancel_at: null,
+          canceled_at: null,
+          start_date: 1234567890,
+          billing_cycle_anchor: 1234567890,
+          plan: {
+            interval: "month",
+            amount: 1000,
+            currency: "usd",
+            product: "prod_123",
+          },
+          cancellation_details: {
+            comment: "No longer needed",
+            feedback: "too_expensive",
+            reason: "cancelled",
+          },
+          id: "sub_123",
+          customer: "cus_123",
+          status: "active",
+          metadata: {
+            user_id: "user_123",
+          },
+        },
+      },
+    });
+    Subscription.create.mockResolvedValue({ id: 1 });
+
+    await listenWebhook(req, res, next);
+
+    expect(stripeProperties.webhooks.constructEvent).toHaveBeenCalled();
+    expect(Subscription.create).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalled();
+    expect(next).not.toHaveBeenCalled();
+  });
 });

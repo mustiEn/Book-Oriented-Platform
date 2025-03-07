@@ -2760,12 +2760,11 @@ const createCheckoutSession = async (req, res, next) => {
 
 const listenWebhook = async (req, res, next) => {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-  let event = req.body;
+  const signature = req.headers["stripe-signature"];
+  let event;
   let paymentIntent;
 
   if (endpointSecret) {
-    // Get the signature sent by Stripe
-    const signature = req.headers["stripe-signature"];
     try {
       event = stripe.webhooks.constructEvent(
         req.rawBody,
@@ -2779,76 +2778,68 @@ const listenWebhook = async (req, res, next) => {
   }
 
   // Handle the event
-  if (event.type) {
-    if (event.type === "checkout.session.completed") {
-      paymentIntent = event.data.object;
-      logger.log("Event listned,payment success");
-      logger.log("\n", event.data.object);
-      await Transaction.create({
-        cardholder_name: paymentIntent.customer_details.name,
-        email: paymentIntent.customer_details.email,
-        country: paymentIntent.customer_details.address.country,
-        postal_code: paymentIntent.customer_details.address.postal_code,
-        customer_id: paymentIntent.customer,
-        checkout_session_id: paymentIntent.id,
-        amount_total: paymentIntent.amount_total,
-        currency: paymentIntent.currency,
-        mode: paymentIntent.mode,
-        payment_status: paymentIntent.payment_status,
-        payment_method_configuration_id:
-          paymentIntent.payment_method_configuration_details.id,
-        subscription_id: paymentIntent.subscription,
-        expires_at: paymentIntent.expires_at,
-        userId: paymentIntent.metadata.user_id,
-      });
-    } else if (event.type === "checkout.session.expired") {
-      logger.log("Event listned,checkout expired");
-      paymentIntent = event.data.object;
-      logger.log("\n", event.data.object);
-      await Transaction.create({
-        cardholder_name: null,
-        email: null,
-        country: null,
-        postal_code: null,
-        customer_id: null,
-        checkout_session_id: paymentIntent.id,
-        amount_total: paymentIntent.amount_total,
-        currency: paymentIntent.currency,
-        mode: paymentIntent.mode,
-        payment_status: paymentIntent.payment_status,
-        payment_method_configuration_id:
-          paymentIntent.payment_method_configuration_details.id,
-        subscription_id: null,
-        expires_at: null,
-        userId: paymentIntent.metadata.user_id,
-      });
-    } else if (event.type === "customer.subscription.updated") {
-      paymentIntent = event.data.object;
-      await Subscription.create({
-        cancel_at: paymentIntent.cancel_at,
-        canceled_at: paymentIntent.canceled_at,
-        start_date: paymentIntent.start_date,
-        billing_cycle_anchor: paymentIntent.billing_cycle_anchor,
-        interval: paymentIntent.plan.interval,
-        comment: paymentIntent.cancellation_details.comment,
-        feedback: paymentIntent.cancellation_details.feedback,
-        reason: paymentIntent.cancellation_details.reaosn,
-        subscription_id: paymentIntent.id,
-
-        customer_id: paymentIntent.customer,
-        product_id: paymentIntent.plan.product,
-        amount_total: paymentIntent.plan.amount,
-        currency: paymentIntent.plan.currency,
-        status: paymentIntent.status,
-        userId: paymentIntent.metadata.user_id,
-      });
-      logger.log("Event listned,subscription updated");
-      logger.log("\n", event.data.object);
-    } else logger.log(`Unhandled event type ${event.type}`);
-  }
+  if (event.type === "checkout.session.completed") {
+    paymentIntent = event.data.object;
+    await Transaction.create({
+      cardholder_name: paymentIntent.customer_details.name,
+      email: paymentIntent.customer_details.email,
+      country: paymentIntent.customer_details.address.country,
+      postal_code: paymentIntent.customer_details.address.postal_code,
+      customer_id: paymentIntent.customer,
+      checkout_session_id: paymentIntent.id,
+      amount_total: paymentIntent.amount_total,
+      currency: paymentIntent.currency,
+      mode: paymentIntent.mode,
+      payment_status: paymentIntent.payment_status,
+      payment_method_configuration_id:
+        paymentIntent.payment_method_configuration_details.id,
+      subscription_id: paymentIntent.subscription,
+      expires_at: paymentIntent.expires_at,
+      userId: paymentIntent.metadata.user_id,
+    });
+  } else if (event.type === "checkout.session.expired") {
+    logger.log("Event listned,checkout expired");
+    paymentIntent = event.data.object;
+    await Transaction.create({
+      cardholder_name: null,
+      email: null,
+      country: null,
+      postal_code: null,
+      customer_id: null,
+      checkout_session_id: paymentIntent.id,
+      amount_total: paymentIntent.amount_total,
+      currency: paymentIntent.currency,
+      mode: paymentIntent.mode,
+      payment_status: paymentIntent.payment_status,
+      payment_method_configuration_id:
+        paymentIntent.payment_method_configuration_details.id,
+      subscription_id: null,
+      expires_at: null,
+      userId: paymentIntent.metadata.user_id,
+    });
+  } else if (event.type === "customer.subscription.updated") {
+    paymentIntent = event.data.object;
+    await Subscription.create({
+      cancel_at: paymentIntent.cancel_at,
+      canceled_at: paymentIntent.canceled_at,
+      start_date: paymentIntent.start_date,
+      billing_cycle_anchor: paymentIntent.billing_cycle_anchor,
+      interval: paymentIntent.plan.interval,
+      comment: paymentIntent.cancellation_details.comment,
+      feedback: paymentIntent.cancellation_details.feedback,
+      reason: paymentIntent.cancellation_details.reaosn,
+      subscription_id: paymentIntent.id,
+      customer_id: paymentIntent.customer,
+      product_id: paymentIntent.plan.product,
+      amount_total: paymentIntent.plan.amount,
+      currency: paymentIntent.plan.currency,
+      status: paymentIntent.status,
+      userId: paymentIntent.metadata.user_id,
+    });
+  } else logger.log(`Unhandled event type ${event.type}`);
 
   // Return a res to acknowledge receipt of the event
-  res.json({ received: true });
+  return res.json({ received: true });
 };
 
 export {

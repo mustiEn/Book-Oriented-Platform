@@ -1,4 +1,4 @@
-import { logger, sum } from "../utils/constants.js";
+import { logger, sum } from "../../utils/constants.js";
 import { vi, test, expect, describe, beforeAll } from "vitest";
 
 test("add numbers", () => {

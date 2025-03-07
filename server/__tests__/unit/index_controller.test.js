@@ -1,9 +1,9 @@
 import { test, expect, vi, beforeEach, describe, afterEach } from "vitest";
-import { logger, returnRawQuery } from "../utils/constants";
-import { bookCollection, login, signup } from "../controllers/index";
+import { logger, returnRawQuery } from "../../utils/constants";
+import { bookCollection, login, signup } from "../../controllers/index";
 import { validationResult, matchedData } from "express-validator";
 import Groq, { mockCreate } from "groq-sdk";
-import { User } from "../models/User";
+import { User } from "../../models/User";
 import bcrypt from "bcrypt";
 
 vi.mock("express-validator");

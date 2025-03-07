@@ -1,5 +1,5 @@
 import { vi, test, expect } from "vitest";
-import { handleError } from "../middlewares/error_handler";
+import { handleError } from "../../middlewares/error_handler";
 
 const error = "Testing error";
 const mockRequest = {
