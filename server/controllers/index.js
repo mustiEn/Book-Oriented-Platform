@@ -115,7 +115,7 @@ const bookCollection = async (req, res, next) => {
   //^ Gets either bookId or query.
   //^ bookId is used to get a specific book,
   //^ while query is used to get 20 books based on the query
-
+  logger.log(req.session.passport?.user);
   try {
     const groq = new Groq({
       apiKey: process.env.GROQ_KEY,

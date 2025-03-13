@@ -63,3 +63,11 @@ app.use(passport.session());
 app.use(indexRouter);
 app.use(userRouter);
 app.use(handleError);
+
+const port = process.env.PORT || 8081;
+logger.log("STARTER FILE");
+if (process.env.NODE_ENV !== "test") {
+  app.listen(port, () => {
+    logger.log(`Server is running on port ${port}`);
+  });
+}
