@@ -33,9 +33,7 @@ const BookDetailsReaders = () => {
                     ? "btn btn-danger"
                     : "btn btn-primary"
                 }
-                to={`/book/${slugify(data.title)}/${data.book_key}/${
-                  data.id
-                }/readers?q=${option}`}
+                to={`${location.pathname}?q=${option}`}
               >
                 {option.replaceAll("-", " ")}
               </NavLink>

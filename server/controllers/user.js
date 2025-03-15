@@ -523,9 +523,17 @@ const getBookStatistics = async (req, res, next) => {
 
 const getReaderProfiles = async (req, res, next) => {
   try {
-    const { bookId } = req.params;
-    let { q } = req.query;
-    q = q.replaceAll("-", " ");
+    const result = validationResult(req);
+
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+
+    const { bookId, q: qParam } = matchedData(req);
+    const q = qParam.replaceAll("-", " ");
     let readerProfilesSql;
 
     if (q !== "Liked") {
@@ -555,10 +563,7 @@ const getReaderProfiles = async (req, res, next) => {
                             GROUP BY a.userId `;
     }
 
-    const readerProfiles = await sequelize.query(readerProfilesSql, {
-      type: QueryTypes.SELECT,
-    });
-    logger.log(readerProfiles);
+    const readerProfiles = await returnRawQuery(readerProfilesSql);
     res.status(200).json({
       readerProfiles,
     });
@@ -577,6 +582,7 @@ const displayReaderProfile = async (req, res, next) => {
           result.array()[0].path
         }`
       );
+
     const { username } = matchedData(req);
     const reader = await User.findOne({
       attributes: {
@@ -595,6 +601,9 @@ const displayReaderProfile = async (req, res, next) => {
 const filterReaderBooks = async (req, res, next) => {
   try {
     const result = validationResult(req);
+    const userId = req.session.passport.user;
+    let tableParam;
+    let whereParam;
 
     if (!result.array())
       throw new Error(
@@ -602,30 +611,40 @@ const filterReaderBooks = async (req, res, next) => {
           result.array()[0].path
         }`
       );
+
     const { q, sort, category, author, year } = matchedData(req);
-    const userId = req.session.passport.user;
+
+    if (q == "Liked") {
+      tableParam = "liked_books";
+      whereParam = "is_liked = '1'";
+    } else {
+      tableParam = "book_reading_states";
+      whereParam = `reading_state = "${q}"`;
+    }
+
     const querySortDict = {
       1: ["title", "ASC"],
       2: ["published_date", "DESC"],
       3: ["page_count", "DESC"],
     };
-    const defineWhereClause = (condition, userId, category, author, year) => {
+    const returnWhereClause = (condition, userId, category, author, year) => {
       let where = `WHERE ${condition}
                AND a.userId=${userId}`;
-      return category != undefined
-        ? (where += ` AND h.category= "${category}"`)
-        : author != undefined
-        ? (where += ` AND d.author= "${author}"`)
-        : year != undefined && year != "All times"
-        ? (where += ` AND YEAR(a.createdAt)= "${year}"`)
-        : where;
+      if (category != undefined) {
+        where += ` AND h.category= "${category}"`;
+      } else if (author != undefined) {
+        where += ` AND d.author= "${author}"`;
+      } else if (year != undefined && year != "All times") {
+        where += ` AND YEAR(a.createdAt)= "${year}"`;
+      }
+      return where;
     };
-    const defineOrderByClause = (sort) => {
+    const returnOrderByClause = (sort) => {
       return sort != undefined
         ? `ORDER BY f.${querySortDict[sort][0]} ${querySortDict[sort][1]}`
         : "";
     };
-    const returnReaderBooks = (table, where) => {
+    const returnReaderBooksSql = (table, where) => {
       return `SELECT f.id,a.userId AS userId,
                 MAX(f.book_key) AS book_key,  
                 CASE WHEN MAX(LENGTH(f.title)) > 100
@@ -651,44 +670,53 @@ const filterReaderBooks = async (req, res, next) => {
                 ON h.id=g.categoryId
                 INNER JOIN book_collections f
                 ON f.id=a.bookId
-                ${defineWhereClause(where, userId, category, author, year)}
+                ${returnWhereClause(where, userId, category, author, year)}
                 GROUP BY f.id
-                ${defineOrderByClause(sort)}
+                ${returnOrderByClause(sort)}
                 `;
     };
-    const returnBooksPerCategory = (table, where, userId) => {
-      return `SELECT MAX(c.id) AS categoryId,MAX(a.bookId) AS bookId,
-            MAX(c.category) AS category,
-            COUNT(c.id) AS "quantity"
-            FROM (SELECT bookId AS bookId
-            FROM ${table} 
-            WHERE ${where}
-            AND userId=${userId}) a
-            INNER JOIN category_book_association b
-            ON a.bookId=b.bookId
-            INNER JOIN categories c
-            ON c.id=b.categoryId
-            GROUP BY c.id `;
+    const returnBooksPerCategorySql = (table, where, userId) => {
+      return `SELECT 
+                MAX(c.id) AS categoryId, 
+                MAX(a.bookId) AS bookId, 
+                MAX(c.category) AS category, 
+                COUNT(c.id) AS "quantity" 
+              FROM 
+                ${table} a 
+                INNER JOIN category_book_association b ON a.bookId = b.bookId 
+                INNER JOIN categories c ON c.id = b.categoryId 
+              WHERE 
+                reading_state = "${q}" 
+                AND userId = ${userId} 
+              GROUP BY 
+                c.id
+              `;
     };
-    const returnBooksPerAuthor = (table, where, userId) => {
-      return `SELECT MAX(c.id) AS authorId,MAX(a.bookId) AS bookId,
-            MAX(c.author) AS author,
-            COUNT(c.id) AS "quantity"
-            FROM (SELECT bookId AS bookId
-            FROM ${table} 
-            WHERE ${where}
-            AND userId=${userId}) a
-            INNER JOIN author_book_association b
-            ON a.bookId=b.bookId
-            INNER JOIN AUTHORS c
-            ON c.id=b.authorId
-            GROUP BY c.id`;
+    const returnBooksPerAuthorSql = (table, where, userId) => {
+      return `SELECT 
+                MAX(c.id) AS authorId, 
+                MAX(a.bookId) AS bookId, 
+                MAX(c.author) AS author, 
+                COUNT(c.id) AS "quantity" 
+              FROM 
+                ${table} a 
+                INNER JOIN author_book_association b ON a.bookId = b.bookId 
+                INNER JOIN AUTHORS c ON c.id = b.authorId 
+              WHERE 
+                reading_state = "${q}" 
+                AND userId = ${userId} 
+              GROUP BY 
+                c.id
+              `;
     };
-    const returnBookRatings = () => {
+    const returnBookRatingsSql = () => {
       return `SELECT te.id,ROUND(AVG(rating),1) AS rating,
               MAX(b.rating) AS user_rating
               FROM (
-              ${returnReaderBooks("liked_books", "is_liked = '1'")}            
+              ${returnReaderBooksSql(
+                "liked_books",
+                "is_liked = '1'"
+              )}            
               ) te
               LEFT JOIN rated_books b
               ON b.bookId = te.id
@@ -696,34 +724,32 @@ const filterReaderBooks = async (req, res, next) => {
               `;
     };
     const readerBooksMerged = [];
-
-    let booksPerAuthorSql, booksPerCategorySql, readerBooksSql, bookRatingsSql;
+    const bookRatingsSql = returnBookRatingsSql();
+    let booksPerAuthorSql, booksPerCategorySql, readerBooksSql;
 
     if (q == "Liked") {
-      readerBooksSql = returnReaderBooks("liked_books", "is_liked = '1'");
-      booksPerAuthorSql = returnBooksPerAuthor(
+      readerBooksSql = returnReaderBooksSql("liked_books", "is_liked = '1'");
+      booksPerAuthorSql = returnBooksPerAuthorSql(
         "liked_books",
         "is_liked = '1'",
         userId
       );
-      booksPerCategorySql = returnBooksPerCategory(
+      booksPerCategorySql = returnBooksPerCategorySql(
         "liked_books",
         "is_liked = '1'",
         userId
       );
-      bookRatingsSql = returnBookRatings();
     } else {
-      readerBooksSql = returnReaderBooks(
+      readerBooksSql = returnReaderBooksSql(
         "book_reading_states",
         `reading_state = "${q}"`
       );
-      bookRatingsSql = returnBookRatings();
-      booksPerAuthorSql = returnBooksPerAuthor(
+      booksPerAuthorSql = returnBooksPerAuthorSql(
         "book_reading_states",
         `reading_state = "${q}"`,
         userId
       );
-      booksPerCategorySql = returnBooksPerCategory(
+      booksPerCategorySql = returnBooksPerCategorySql(
         "book_reading_states",
         `reading_state = "${q}"`,
         userId
@@ -851,7 +877,6 @@ const getReaderReviews = async (req, res, next) => {
                         `;
 
     const readerReviews = await returnRawQuery(reviewsSql);
-    console.log(readerReviews);
 
     res.status(200).json({
       readerReviews,
@@ -1338,7 +1363,7 @@ const getReaderPostComments = async (req, res, next) => {
         raw: true,
         group: ["Review.id", "Book_Collection.id", "Topic.id"],
       });
-      logger.log(post);
+      // logger.log(post);
     } else if (postType == "quote") {
       post = await Quote.findOne({
         attributes: [
@@ -1763,7 +1788,7 @@ const getTopicBooks = async (req, res, next) => {
                                 tba.TopicId = ${topic.id}
                                 `;
     const topicBooks = await returnRawQuery(topicBooksSql);
-    logger.log(topicBooks);
+    // logger.log(topicBooks);
     const topicBookIds = topicBooks.map((item) => item.BookCollectionId);
     const books = await BookCollection.findAll({
       attributes: [
@@ -1846,7 +1871,6 @@ const getTopicPosts = async (req, res, next) => {
     }
 
     let { sortBy, topicName, postType } = matchedData(req);
-    console.log(postType);
 
     sortBy = sortBy != undefined ? "ASC" : "DESC";
     const topic = await Topic.findOne({
@@ -2002,7 +2026,6 @@ const getTopicPosts = async (req, res, next) => {
         returnRawQuery(thoughtsSql),
         returnRawQuery(quotesSql),
       ]);
-      console.log(reviews, thoughts, quotes);
 
       posts = [...reviews, ...thoughts, ...quotes];
       posts = posts.sort((a, b) => {
@@ -2022,7 +2045,6 @@ const getTopicPosts = async (req, res, next) => {
     jsonDict["posts"] = posts;
     res.status(200).json(jsonDict);
   } catch (error) {
-    logger.log(error);
     next(error);
   }
 };
@@ -2066,7 +2088,7 @@ const getReaderBookModalDetails = async (req, res, next) => {
       ],
     });
 
-    logger.log(readerBookModalDetails);
+    // logger.log(readerBookModalDetails);
     res.status(200).json({ readerBookModalDetails });
   } catch (error) {
     next(error);
@@ -2112,7 +2134,7 @@ const getTopicReaders = async (req, res, next) => {
                                     u.id
                                 `;
     const topicReaders = await returnRawQuery(topicReadersSql);
-    logger.log(topicReaders);
+    // logger.log(topicReaders);
     res.status(200).json(topicReaders);
   } catch (error) {
     next(error);
@@ -2216,7 +2238,7 @@ const getExploreTopics = async (req, res, next) => {
                     `;
     const popularTopics = await returnRawQuery(popularTopicsSql);
 
-    logger.log(popularTopics);
+    // logger.log(popularTopics);
     res.status(200).json({ trendingTopics, popularTopics });
   } catch (error) {
     next(error);
@@ -2428,7 +2450,6 @@ const getExploreBooks = async (req, res, next) => {
       mostReadLastYear,
     });
   } catch (error) {
-    logger.log(error);
     next(error);
   }
 };
@@ -2436,7 +2457,6 @@ const getExploreBooks = async (req, res, next) => {
 const getTrendingTopics = async (req, res, next) => {
   try {
     const updated = await returnRawQuery(trendingTopicsSql);
-    logger.log(updated);
     res.status(200).json(updated);
   } catch (error) {
     next(error);
@@ -2447,7 +2467,6 @@ const getTopicCategories = async (req, res, next) => {
   try {
     let results = await TopicCategory.findAll();
     results = results.map((result) => result.toJSON());
-    // logger.log(results);
     res.status(200).json(results);
   } catch (error) {
     next(error);
@@ -2466,7 +2485,6 @@ const setFollowingState = async (req, res, next) => {
         }`
       );
     const { topicId, isFollowed } = matchedData(req);
-    console.log(topicId, isFollowed);
 
     const sqlUpdate = `INSERT INTO user_topic_association 
                         (createdAt,updatedAt,TopicId, UserId)
@@ -2784,7 +2802,6 @@ const getCategoryBooks = async (req, res, next) => {
       mostReadLastYear,
     });
   } catch (error) {
-    logger.log(error);
     next(error);
   }
 };
@@ -2806,7 +2823,6 @@ const getSidebarTopics = async (req, res, next) => {
 
     res.status(200).json(topics);
   } catch (error) {
-    logger.log(error);
     next(error);
   }
 };
@@ -2821,7 +2837,6 @@ const createCheckoutSession = async (req, res, next) => {
     }
 
     const { premiumType } = matchedData(req);
-    console.log(premiumType);
 
     const userId = req.session.passport.user;
     const prices = await stripe.prices.list({
@@ -2852,7 +2867,6 @@ const createCheckoutSession = async (req, res, next) => {
       url: session.url,
     });
   } catch (error) {
-    logger.log(error);
     next(error);
   }
 };
@@ -2897,7 +2911,6 @@ const listenWebhook = async (req, res, next) => {
       userId: paymentIntent.metadata.user_id,
     });
   } else if (event.type === "checkout.session.expired") {
-    logger.log("Event listned,checkout expired");
     paymentIntent = event.data.object;
     await Transaction.create({
       cardholder_name: null,

@@ -117,7 +117,11 @@ router.get(
 router.get(
   "/get-reader-profiles/:bookId/reader",
   //* WHY READER SINgLE
-  isUserActive,
+  [
+    isUserActive,
+    param("bookId").notEmpty().isInt(),
+    query("q").notEmpty().isString(),
+  ],
   userController.getReaderProfiles
 );
 
@@ -128,7 +132,18 @@ router.get(
   userController.displayReaderProfile
 );
 
-router.get("/profile/books", isUserActive, userController.filterReaderBooks);
+router.get(
+  "/profile/books",
+  [
+    isUserActive,
+    query("q").isString(),
+    query("sort").optional().isInt(),
+    query("category").optional().isString(),
+    query("year").optional().isString(),
+    query("author").optional().isString(),
+  ],
+  userController.filterReaderBooks
+);
 
 router.get(
   "/:username/get-reader-reviews",

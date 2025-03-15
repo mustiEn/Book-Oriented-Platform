@@ -1,22 +1,30 @@
 import request from "supertest";
 import { app } from "../../server";
-import { afterEach, beforeEach, describe, test, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  test,
+  vi,
+} from "vitest";
 import { sequelize } from "../../models/db";
 import { logger } from "../../utils/constants";
 
 vi.mock("../../middlewares/user_session_checker", () => ({
   isUserActive: (req, res, next) => {
-    req.session.passport = { user: 52 };
+    req.session.passport = { user: 6 };
     next();
   },
 }));
 
-beforeEach(async () => {
+beforeAll(async () => {
   await sequelize.authenticate();
   logger.log("DB CONNECTED");
 });
 
-afterEach(async () => {
+afterAll(async () => {
   await sequelize.close();
   logger.log("DB DISCONNECTED");
 });
@@ -63,10 +71,43 @@ test.skip("should create readingState if not exist, else update", async () => {
   console.log(res.body);
 });
 
-test("should create readingState if not exist, else update", async () => {
+test.skip("should get reader book interaction data", async () => {
   const res = await request(app)
-    .post("/set-reading-state/1")
-    .send({ readingState: "Did not finish" })
+    .get("/get-reader-book-interaction-data/52")
+    .expect("Content-Type", /json/)
+    .expect(200);
+
+  console.log(res.body);
+});
+
+test.skip("should get book statistics", async () => {
+  const res = await request(app)
+    .get("/get-book-statistics/52")
+    .expect("Content-Type", /json/)
+    .expect(200);
+
+  console.log(res.body);
+});
+
+test.skip.each([
+  "Read",
+  "Currently-reading",
+  "Want-to-read",
+  "Did-not-finish",
+  "Liked",
+])("should get book reader profiles with param q = %s", async (param) => {
+  const res = await request(app)
+    .get("/get-reader-profiles/52/reader")
+    .query({ q: param })
+    .expect("Content-Type", /json/)
+    .expect(200);
+
+  console.log(res.body);
+});
+
+test.skip("should filter reader books", async () => {
+  const res = await request(app)
+    .get("/get-book-statistics/52")
     .expect("Content-Type", /json/)
     .expect(200);
 

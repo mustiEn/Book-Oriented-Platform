@@ -3,13 +3,13 @@ import { useLoaderData, Outlet } from "react-router-dom";
 import BookDetailsSection from "../components/BookDetailsSection";
 
 const BookDetails = () => {
-  const [bookDetails, readerBookDetailsHeader] = useLoaderData();
+  const [bookDetails, readerBookInteractionData] = useLoaderData();
 
   return (
     <>
       <BookDetailsSection
         bookDetails={bookDetails[0]}
-        readerBookDetailsHeader={readerBookDetailsHeader}
+        readerBookInteractionData={readerBookInteractionData}
       />
       <div className="w-100 p-4">
         <Outlet context={bookDetails} />

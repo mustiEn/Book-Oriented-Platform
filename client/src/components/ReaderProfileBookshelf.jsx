@@ -16,6 +16,7 @@ import {
 import { toast } from "react-hot-toast";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
+import Spinner from "../spinner/Spinner";
 
 const ReaderProfileBookshelf = (l) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -114,11 +115,11 @@ const ReaderProfileBookshelf = (l) => {
                     </>
                   }
                 >
-                  {querySortDict.map((sort) => (
+                  {querySortDict.map((sort, i) => (
                     <Dropdown.Item
-                      key={`dropdown-sort-${sort.id}`}
+                      key={`dropdown-sort-${i}`}
                       as={Link}
-                      to={`/${readerUsername}/bookshelf/books?q=${q}&sort=${sort.id}`}
+                      to={`/${readerUsername}/bookshelf/books?q=${q}&sort=${i}`}
                       onClick={() =>
                         setActiveQuery((prev) => ({
                           ...Object.keys(prev).reduce(
