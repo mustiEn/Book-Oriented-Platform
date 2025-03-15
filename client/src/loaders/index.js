@@ -151,7 +151,7 @@ export const loadBookDetails = async ({ params }) => {
     const { bookId } = params;
     const response = await Promise.all([
       fetch(`/api/books/v1/${bookId}`),
-      fetch(`/api/get-reader-book-details/${bookId}`),
+      fetch(`/api/get-reader-book-interaction-data/${bookId}`),
       fetch(`/api/set-reader-book-record/${bookId}`, {
         method: "POST",
         headers: {

@@ -15,7 +15,11 @@ const signup = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
 
     if (!result.isEmpty()) {
-      throw new Error(result.array());
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     }
 
     const { email, password, firstname, lastname, username, DOB, gender } =
@@ -79,7 +83,11 @@ const login = async (req, res, next) => {
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error(result.array());
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     }
 
     const { username, password } = matchedData(req);
@@ -124,7 +132,11 @@ const bookCollection = async (req, res, next) => {
     let data;
 
     if (!result.isEmpty()) {
-      throw new Error(result.array());
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     }
 
     const { q, bookId } = matchedData(req);

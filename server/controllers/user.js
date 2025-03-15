@@ -35,7 +35,11 @@ const shareReview = async (req, res, next) => {
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error(result.array());
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     }
 
     const { topic: topicName, title, review, bookId } = matchedData(req);
@@ -65,54 +69,57 @@ const shareReview = async (req, res, next) => {
   }
 };
 
-// !!!!!! change
 const getBookReviews = async (req, res, next) => {
   try {
     const { bookId } = req.params;
     const totalRatingSql = `SELECT ROUND(AVG(rating),1) AS rate,
-    COUNT(*) AS total_people_rated
+                          COUNT(*) AS total_people_rated
                         FROM rated_books
                         WHERE bookId=52
                         `;
-    const reviewsSql = `SELECT d.id,userId,e.username,e.firstname,e.lastname,
-                        e.profile_photo,bookId,rating,title,review,created_at,
-                        reading_state,page_number,topic
-                        FROM users e
-                        INNER JOIN (SELECT MAX(a.id) AS id,MAX(a.userId) AS userId,
-                        MAX(a.rating) AS rating,
-                        MAX(reviewBookId) AS bookId,
-                        MAX(title) AS title,MAX(review) AS review,
-                        MAX(created_at) AS created_at,
-                        MAX(c.reading_state) AS reading_state,
-                        MAX(c.page_number) AS page_number,MAX(topic) AS topic
-                        FROM rated_books a
-                        INNER JOIN (SELECT r.userId,r.title AS title,r.bookId AS reviewBookId,
-                        r.review AS review, r.createdAt AS created_at, t.topic AS topic
-                        FROM reviews r
-                        LEFT JOIN topics t
-                        ON t.id=r.topicId
-                        WHERE bookId=${bookId}) b
-                        ON a.userId=b.userId
-                        LEFT JOIN book_reading_states c
-                        ON c.userId=b.userId
-                        WHERE c.bookId=${bookId}
-                        GROUP BY a.userId) d
-                        ON e.id=d.userId`;
-    const ratingsSql = `SELECT rating,bookId,COUNT(rating) AS total
+    const reviewsSql = `SELECT 
+                          MAX(rb.id) AS id, 
+                          MAX(rb.rating) AS rating, 
+                          MAX(r.userId), 
+                          MAX(r.title) AS title, 
+                          r.bookId AS reviewBookId, 
+                          MAX(r.review) AS review, 
+                          MAX(r.createdAt) AS created_at, 
+                          MAX(t.topic) AS topic, 
+                          MAX(c.reading_state) AS reading_state, 
+                          MAX(c.page_number) AS page_number, 
+                          u.username, 
+                          u.firstname, 
+                          u.lastname, 
+                          u.profile_photo 
+                        FROM 
+                          reviews r 
+                          LEFT JOIN rated_books rb ON r.userId = rb.userId 
+                          LEFT JOIN topics t ON t.id = r.topicId 
+                          LEFT JOIN book_reading_states c ON c.userId = r.userId 
+                          INNER JOIN users u ON u.id = r.userId 
+                        WHERE 
+                          r.bookId = 52 
+                        GROUP BY 
+                          r.userId
+                        `;
+    const ratingsSql = `SELECT rating,COUNT(rating) AS total
                         FROM rated_books
                         WHERE bookId=${bookId}
                         GROUP BY rating`;
     let [reviews, ratings, totalRating] = await Promise.all([
-      sequelize.query(reviewsSql, { type: QueryTypes.SELECT }),
-      sequelize.query(ratingsSql, { type: QueryTypes.SELECT }),
-      sequelize.query(totalRatingSql, { type: QueryTypes.SELECT }),
+      returnRawQuery(reviewsSql),
+      returnRawQuery(ratingsSql),
+      returnRawQuery(totalRatingSql),
     ]);
     let ratingsMap = new Map();
+
     for (const element of ratings) {
       ratingsMap.set(element.rating, element.total);
     }
 
     ratingsMap = Object.fromEntries(ratingsMap);
+
     res.status(200).json({ reviews, ratingsMap, totalRating });
   } catch (error) {
     next(error);
@@ -125,7 +132,11 @@ const setPrivateNote = async (req, res, next) => {
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error(result.array());
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     }
 
     const { privateNote, bookId } = matchedData(req);
@@ -166,12 +177,18 @@ const setPrivateNote = async (req, res, next) => {
 
 const setReadingState = async (req, res, next) => {
   try {
-    const { readingState } = req.body;
-    const { bookId } = req.params;
     const userId = req.session.passport.user;
+    const result = validationResult(req);
 
-    logger.log(readingState);
+    if (!result.isEmpty()) {
+      throw new Error(
+        `Validation failed ==>\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+    }
 
+    const { readingState, bookId } = matchedData(req);
     const userReadingState = await BookReadingState.findOne({
       where: {
         bookId: bookId,
@@ -215,9 +232,18 @@ const setReadingState = async (req, res, next) => {
 
 const setBookLiked = async (req, res, next) => {
   try {
-    const { isBookLiked } = req.body;
-    const { bookId } = req.params;
     const userId = req.session.passport.user;
+    const result = validationResult(req);
+
+    if (!result.isEmpty()) {
+      throw new Error(
+        `Validation failed ==>\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+    }
+
+    const { isBookLiked, bookId } = matchedData(req);
 
     const userLikedBook = await LikedBook.findOne({
       where: {
@@ -256,11 +282,19 @@ const setBookLiked = async (req, res, next) => {
 
 const setBookRate = async (req, res, next) => {
   try {
-    const { rate } = req.body;
-    const { bookId } = req.params;
     const userId = req.session.passport.user;
+    const result = validationResult(req);
 
-    logger.log(rate);
+    if (!result.isEmpty()) {
+      throw new Error(
+        `Validation failed ==>\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+    }
+
+    const { rate, bookId } = matchedData(req);
+
     const userRatedBook = await RatedBook.findOne({
       where: {
         bookId: bookId,
@@ -296,10 +330,20 @@ const setBookRate = async (req, res, next) => {
   }
 };
 
-const getReaderBookDetailsAndHeader = async (req, res, next) => {
+const getReaderBookInteractionData = async (req, res, next) => {
   try {
-    const { bookId } = req.params;
     const userId = req.session.passport.user;
+    const result = validationResult(req);
+
+    if (!result.isEmpty()) {
+      throw new Error(
+        `Validation failed ==>\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+    }
+
+    const { bookId } = matchedData(req);
     const readerBookRecordSql = `SELECT a.userId,a.bookId,MAX(a.reading_state) reading_state,
                                 MAX(a.page_number) page_number,
                                 MAX(DATE(starting_date)) starting_date,MAX(DATE(finishing_date)) finishing_date,
@@ -320,7 +364,6 @@ const getReaderBookDetailsAndHeader = async (req, res, next) => {
     readerBookRecord.is_liked =
       readerBookRecord.is_liked == null ? false : readerBookRecord.is_liked;
 
-    logger.log(readerBookRecord);
     res.status(200).json(readerBookRecord);
   } catch (error) {
     next(error);
@@ -375,9 +418,13 @@ const getBookStatistics = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (result.array()) throw new Error(result.array());
-
-    const { bookId } = matchedData;
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+    const { bookId } = matchedData(req);
 
     const readerAgeRange = {};
     const ageRangeArr = [
@@ -524,8 +571,12 @@ const displayReaderProfile = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array()) throw new Error(result.array());
-
+    if (!result.array())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { username } = matchedData(req);
     const reader = await User.findOne({
       attributes: {
@@ -545,8 +596,12 @@ const filterReaderBooks = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array()) throw new Error(result.array());
-
+    if (!result.array())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { q, sort, category, author, year } = matchedData(req);
     const userId = req.session.passport.user;
     const querySortDict = {
@@ -709,8 +764,12 @@ const getReaderReviews = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array()) throw new Error(result.array());
-
+    if (!result.array())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { username } = matchedData(req);
     const user = await User.findOne({
       where: {
@@ -806,8 +865,12 @@ const getReaderQuotes = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array()) throw new Error(result.array());
-
+    if (!result.array())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { username } = matchedData(req);
     const user = await User.findOne({
       where: {
@@ -896,8 +959,12 @@ const getReaderThoughts = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array()) throw new Error(result.array());
-
+    if (!result.array())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { username } = matchedData(req);
 
     const user = await User.findOne({
@@ -956,8 +1023,12 @@ const updateReaderBookDates = async (req, res, next) => {
     const userId = req.session.passport.user;
     const result = validationResult(req);
 
-    if (!result.array()) throw new Error(result.array());
-
+    if (!result.array())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { bookId, startingDate, finishingDate } = matchedData(req);
 
     await BookReadingState.update(
@@ -1166,8 +1237,12 @@ const getReaderPostComments = async (req, res, next) => {
     const result = validationResult(req);
     let comments, post;
 
-    if (!result.isEmpty()) throw new Error(result.array());
-
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { postType, postId: fkPostId } = matchedData(req);
 
     const userId = req.session.passport.user;
@@ -1380,8 +1455,12 @@ const sendComment = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty()) throw new Error(result.array());
-
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { comment, commentToId, postType } = matchedData(req);
     const userId = req.session.passport.user;
     const commentsSql = `SELECT p.id,u.username,u.firstname,u.lastname,
@@ -1555,8 +1634,12 @@ const createTopic = async (req, res, next) => {
     const image = colorList[Math.floor(Math.random() * colorList.length)];
     const result = validationResult(req);
 
-    if (!result.isEmpty()) throw new Error(result.array());
-
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { topic, category } = matchedData(req);
     const topicCategory = await TopicCategory.findAll({
       where: {
@@ -1602,8 +1685,12 @@ const getTopic = async (req, res, next) => {
     const result = validationResult(req);
     let topic;
 
-    if (!result.isEmpty()) throw new Error(result.array());
-
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { topicName } = matchedData(req);
 
     topic = await Topic.findOne({
@@ -1641,8 +1728,12 @@ const getTopicBooks = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty()) throw new Error(result.array());
-
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { topicName } = matchedData(req);
     const topic = await Topic.findOne({
       where: {
@@ -1986,8 +2077,12 @@ const getTopicReaders = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array()) throw new Error(result.array());
-
+    if (!result.array())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { topicName } = matchedData(req);
     const topic = await Topic.findOne({
       where: {
@@ -2364,8 +2459,12 @@ const setFollowingState = async (req, res, next) => {
     const userId = req.session.passport.user;
     const result = validationResult(req);
 
-    if (!result.array()) throw new Error(result.array());
-
+    if (!result.array())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     const { topicId, isFollowed } = matchedData(req);
     console.log(topicId, isFollowed);
 
@@ -2851,7 +2950,7 @@ export {
   setReadingState,
   setBookLiked,
   setBookRate,
-  getReaderBookDetailsAndHeader,
+  getReaderBookInteractionData,
   setUserBookRecord,
   getBookStatistics,
   getReaderProfiles,

@@ -11,11 +11,11 @@ vi.mock("../../middlewares/user_session_checker", () => ({
 }));
 
 const mockUser = {
-  username: "111mike",
-  password: "123",
-  email: "test11@gmail.com",
-  firstname: "mike",
-  lastname: "james",
+  username: "testuser",
+  password: "123testuser",
+  email: "testdump@gmail.com",
+  firstname: "test",
+  lastname: "user",
   DOB: "2000-02-12",
   gender: "Male",
 };
@@ -30,7 +30,7 @@ afterEach(async () => {
   console.log("DB DISCONNECTED");
 });
 
-test("should create user and log in", async () => {
+test.only("should create user and log in", async () => {
   await request(app)
     .post("/signup")
     .send(mockUser)

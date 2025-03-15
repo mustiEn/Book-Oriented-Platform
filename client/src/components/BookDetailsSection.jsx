@@ -21,7 +21,7 @@ import "../css/book_details_section.css";
 import ReaderBookModalDetails from "./ReaderBookModalDetails";
 import Spinner from "../spinner/Spinner";
 
-const BookDetailsSection = ({ bookDetails, readerBookDetailsHeader }) => {
+const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
   const navigate = useNavigate();
   const navigation = useNavigation();
   const bookPageCount = { [bookDetails.id]: bookDetails.page_count };
@@ -47,12 +47,12 @@ const BookDetailsSection = ({ bookDetails, readerBookDetailsHeader }) => {
   });
   const [pending, setPending] = useState(false);
   const [bookState, setBookState] = useState({
-    isBookLiked: readerBookDetailsHeader.is_liked,
+    isBookLiked: readerBookInteractionData.is_liked,
     isBookLikedToggler: false,
     isRatingReset: false,
-    rate: readerBookDetailsHeader.rating,
+    rate: readerBookInteractionData.rating,
     rateGiven: null,
-    ratePrev: readerBookDetailsHeader.rating,
+    ratePrev: readerBookInteractionData.rating,
     rateToggler: false,
   });
 

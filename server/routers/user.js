@@ -70,14 +70,21 @@ router.get(
 
 router.post(
   "/set-private-note/:bookId",
-  isUserActive,
-  [body("privateNote").notEmpty(), param("bookId").notEmpty().isInt()],
+  [
+    isUserActive,
+    body("privateNote").notEmpty().isString(),
+    param("bookId").notEmpty().isInt(),
+  ],
   userController.setPrivateNote
 );
 
 router.post(
   "/set-reading-state/:bookId",
-  isUserActive,
+  [
+    isUserActive,
+    body("readingState").notEmpty().isString(),
+    param("bookId").notEmpty().isInt(),
+  ],
   userController.setReadingState
 );
 
@@ -90,9 +97,9 @@ router.post(
 router.post("/set-book-rate/:bookId", isUserActive, userController.setBookRate);
 
 router.get(
-  "/get-reader-book-details/:bookId",
-  isUserActive,
-  userController.getReaderBookDetailsAndHeader
+  "/get-reader-book-interaction-data/:bookId",
+  [isUserActive, param("bookId").notEmpty().isInt()],
+  userController.getReaderBookInteractionData
 );
 
 router.post(
@@ -103,7 +110,7 @@ router.post(
 
 router.get(
   "/get-book-statistics/:bookId",
-  isUserActive,
+  [isUserActive, param("bookId").notEmpty().isInt()],
   userController.getBookStatistics
 );
 
