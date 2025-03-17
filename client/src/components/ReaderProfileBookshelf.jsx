@@ -41,12 +41,11 @@ const ReaderProfileBookshelf = (l) => {
     "Want to read",
     "Did not finish",
     "Liked",
-    "Rated",
   ];
   const querySortDict = [
-    { id: 1, sortBy: "Title" },
-    { id: 2, sortBy: "Published Date" },
-    { id: 3, sortBy: "Page Count" },
+    { sortBy: "Title" },
+    { sortBy: "Published Date" },
+    { sortBy: "Page Count" },
   ];
 
   useEffect(() => {
@@ -115,11 +114,13 @@ const ReaderProfileBookshelf = (l) => {
                     </>
                   }
                 >
-                  {querySortDict.map((sort, i) => (
+                  {querySortDict.map((sort) => (
                     <Dropdown.Item
-                      key={`dropdown-sort-${i}`}
+                      key={`dropdown-sort-${sort.sortBy}`}
                       as={Link}
-                      to={`/${readerUsername}/bookshelf/books?q=${q}&sort=${i}`}
+                      to={`/${readerUsername}/bookshelf/books?q=${q}&sort=${encodeURIComponent(
+                        sort.sortBy
+                      )}`}
                       onClick={() =>
                         setActiveQuery((prev) => ({
                           ...Object.keys(prev).reduce(

@@ -1,7 +1,7 @@
 import { logger, returnRawQuery } from "../utils/constants.js";
 import fs from "fs";
 import { matchedData, validationResult } from "express-validator";
-import { Op, QueryTypes, Sequelize } from "sequelize";
+import { Op, QueryTypes, Sequelize, where } from "sequelize";
 import { Review } from "../models/Review.js";
 import { User } from "../models/User.js";
 import moment from "moment";
@@ -576,7 +576,7 @@ const displayReaderProfile = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array())
+    if (!result.isEmpty())
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
@@ -599,13 +599,25 @@ const displayReaderProfile = async (req, res, next) => {
 };
 
 const filterReaderBooks = async (req, res, next) => {
+  //^ Gets all queries.q isnt optional which could be either
+  //^ Read, Currently reading, Liked, Want to read or Did not finish
+  //^ Based on q, it gets all the books with their reader and overall rating
+  //^ sort query is either 1,2 or 3.It is to define order by clause with querySort object
+  //^ querySort object but it is optional.
+  //^ readerBookOrderByStmt and readerBookWhereStmt are only for readerBooksSql.
+
   try {
     const result = validationResult(req);
     const userId = req.session.passport.user;
+    const querySort = {
+      Title: ["title", "ASC"],
+      "Published Date": ["published_date", "DESC"],
+      "Page Count": ["page_count", "DESC"],
+    };
     let tableParam;
     let whereParam;
 
-    if (!result.array())
+    if (!result.isEmpty())
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
@@ -622,140 +634,107 @@ const filterReaderBooks = async (req, res, next) => {
       whereParam = `reading_state = "${q}"`;
     }
 
-    const querySortDict = {
-      1: ["title", "ASC"],
-      2: ["published_date", "DESC"],
-      3: ["page_count", "DESC"],
-    };
-    const returnWhereClause = (condition, userId, category, author, year) => {
-      let where = `WHERE ${condition}
-               AND a.userId=${userId}`;
-      if (category != undefined) {
-        where += ` AND h.category= "${category}"`;
-      } else if (author != undefined) {
-        where += ` AND d.author= "${author}"`;
-      } else if (year != undefined && year != "All times") {
-        where += ` AND YEAR(a.createdAt)= "${year}"`;
-      }
-      return where;
-    };
-    const returnOrderByClause = (sort) => {
-      return sort != undefined
-        ? `ORDER BY f.${querySortDict[sort][0]} ${querySortDict[sort][1]}`
+    let readerBookWhereStmt = `WHERE ${whereParam} AND a.userId=${userId}`;
+    const readerBookOrderByStmt =
+      sort != undefined
+        ? `ORDER BY f.${querySort[sort][0]} ${querySort[sort][1]}`
         : "";
-    };
-    const returnReaderBooksSql = (table, where) => {
-      return `SELECT f.id,a.userId AS userId,
-                MAX(f.book_key) AS book_key,  
-                CASE WHEN MAX(LENGTH(f.title)) > 100
-                THEN CONCAT(SUBSTRING(MAX(f.title), 1, 100), '...')
-                ELSE MAX(f.title) END AS truncatedTitle,
-                MAX(f.title) AS title,        
-                MAX(f.thumbnail) AS thumbnail,
-                GROUP_CONCAT(DISTINCT e.publisher SEPARATOR ', ') AS publishers, 
-                MAX(c.publisherId) AS publisher_id,
-                GROUP_CONCAT(DISTINCT d.author SEPARATOR ', ') AS authors
-                FROM ${table} a
-                INNER JOIN author_book_association b
-                ON b.bookId=a.bookId
-                INNER JOIN publisher_book_association c
-                ON c.bookId=a.bookId
-                INNER JOIN AUTHORS d
-                ON d.id=b.authorId
-                INNER JOIN publishers e
-                ON e.id=c.publisherId
-                INNER JOIN category_book_association g
-                ON g.bookId=a.bookId
-                INNER JOIN categories h
-                ON h.id=g.categoryId
-                INNER JOIN book_collections f
-                ON f.id=a.bookId
-                ${returnWhereClause(where, userId, category, author, year)}
-                GROUP BY f.id
-                ${returnOrderByClause(sort)}
-                `;
-    };
-    const returnBooksPerCategorySql = (table, where, userId) => {
-      return `SELECT 
-                MAX(c.id) AS categoryId, 
-                MAX(a.bookId) AS bookId, 
-                MAX(c.category) AS category, 
-                COUNT(c.id) AS "quantity" 
-              FROM 
-                ${table} a 
-                INNER JOIN category_book_association b ON a.bookId = b.bookId 
-                INNER JOIN categories c ON c.id = b.categoryId 
-              WHERE 
-                reading_state = "${q}" 
-                AND userId = ${userId} 
-              GROUP BY 
-                c.id
-              `;
-    };
-    const returnBooksPerAuthorSql = (table, where, userId) => {
-      return `SELECT 
-                MAX(c.id) AS authorId, 
-                MAX(a.bookId) AS bookId, 
-                MAX(c.author) AS author, 
-                COUNT(c.id) AS "quantity" 
-              FROM 
-                ${table} a 
-                INNER JOIN author_book_association b ON a.bookId = b.bookId 
-                INNER JOIN AUTHORS c ON c.id = b.authorId 
-              WHERE 
-                reading_state = "${q}" 
-                AND userId = ${userId} 
-              GROUP BY 
-                c.id
-              `;
-    };
-    const returnBookRatingsSql = () => {
-      return `SELECT te.id,ROUND(AVG(rating),1) AS rating,
-              MAX(b.rating) AS user_rating
-              FROM (
-              ${returnReaderBooksSql(
-                "liked_books",
-                "is_liked = '1'"
-              )}            
-              ) te
-              LEFT JOIN rated_books b
-              ON b.bookId = te.id
-              GROUP BY te.id
-              `;
-    };
-    const readerBooksMerged = [];
-    const bookRatingsSql = returnBookRatingsSql();
-    let booksPerAuthorSql, booksPerCategorySql, readerBooksSql;
 
-    if (q == "Liked") {
-      readerBooksSql = returnReaderBooksSql("liked_books", "is_liked = '1'");
-      booksPerAuthorSql = returnBooksPerAuthorSql(
-        "liked_books",
-        "is_liked = '1'",
-        userId
-      );
-      booksPerCategorySql = returnBooksPerCategorySql(
-        "liked_books",
-        "is_liked = '1'",
-        userId
-      );
-    } else {
-      readerBooksSql = returnReaderBooksSql(
-        "book_reading_states",
-        `reading_state = "${q}"`
-      );
-      booksPerAuthorSql = returnBooksPerAuthorSql(
-        "book_reading_states",
-        `reading_state = "${q}"`,
-        userId
-      );
-      booksPerCategorySql = returnBooksPerCategorySql(
-        "book_reading_states",
-        `reading_state = "${q}"`,
-        userId
-      );
+    if (category != undefined) {
+      readerBookWhereStmt += ` AND h.category= "${category}"`;
+    } else if (author != undefined) {
+      readerBookWhereStmt += ` AND d.author= "${author}"`;
+    } else if (year != undefined && year != "All times") {
+      readerBookWhereStmt += ` AND YEAR(a.createdAt)= "${year}"`;
     }
 
+    const readerBooksSql = `SELECT 
+                                f.id, 
+                                a.userId AS userId, 
+                                MAX(f.book_key) AS book_key, 
+                                CASE WHEN MAX(
+                                  LENGTH(f.title)
+                                ) > 100 THEN CONCAT(
+                                  SUBSTRING(
+                                    MAX(f.title), 
+                                    1, 
+                                    100
+                                  ), 
+                                  '...'
+                                ) ELSE MAX(f.title) END AS truncatedTitle, 
+                                MAX(f.title) AS title, 
+                                MAX(f.thumbnail) AS thumbnail, 
+                                GROUP_CONCAT(
+                                  DISTINCT e.publisher SEPARATOR ', '
+                                ) AS publishers, 
+                                MAX(c.publisherId) AS publisher_id, 
+                                GROUP_CONCAT(DISTINCT d.author SEPARATOR ', ') AS authors 
+                              FROM 
+                                ${tableParam} a 
+                                INNER JOIN author_book_association b ON b.bookId = a.bookId 
+                                INNER JOIN publisher_book_association c ON c.bookId = a.bookId 
+                                INNER JOIN AUTHORS d ON d.id = b.authorId 
+                                INNER JOIN publishers e ON e.id = c.publisherId 
+                                INNER JOIN category_book_association g ON g.bookId = a.bookId 
+                                INNER JOIN categories h ON h.id = g.categoryId 
+                                INNER JOIN book_collections f ON f.id = a.bookId 
+                              ${readerBookWhereStmt} 
+                              GROUP BY 
+                                f.id 
+                              ${readerBookOrderByStmt}
+                                              `;
+    const booksPerCategorySql = `SELECT 
+                                    MAX(c.id) AS categoryId, 
+                                    MAX(a.bookId) AS bookId, 
+                                    MAX(c.category) AS category, 
+                                    COUNT(c.id) AS "quantity" 
+                                  FROM 
+                                    ${tableParam} a 
+                                    INNER JOIN category_book_association b ON a.bookId = b.bookId 
+                                    INNER JOIN categories c ON c.id = b.categoryId 
+                                  WHERE 
+                                    ${whereParam} 
+                                    AND userId = ${userId} 
+                                  GROUP BY 
+                                    c.id
+                                  `;
+
+    const booksPerAuthorSql = `SELECT 
+                                MAX(c.id) AS authorId, 
+                                MAX(a.bookId) AS bookId, 
+                                MAX(c.author) AS author, 
+                                COUNT(c.id) AS "quantity" 
+                              FROM 
+                                ${tableParam} a 
+                                INNER JOIN author_book_association b ON a.bookId = b.bookId 
+                                INNER JOIN AUTHORS c ON c.id = b.authorId 
+                              WHERE 
+                                ${whereParam} 
+                                AND userId = ${userId} 
+                              GROUP BY 
+                                c.id
+                              `;
+
+    const bookRatingsSql = `SELECT 
+                              a.bookId, 
+                              MAX(rb.rating) user_rating, 
+                              ROUND(
+                                AVG(rb2.rating), 
+                                1
+                              ) rating 
+                            FROM 
+                              ${tableParam} a 
+                              INNER JOIN book_collections f ON f.id = a.bookId 
+                              LEFT JOIN rated_books rb ON rb.bookId = a.bookId 
+                              AND rb.userId = ${userId} 
+                              LEFT JOIN rated_books rb2 ON rb2.bookId = a.bookId 
+                            WHERE 
+                              ${whereParam} 
+                              AND a.userId = ${userId} 
+                            GROUP BY 
+                              a.bookId
+                                          `;
+    const readerBooksMerged = [];
     const [readerBooks, booksPerAuthor, booksPerCategory, bookRatings] =
       await Promise.all([
         returnRawQuery(readerBooksSql),
@@ -765,15 +744,16 @@ const filterReaderBooks = async (req, res, next) => {
       ]);
 
     if (readerBooks.length != 0) {
-      const bookRatingsMap = new Map(
-        bookRatings.map((item) => [
-          item.id,
-          { overall_rating: item.rating, reader_rating: item.user_rating },
-        ])
-      );
+      const bookRatingsMap = bookRatings.reduce((acc, curr) => {
+        acc[curr.bookId] = {
+          reader_rating: curr.user_rating,
+          overall_rating: curr.rating,
+        };
+        return acc;
+      }, {});
 
       for (let x of readerBooks) {
-        readerBooksMerged.push({ ...x, ...bookRatingsMap.get(x.id) });
+        readerBooksMerged.push({ ...x, ...bookRatingsMap[x.id] });
       }
     }
     res.status(200).json({
@@ -790,12 +770,13 @@ const getReaderReviews = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array())
+    if (!result.isEmpty())
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
         }`
       );
+
     const { username } = matchedData(req);
     const user = await User.findOne({
       where: {
@@ -815,7 +796,6 @@ const getReaderReviews = async (req, res, next) => {
                         r.title, 
                         r.review, 
                         p.comment_count, 
-                        #people_read,
                         rb.rating,
                         lb.is_liked,
                         brs.reading_state, 
@@ -833,7 +813,6 @@ const getReaderReviews = async (req, res, next) => {
                         INNER JOIN (
                           SELECT 
                             r.bookId AS bcId, 
-                            #bc.people_read AS people_read, 
                             CASE WHEN MAX(
                               LENGTH(bc.title)
                             ) > 100 THEN CONCAT(
@@ -890,7 +869,7 @@ const getReaderQuotes = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array())
+    if (!result.isEmpty())
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
@@ -984,7 +963,7 @@ const getReaderThoughts = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array())
+    if (!result.isEmpty())
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
@@ -1048,12 +1027,13 @@ const updateReaderBookDates = async (req, res, next) => {
     const userId = req.session.passport.user;
     const result = validationResult(req);
 
-    if (!result.array())
+    if (!result.isEmpty())
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
         }`
       );
+
     const { bookId, startingDate, finishingDate } = matchedData(req);
 
     await BookReadingState.update(
@@ -1077,9 +1057,18 @@ const updateReaderBookDates = async (req, res, next) => {
 const updateReaderPageNumber = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
-    const { bookId } = req.params;
-    const { pageNumber } = req.body;
-    const readerBookRecord = await BookReadingState.update(
+    const result = validationResult(req);
+
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+
+    const { bookId, pageNumber } = matchedData(req);
+
+    await BookReadingState.update(
       { page_number: pageNumber },
       {
         where: {
@@ -1088,6 +1077,7 @@ const updateReaderPageNumber = async (req, res, next) => {
         },
       }
     );
+
     res.status(200).json({
       message: "Page number updated",
     });
@@ -1097,6 +1087,8 @@ const updateReaderPageNumber = async (req, res, next) => {
 };
 
 const uploadImage = async (req, res, next) => {
+  //^ Gets image, saves its name to the db and deletes the previous one
+  //^ from public folder if exists
   try {
     const userId = req.session.passport.user;
     const filePath = "../client/public/Pps_and_Bgs";
@@ -1167,52 +1159,58 @@ const getReaderBookshelfOverview = async (req, res, next) => {
       });
     });
 
-    const yearlyReadBooksSql = `SELECT MAX(DATE_FORMAT(finishing_date, '%b')) AS MONTH,
-                                      COUNT(*) AS "quantity"
-                                      FROM book_reading_states
-                                      WHERE reading_state = "Read"
-                                      AND userId=${userId}
-                                      AND YEAR(finishing_date)=YEAR(CURDATE())
-                                      GROUP BY MONTH(finishing_date)`;
-    const readBooksPerAuthorSql = `SELECT MAX(c.id) AS authorId,MAX(a.bookId) AS bookId,
-                                  MAX(c.author) AS author,
-                                  COUNT(c.id) AS "quantity"
-                                  FROM (SELECT bookId AS bookId
-                                  FROM book_reading_states 
-                                  WHERE reading_state = "Read"
-                                  AND userId=${userId}) a
-                                  INNER JOIN author_book_association b
-                                  ON a.bookId=b.bookId
-                                  INNER JOIN AUTHORS c
-                                  ON c.id=b.authorId
-                                  GROUP BY c.id 
+    const yearlyReadBooksSql = `SELECT 
+                                  MAX(
+                                    DATE_FORMAT(finishing_date, '%b')
+                                  ) AS MONTH, 
+                                  COUNT(*) AS "quantity" 
+                                FROM 
+                                  book_reading_states 
+                                WHERE 
+                                  reading_state = "Read" 
+                                  AND userId = ${userId} 
+                                  AND YEAR(finishing_date)= YEAR(
+                                    CURDATE()
+                                  ) 
+                                GROUP BY 
+                                  MONTH(finishing_date)
+                                `;
+    const readBooksPerAuthorSql = `SELECT 
+                                      MAX(c.id) AS authorId, 
+                                      MAX(a.bookId) AS bookId, 
+                                      MAX(c.author) AS author, 
+                                      COUNT(c.id) AS "quantity" 
+                                    FROM 
+                                      book_reading_states a 
+                                      INNER JOIN author_book_association b ON a.bookId = b.bookId 
+                                      INNER JOIN AUTHORS c ON c.id = b.authorId 
+                                    WHERE 
+                                      reading_state = "Read" 
+                                      AND userId = ${userId} 
+                                    GROUP BY 
+                                      c.id
                                   `;
-    const readBooksPerCategorySql = `SELECT MAX(c.id) AS categoryId,MAX(a.bookId) AS bookId,
-                                      MAX(c.category) AS category,
-                                      COUNT(c.id) AS "quantity"
-                                      FROM (SELECT bookId AS bookId
-                                      FROM book_reading_states 
-                                      WHERE reading_state = "Read"
-                                      AND userId=${userId}) a
-                                      INNER JOIN category_book_association b
-                                      ON a.bookId=b.bookId
-                                      INNER JOIN categories c
-                                      ON c.id=b.categoryId
-                                      GROUP BY c.id 
+    const readBooksPerCategorySql = `SELECT 
+                                        MAX(c.id) AS categoryId, 
+                                        MAX(a.bookId) AS bookId, 
+                                        MAX(c.category) AS category, 
+                                        COUNT(c.id) AS "quantity" 
+                                      FROM 
+                                        book_reading_states a 
+                                        INNER JOIN category_book_association b ON a.bookId = b.bookId 
+                                        INNER JOIN categories c ON c.id = b.categoryId 
+                                      WHERE 
+                                        reading_state = "Read" 
+                                        AND userId = ${userId} 
+                                      GROUP BY 
+                                        c.id
                                       `;
     let [yearlyReadBooksData, readBooksPerAuthor, readBooksPerCategory] =
       await Promise.all([
-        sequelize.query(yearlyReadBooksSql, {
-          type: QueryTypes.SELECT,
-        }),
-        sequelize.query(readBooksPerAuthorSql, {
-          type: QueryTypes.SELECT,
-        }),
-        sequelize.query(readBooksPerCategorySql, {
-          type: QueryTypes.SELECT,
-        }),
+        returnRawQuery(yearlyReadBooksSql),
+        returnRawQuery(readBooksPerAuthorSql),
+        returnRawQuery(readBooksPerCategorySql),
       ]);
-
     if (yearlyReadBooksData.length != 12) {
       yearlyReadBooksData = new Map(
         yearlyReadBooksData.map((element) => [
@@ -1220,10 +1218,11 @@ const getReaderBookshelfOverview = async (req, res, next) => {
           element["quantity"],
         ])
       );
-
+      logger.log(yearlyReadBooksData);
       for (let element of yearlyReadBooks) {
         if (yearlyReadBooksData.has(element.MONTH)) {
-          element["quantity"] = yearlyReadBooksData.get(element.MONTH);
+          logger.log(yearlyReadBooksData.get(element.MONTH));
+          element.quantity = yearlyReadBooksData.get(element.MONTH);
         }
       }
     }
@@ -2099,7 +2098,7 @@ const getTopicReaders = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.array())
+    if (!result.isEmpty())
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
@@ -2478,7 +2477,7 @@ const setFollowingState = async (req, res, next) => {
     const userId = req.session.passport.user;
     const result = validationResult(req);
 
-    if (!result.array())
+    if (!result.isEmpty())
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path

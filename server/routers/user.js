@@ -4,6 +4,7 @@ import { query, body, param, check } from "express-validator";
 import multer from "multer";
 import bodyParser from "body-parser";
 import { isUserActive } from "../middlewares/user_session_checker.js";
+import { logger } from "../utils/constants.js";
 
 const maxSize = 25 * 1000 * 100;
 const storage = multer.diskStorage({
@@ -137,7 +138,7 @@ router.get(
   [
     isUserActive,
     query("q").isString(),
-    query("sort").optional().isInt(),
+    query("sort").optional().isString(),
     query("category").optional().isString(),
     query("year").optional().isString(),
     query("author").optional().isString(),
@@ -147,8 +148,7 @@ router.get(
 
 router.get(
   "/:username/get-reader-reviews",
-  isUserActive,
-  check("username").notEmpty(),
+  [isUserActive, param("username").notEmpty().isString()],
   userController.getReaderReviews
 );
 router.get(
@@ -235,23 +235,33 @@ router.post(
 
 router.post(
   "/update-reader-book-dates/:bookId",
-  isUserActive,
+  [
+    isUserActive,
+    param("bookId").notEmpty().isInt(),
+    body("startingDate"),
+    body("finishingDate"),
+  ],
   userController.updateReaderBookDates
 );
 
 router.post(
   "/update-reader-page-number/:bookId",
-  isUserActive,
+  [
+    isUserActive,
+    body("pageNumber").notEmpty().isInt(),
+    param("bookId").notEmpty().isInt(),
+  ],
   userController.updateReaderPageNumber
 );
 
 router.post(
   "/upload",
+  isUserActive,
   upload.fields([
     { name: "bgImage", maxCount: 1 },
     { name: "ppImage", maxCount: 1 },
   ]),
-  isUserActive,
+
   userController.uploadImage
 );
 

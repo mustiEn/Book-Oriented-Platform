@@ -284,6 +284,7 @@ export const loadReaderReviews = async ({ params }) => {
 export const loadReaderBooks = async ({ request }) => {
   const q = new URL(request.url).search;
   const response = await fetch(`/api/profile/books${q}`);
+  console.log(q);
 
   const data = await response.json();
   if (!response.ok) {
