@@ -246,11 +246,10 @@ export const loadReaderPostComments = async ({ params }) => {
 
   const response = await fetch(`/api/${postType}/${postId}`);
 
-  for (const res of response) {
-    if (!res.ok) {
-      throw new Error(res.error);
-    }
+  if (!response.ok) {
+    throw new Error(response.error);
   }
+
   const data = await response.json();
   return data;
 };

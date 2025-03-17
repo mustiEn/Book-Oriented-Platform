@@ -7,6 +7,7 @@ import {
   beforeAll,
   beforeEach,
   describe,
+  expect,
   test,
   vi,
 } from "vitest";
@@ -187,10 +188,103 @@ test.skip("should upload image", async () => {
   console.log(res.body);
 });
 
-test("should get reader bookshelf overview", async () => {
+test.skip("should get reader bookshelf overview", async () => {
   const res = await request(app)
     .get("/profile/bookshelf/get-bookshelf-overview")
     .expect("Content-Type", /json/)
     .expect(200);
   console.log(res.body);
 });
+
+test.skip.each([
+  { postType: "review", postId: 1 },
+  { postType: "quote", postId: 1 },
+  { postType: "thought", postId: 1 },
+  { postType: "comment", postId: 1 },
+])(
+  "should get reader's comments with param postType = $postType, postId = $postId",
+  async ({ postType, postId }) => {
+    const res = await request(app)
+      .get(`/${postType}/${postId}`)
+      .expect("Content-Type", /json/)
+      .expect(200);
+    console.log(res.body);
+  }
+);
+
+test.skip.each([
+  { postType: "review", postId: 1, comment: "My test comment to review" },
+  { postType: "comment", postId: 1, comment: "My test comment to comment" },
+])(
+  "should save reader's comment to the db and update the post being commented on with body postType = $postType, commentToId = $commentToId, comment = $comment",
+  async ({ postType, commentToId }) => {
+    const res = await request(app)
+      .post("/send-comment")
+      .send({
+        comment,
+        commentToId,
+        postType,
+      })
+      .expect("Content-Type", /json/)
+      .expect(200);
+    console.log(res.body);
+  }
+);
+
+test.skip("should get reader comments", async () => {
+  const res = await request(app)
+    .get("/get-reader-comments/0")
+    .expect("Content-Type", /json/)
+    .expect(200);
+  console.log(res.body);
+});
+
+test.skip("should get themed topics", async () => {
+  const res = await request(app)
+    .get("/get-themed-topics/Literature")
+    .expect("Content-Type", /json/)
+    .expect(200);
+  console.log(res.body);
+});
+
+test.skip.each([
+  { topic: "test topic", category: ["Anime"] },
+  { topic: "test topic 5", category: ["Anime", "Literature"] },
+])(
+  "should create topics with body topic = $topic, category = $category",
+  async ({ topic, category }) => {
+    const res = await request(app)
+      .post("/create-topic")
+      .send({ topic, category })
+      .expect("Content-Type", /json/)
+      .expect(200);
+
+    console.log(res.body);
+  }
+);
+
+test.skip("should get topic", async () => {
+  const res = await request(app)
+    .get("/get-topic/Literature")
+    .expect("Content-Type", /json/)
+    .expect(200);
+  console.log(res.body);
+});
+
+test.each([
+  { topicName: "Literature", postType: "all" },
+  { topicName: "Literature", postType: "review" },
+  { topicName: "Literature", postType: "thought" },
+  { topicName: "Literature", postType: "quote" },
+  { topicName: "Literature", postType: "quote" },
+])(
+  "should get topic topic posts with param postType = $postType, topic = $topic",
+  async ({ topicName, postType }) => {
+    // const url = sortBy ?
+    const res = await request(app)
+      .get(`/get-topic-posts/${topicName}/${postType}?sortBy=`)
+      .expect("Content-Type", /json/)
+      .expect(200);
+    console.log(res.body);
+  }
+);

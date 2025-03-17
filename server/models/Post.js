@@ -28,7 +28,6 @@ export const Post = sequelize.define(
 );
 
 Post.addHook("afterCreate", async (post, options) => {
-  logger.log(post.dataValues.topicId);
   if (post.get("post_type") != "comment") {
     await Topic.update(
       {

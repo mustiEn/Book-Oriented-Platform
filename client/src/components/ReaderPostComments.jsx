@@ -65,14 +65,13 @@ const ReaderPostComments = () => {
     }
     return comp;
   };
-  post = JSON.parse(post);
 
   console.log(post, comments);
 
-  useEffect(() => {
-    setCommentList(comments);
-    console.log(comments);
-  }, [comments]);
+  // useEffect(() => {
+  //   setCommentList(comments);
+  //   console.log(comments);
+  // }, [comments]);
 
   return (
     <>

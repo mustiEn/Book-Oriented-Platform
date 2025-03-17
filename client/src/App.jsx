@@ -208,11 +208,6 @@ function App() {
                 },
               ],
             },
-            // {
-            //   path: "overview",
-            //   element: <BookshelfOverview />,
-            //   loader: loadReaderBookshelfOverview,
-            // },
             {
               path: "comments",
               element: <ReaderProfileComments />,

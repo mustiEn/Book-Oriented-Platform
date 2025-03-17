@@ -164,8 +164,7 @@ router.get(
 
 router.get(
   "/get-topic/:topicName",
-  isUserActive,
-  param("topicName").notEmpty().isString(),
+  [isUserActive, param("topicName").notEmpty().isString()],
   userController.getTopic
 );
 router.get(
@@ -272,18 +271,21 @@ router.get(
 );
 router.get(
   "/get-reader-comments/:index",
-  isUserActive,
+  [isUserActive, param("index").notEmpty().isInt()],
   userController.getReaderComments
 );
 router.get(
   "/get-themed-topics/:category",
-  isUserActive,
+  [isUserActive, param("category").notEmpty().isString()],
   userController.getThemedTopics
 );
 router.get(
   "/:postType/:postId",
-  isUserActive,
-  [param("postType").notEmpty().isString(), param("postId").notEmpty().isInt()],
+  [
+    isUserActive,
+    param("postType").notEmpty().isString(),
+    param("postId").notEmpty().isInt(),
+  ],
   userController.getReaderPostComments
 );
 router.post(
@@ -292,14 +294,17 @@ router.post(
   [
     body("comment").notEmpty().isString(),
     body("commentToId").notEmpty().isInt(),
-    body("postType").notEmpty().isInt(),
+    body("postType").notEmpty().isString(),
   ],
   userController.sendComment
 );
 router.post(
   "/create-topic",
-  isUserActive,
-  [body("topic").notEmpty().isString(), body("category").notEmpty().isString()],
+  [
+    isUserActive,
+    body("topic").notEmpty().isString(),
+    body("category").notEmpty().isArray(),
+  ],
   userController.createTopic
 );
 

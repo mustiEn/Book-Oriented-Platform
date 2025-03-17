@@ -1149,6 +1149,8 @@ const uploadImage = async (req, res, next) => {
 };
 
 const getReaderBookshelfOverview = async (req, res, next) => {
+  //^ initializes placeholder data for monthly reads and updates it
+  //^ with actual results from the database.
   try {
     const userId = req.session.passport.user;
     let yearlyReadBooks = [];
@@ -1211,21 +1213,17 @@ const getReaderBookshelfOverview = async (req, res, next) => {
         returnRawQuery(readBooksPerAuthorSql),
         returnRawQuery(readBooksPerCategorySql),
       ]);
-    if (yearlyReadBooksData.length != 12) {
-      yearlyReadBooksData = new Map(
-        yearlyReadBooksData.map((element) => [
-          element.MONTH,
-          element["quantity"],
-        ])
-      );
-      logger.log(yearlyReadBooksData);
-      for (let element of yearlyReadBooks) {
-        if (yearlyReadBooksData.has(element.MONTH)) {
-          logger.log(yearlyReadBooksData.get(element.MONTH));
-          element.quantity = yearlyReadBooksData.get(element.MONTH);
-        }
+    // if (yearlyReadBooksData.length != 12) {
+    yearlyReadBooksData = new Map(
+      yearlyReadBooksData.map((element) => [element.MONTH, element["quantity"]])
+    );
+    for (let element of yearlyReadBooks) {
+      if (yearlyReadBooksData.has(element.MONTH)) {
+        logger.log(yearlyReadBooksData.get(element.MONTH));
+        element.quantity = yearlyReadBooksData.get(element.MONTH);
       }
     }
+    // }
 
     res.status(200).json({
       yearlyReadBooks,
@@ -1257,18 +1255,20 @@ const getLoggedInReader = async (req, res, next) => {
 };
 
 const getReaderPostComments = async (req, res, next) => {
+  //^ Gets reader's comments depending on postType.
+  //^ PostId is the foreign key for the post
   try {
     const result = validationResult(req);
     let comments, post;
-
+    logger.log(req.params);
     if (!result.isEmpty())
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
         }`
       );
-    const { postType, postId: fkPostId } = matchedData(req);
 
+    const { postType, postId: fkPostId } = matchedData(req);
     const userId = req.session.passport.user;
     const user = await User.findByPk(userId, {
       attributes: ["profile_photo"],
@@ -1362,7 +1362,6 @@ const getReaderPostComments = async (req, res, next) => {
         raw: true,
         group: ["Review.id", "Book_Collection.id", "Topic.id"],
       });
-      // logger.log(post);
     } else if (postType == "quote") {
       post = await Quote.findOne({
         attributes: [
@@ -1475,6 +1474,20 @@ const getReaderPostComments = async (req, res, next) => {
 };
 
 const sendComment = async (req, res, next) => {
+  //^ Gets comment, post being commented on and postType
+  //^ to define what post it is.
+  //^ Predefines the comments sql to update the comments list
+  //^ after creating and updating
+  //^ Checks the post being commented on, it could be a rootParent
+  //^ which is quote,review,thought or just a comment.
+  //^ If the post being commented is not a comment,it creates a
+  //^ new comment with the rootParent id being the id of the post at
+  //^ the beginning. If its not, it finds the comment being commented
+  //^ on, then creates a new comment with the rootParent id of the
+  //^ comment being commented on.
+  //^ It updated the post comment count and get the updated comment
+  //^ list
+
   const t = await sequelize.transaction();
   try {
     const result = validationResult(req);
@@ -1485,21 +1498,34 @@ const sendComment = async (req, res, next) => {
           result.array()[0].path
         }`
       );
+
     const { comment, commentToId, postType } = matchedData(req);
     const userId = req.session.passport.user;
-    const commentsSql = `SELECT p.id,u.username,u.firstname,u.lastname,
-                          te.comment,te.createdAt,p.comment_count
-                          FROM posts p
-                          INNER JOIN(SELECT c.id,c.comment,c.createdAt,c.userId
-                          FROM posts p
-                          INNER JOIN comments c
-                          ON c.commentToId=p.id
-                          AND p.id=${commentToId}
-                          AND p.post_type="${postType}") te
-                          ON te.id=p.postId
-                          AND p.post_type="comment"
-                          INNER JOIN users u
-                          ON u.id=te.userId`;
+    const commentsSql = `SELECT 
+                            p.id, 
+                            u.username, 
+                            u.firstname, 
+                            u.lastname, 
+                            te.comment, 
+                            te.createdAt, 
+                            p.comment_count 
+                          FROM 
+                            posts p 
+                            INNER JOIN(
+                              SELECT 
+                                c.id, 
+                                c.comment, 
+                                c.createdAt, 
+                                c.userId 
+                              FROM 
+                                posts p 
+                                INNER JOIN comments c ON c.commentToId = p.id 
+                                AND p.id = ${commentToId} 
+                                AND p.post_type = "${postType}"
+                            ) te ON te.id = p.postId 
+                            AND p.post_type = "comment" 
+                            INNER JOIN users u ON u.id = te.userId
+                          `;
 
     const post = await Post.findOne({
       where: {
@@ -1510,12 +1536,24 @@ const sendComment = async (req, res, next) => {
     if (!post) {
       throw new Error("Post not found");
     }
+
     if (postType != "comment") {
-      await Comment.create(
+      const newComment = (
+        await Comment.create(
+          {
+            comment: comment,
+            commentToId: post.id,
+            rootParentId: post.id,
+            userId: userId,
+          },
+          { transaction: t }
+        )
+      ).toJSON();
+
+      await Post.create(
         {
-          comment: comment,
-          commentToId: post.id,
-          rootParentId: post.id,
+          post_type: "comment",
+          postId: newComment.id,
           userId: userId,
         },
         { transaction: t }
@@ -1527,12 +1565,24 @@ const sendComment = async (req, res, next) => {
         },
       });
 
-      if (!commentPost) throw new Error("Comment not found");
-      await Comment.create(
+      if (!commentPost) throw new Error("Comment post not found");
+
+      const newComment = (
+        await Comment.create(
+          {
+            comment: comment,
+            commentToId: post.id,
+            rootParentId: commentPost.rootParentId,
+            userId: userId,
+          },
+          { transaction: t }
+        )
+      ).toJSON();
+
+      await Post.create(
         {
-          comment: comment,
-          commentToId: post.id,
-          rootParentId: commentPost.rootParentId,
+          post_type: "comment",
+          postId: newComment.id,
           userId: userId,
         },
         { transaction: t }
@@ -1566,7 +1616,16 @@ const sendComment = async (req, res, next) => {
 
 const getReaderComments = async (req, res, next) => {
   try {
-    const { index } = req.params;
+    const result = validationResult(req);
+
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+
+    const { index } = matchedData(req);
     const commentsSql = `SELECT te.post_id,
                           te.post_type,
                           u.username,
@@ -1609,7 +1668,7 @@ const getReaderComments = async (req, res, next) => {
                     Limit 5 offset ${index}
                                         `;
 
-    const [comments] = await sequelize.query(commentsSql);
+    const comments = await returnRawQuery(commentsSql);
 
     res.status(200).json({
       comments,
@@ -1621,8 +1680,17 @@ const getReaderComments = async (req, res, next) => {
 
 const getThemedTopics = async (req, res, next) => {
   try {
-    const { category } = req.params;
+    const result = validationResult(req);
     const userId = req.session.passport.user;
+
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+
+    const { category } = matchedData(req);
     const topicCategory = await TopicCategory.findOne({
       attributes: ["id"],
       where: {
@@ -1644,7 +1712,8 @@ const getThemedTopics = async (req, res, next) => {
                             WHERE 
                               topicCategoryId = ${topicCategory.id};
                             `;
-    let themedTopics = await returnRawQuery(themedTopicsSql);
+    const themedTopics = await returnRawQuery(themedTopicsSql);
+
     res.status(200).json(themedTopics);
   } catch (error) {
     next(error);
@@ -1652,6 +1721,9 @@ const getThemedTopics = async (req, res, next) => {
 };
 
 const createTopic = async (req, res, next) => {
+  //^ Gets body from request, finds topic category
+  //^ and loops through them to create topic
+  //^ association
   const t = await sequelize.transaction();
   try {
     const colorList = ["#095109", "#000", "#710c0c", "#875802", "#00006d"];
@@ -1664,6 +1736,7 @@ const createTopic = async (req, res, next) => {
           result.array()[0].path
         }`
       );
+
     const { topic, category } = matchedData(req);
     const topicCategory = await TopicCategory.findAll({
       where: {
@@ -1674,32 +1747,33 @@ const createTopic = async (req, res, next) => {
     if (!topicCategory) throw new Error("Topic category not found");
 
     const topicCategoryIds = topicCategory.map((i) => i.id);
-    const newTopic = await Topic.create(
-      {
-        topic: topic,
-        image: image,
-      },
-      { transaction: t }
-    );
-    const sql = `INSERT INTO topic_category_association (createdAt,updatedAt,TopicId,topicCategoryId)
-                VALUES (NOW(), NOW(), :topicId, :topicCategoryId);`;
-    const queries = topicCategoryIds.map((element) => {
-      return returnRawQuery(sql, {
-        replacements: {
-          topicId: newTopic.id,
-          topicCategoryId: element,
+    const newTopic = (
+      await Topic.create(
+        {
+          topic: topic,
+          image: image,
         },
+        { transaction: t }
+      )
+    ).toJSON();
+
+    const sql = `INSERT INTO topic_category_association (createdAt,updatedAt,TopicId,topicCategoryId)
+                VALUES (NOW(), NOW(), ?, ?);`;
+    const queries = topicCategoryIds.map((element) =>
+      sequelize.query(sql, {
+        replacements: [newTopic.id, element],
         transaction: t,
-      });
-    });
+      })
+    );
 
     await Promise.all(queries);
+    await t.commit();
+
     res.status(200).json({
       success: "Topic created",
     });
-    await t.commit();
   } catch (error) {
-    await t.rollback();
+    // await t.rollback();
     next(error);
   }
 };
@@ -1707,7 +1781,6 @@ const createTopic = async (req, res, next) => {
 const getTopic = async (req, res, next) => {
   try {
     const result = validationResult(req);
-    let topic;
 
     if (!result.isEmpty())
       throw new Error(
@@ -1715,9 +1788,10 @@ const getTopic = async (req, res, next) => {
           result.array()[0].path
         }`
       );
+
     const { topicName } = matchedData(req);
 
-    topic = await Topic.findOne({
+    const topic = await Topic.findOne({
       where: {
         topic: topicName,
       },
@@ -1740,9 +1814,12 @@ const getTopic = async (req, res, next) => {
       },
     });
 
-    topic = { ...topic, ...{ topicFollowerCount: topicFollowerCount } };
+    const topicMerged = {
+      ...topic,
+      ...{ topicFollowerCount: topicFollowerCount },
+    };
 
-    res.status(200).json(topic);
+    res.status(200).json(topicMerged);
   } catch (error) {
     next(error);
   }
@@ -1787,7 +1864,7 @@ const getTopicBooks = async (req, res, next) => {
                                 tba.TopicId = ${topic.id}
                                 `;
     const topicBooks = await returnRawQuery(topicBooksSql);
-    // logger.log(topicBooks);
+
     const topicBookIds = topicBooks.map((item) => item.BookCollectionId);
     const books = await BookCollection.findAll({
       attributes: [
@@ -2040,7 +2117,6 @@ const getTopicPosts = async (req, res, next) => {
       posts = await returnRawQuery(quotesSql);
     }
 
-    // logger.log("!!!!!!!!!!!!!!!!!!! \n posts ==> \n", posts);
     jsonDict["posts"] = posts;
     res.status(200).json(jsonDict);
   } catch (error) {
