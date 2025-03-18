@@ -271,18 +271,43 @@ test.skip("should get topic", async () => {
   console.log(res.body);
 });
 
-test.each([
+test.skip.each([
   { topicName: "Literature", postType: "all" },
   { topicName: "Literature", postType: "review" },
   { topicName: "Literature", postType: "thought" },
   { topicName: "Literature", postType: "quote" },
-  { topicName: "Literature", postType: "quote" },
+  { topicName: "Literature", postType: "quote", sortBy: "oldest" },
 ])(
-  "should get topic topic posts with param postType = $postType, topic = $topic",
-  async ({ topicName, postType }) => {
-    // const url = sortBy ?
+  "should get topic posts with param postType = $postType, topic = $topicName, sortBy = $sortBy",
+  async ({ topicName, postType, sortBy }) => {
+    const url = sortBy
+      ? `/get-topic-posts/${topicName}/${postType}?sortBy=${sortBy}`
+      : `/get-topic-posts/${topicName}/${postType}`;
     const res = await request(app)
-      .get(`/get-topic-posts/${topicName}/${postType}?sortBy=`)
+      .get(url)
+      .expect("Content-Type", /json/)
+      .expect(200);
+    console.log(res.body);
+  }
+);
+
+test.skip("should get topic readers", async () => {
+  const res = await request(app)
+    .get("/get-topic-readers/Literature")
+    .expect("Content-Type", /json/)
+    .expect(200);
+  console.log(res.body);
+});
+
+test.each([
+  { isFollowed: true, topicId: 10 },
+  { isFollowed: false, topicId: 4 },
+])(
+  "should set following state with body isFollowed = $isFollowed, topicId = $topicId",
+  async ({ isFollowed, topicId }) => {
+    const res = await request(app)
+      .post("/set-following-state")
+      .send({ isFollowed, topicId })
       .expect("Content-Type", /json/)
       .expect(200);
     console.log(res.body);

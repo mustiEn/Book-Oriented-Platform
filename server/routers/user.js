@@ -179,13 +179,12 @@ router.get(
 );
 router.get(
   "/get-topic-books/:topicName",
-  isUserActive,
-  [param("topicName").notEmpty().isString()],
+  [isUserActive, param("topicName").notEmpty().isString()],
   userController.getTopicBooks
 );
 router.get(
   "/get-topic-readers/:topicName",
-  isUserActive,
+  [isUserActive, param("topicName").notEmpty().isString()],
   userController.getTopicReaders
 );
 
@@ -227,8 +226,11 @@ router.get(
 
 router.post(
   "/set-following-state",
-  isUserActive,
-  [body("isFollowed").notEmpty().isInt(), body("topicId").notEmpty().isInt()],
+  [
+    isUserActive,
+    body("isFollowed").notEmpty().isBoolean(),
+    body("topicId").notEmpty().isInt(),
+  ],
   userController.setFollowingState
 );
 

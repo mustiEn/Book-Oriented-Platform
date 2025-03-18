@@ -1948,7 +1948,7 @@ const getTopicPosts = async (req, res, next) => {
 
     let { sortBy, topicName, postType } = matchedData(req);
 
-    sortBy = sortBy != undefined ? "ASC" : "DESC";
+    sortBy = sortBy != "oldest" ? "ASC" : "DESC";
     const topic = await Topic.findOne({
       attributes: ["id"],
       where: {
@@ -2127,13 +2127,13 @@ const getTopicPosts = async (req, res, next) => {
 const getReaderBookModalDetails = async (req, res, next) => {
   try {
     const result = validationResult(req);
+    const userId = req.session.passport.user;
 
     if (!result.isEmpty()) {
       return res.status(400).json({ error: result.array() });
     }
 
-    let { bookId } = matchedData(req);
-    const userId = req.session.passport.user;
+    const { bookId } = matchedData(req);
     const readerBookModalDetails = await BookCollection.findAll({
       attributes: ["id", "page_count"],
       include: [
@@ -2163,7 +2163,6 @@ const getReaderBookModalDetails = async (req, res, next) => {
       ],
     });
 
-    // logger.log(readerBookModalDetails);
     res.status(200).json({ readerBookModalDetails });
   } catch (error) {
     next(error);
@@ -2180,6 +2179,7 @@ const getTopicReaders = async (req, res, next) => {
           result.array()[0].path
         }`
       );
+
     const { topicName } = matchedData(req);
     const topic = await Topic.findOne({
       where: {
@@ -2209,7 +2209,7 @@ const getTopicReaders = async (req, res, next) => {
                                     u.id
                                 `;
     const topicReaders = await returnRawQuery(topicReadersSql);
-    // logger.log(topicReaders);
+
     res.status(200).json(topicReaders);
   } catch (error) {
     next(error);
@@ -2313,7 +2313,6 @@ const getExploreTopics = async (req, res, next) => {
                     `;
     const popularTopics = await returnRawQuery(popularTopicsSql);
 
-    // logger.log(popularTopics);
     res.status(200).json({ trendingTopics, popularTopics });
   } catch (error) {
     next(error);
