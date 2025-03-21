@@ -193,11 +193,11 @@ test.each([
 );
 
 test.only.each([
-  { postType: "review", commentToId: 1, comment: "My test comment to review" },
+  { postType: "review", commentToId: 1, comment: "deneme yorum to review 33" },
   {
     postType: "comment",
     commentToId: 1,
-    comment: "My test comment to comment",
+    comment: "deneme yorum to review 44",
   },
 ])(
   "should save reader's comment to the db and update the post being commented on with body postType = $postType, commentToId = $commentToId, comment = $comment",

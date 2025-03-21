@@ -116,7 +116,6 @@ router.get(
 
 router.get(
   "/get-reader-profiles/:bookId/reader",
-  //* WHY READER SINgLE
   [
     isUserActive,
     param("bookId").notEmpty().isInt(),

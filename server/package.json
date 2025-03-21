@@ -42,7 +42,9 @@
   },
   "type": "module",
   "devDependencies": {
+    "@playwright/test": "^1.51.1",
     "@testcontainers/mysql": "^10.18.0",
+    "@types/node": "^22.13.11",
     "@vitest/coverage-v8": "^3.0.7",
     "testcontainers": "^10.18.0",
     "vitest": "^3.0.6"

@@ -1322,8 +1322,8 @@ const getLoggedInReader = async (req, res, next) => {
 
 const getReaderPostComments = async (req, res, next) => {
   //^ Gets reader's comments depending on postType.
-  //^ postId is the foreign key for the post to
-  //^ find it in Posts table
+  //^ postId is the pk in posts table so the fk
+  //^ for the post could be found
   try {
     const result = validationResult(req);
     let comments, post;
@@ -1855,6 +1855,8 @@ const createTopic = async (req, res, next) => {
 };
 
 const getTopic = async (req, res, next) => {
+  //^ Gets topic, counts its followersand returns as
+  //^ merged
   try {
     const result = validationResult(req);
 
@@ -1902,6 +1904,8 @@ const getTopic = async (req, res, next) => {
 };
 
 const getTopicBooks = async (req, res, next) => {
+  //^ Gets topic, and finds any related books -review,
+  //^ quote, thought- to it
   try {
     const result = validationResult(req);
 
@@ -2013,6 +2017,8 @@ const getTopicBooks = async (req, res, next) => {
 };
 
 const getTopicPosts = async (req, res, next) => {
+  //^ Gets topic, and finds any related posts -review,
+  //^ quote, thought- to it
   try {
     const jsonDict = {};
     const result = validationResult(req);
@@ -2201,6 +2207,8 @@ const getTopicPosts = async (req, res, next) => {
 };
 
 const getReaderBookModalDetails = async (req, res, next) => {
+  //^ Gets bookId, and returns reader's book modal details
+  //^  which are pivate note and book reading state
   try {
     const result = validationResult(req);
     const userId = req.session.passport.user;
@@ -2246,6 +2254,8 @@ const getReaderBookModalDetails = async (req, res, next) => {
 };
 
 const getTopicReaders = async (req, res, next) => {
+  //^ Gets topic, and finds any related readers
+  //^ that made a post to it
   try {
     const result = validationResult(req);
 
@@ -2615,9 +2625,9 @@ const getTrendingTopics = async (req, res, next) => {
 
 const getTopicCategories = async (req, res, next) => {
   try {
-    let results = await TopicCategory.findAll();
-    results = results.map((result) => result.toJSON());
-    res.status(200).json(results);
+    let topicCategories = await TopicCategory.findAll();
+    topicCategories = topicCategories.map((result) => result.toJSON());
+    res.status(200).json(topicCategories);
   } catch (error) {
     next(error);
   }
@@ -2701,6 +2711,7 @@ const getBookCategories = async (req, res, next) => {
 };
 
 const getCategoryBooks = async (req, res, next) => {
+  //^ Gets categoryId and returns books related to it
   try {
     const result = validationResult(req);
 
