@@ -14,6 +14,7 @@ import {
 import { sequelize } from "../../models/db";
 import { logger } from "../../utils/constants";
 import { fileURLToPath } from "url";
+import Stripe, { stripeProperties } from "stripe";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,28 +25,7 @@ vi.mock("../../middlewares/user_session_checker", () => ({
     next();
   },
 }));
-
-// vi.mock(import("multer"), async (importOriginal) => {
-//   const multer = await importOriginal();
-//   return {
-//     ...multer,
-//     fields: vi.fn((req, res, next) => {
-//       req.files = {
-//         ppImage: [
-//           {
-//             fieldname: "ppImage",
-//             originalname: "test.png",
-//             // encoding: '7bit',
-//             // mimetype: 'image/png
-//             // filename: "6_bg_2025_02_02_126931149_Screenshott.png",
-//             // path: filePath,
-//           },
-//         ],
-//       };
-//       next();
-//     }),
-//   };
-// });
+vi.mock("stripe");
 
 beforeAll(async () => {
   await sequelize.authenticate();
@@ -57,7 +37,7 @@ afterAll(async () => {
   logger.log("DB DISCONNECTED");
 });
 
-test.skip("should create review and save it as post too", async () => {
+test("should create review and save it as post too", async () => {
   await request(app)
     .post("/share-review")
     .send({
@@ -70,7 +50,7 @@ test.skip("should create review and save it as post too", async () => {
     .expect(200);
 });
 
-test.skip("should get book reviews, total rating and people's rating", async () => {
+test("should get book reviews, total rating and people's rating", async () => {
   const res = await request(app)
     .get("/get-book-reviews/52")
     .expect("Content-Type", /json/)
@@ -79,7 +59,7 @@ test.skip("should get book reviews, total rating and people's rating", async () 
   console.log(res.body);
 });
 
-test.skip("should create privateNote if not exist, else update", async () => {
+test("should create privateNote if not exist, else update", async () => {
   const res = await request(app)
     .post("/set-private-note/1")
     .send({ privateNote: "my private note" })
@@ -89,7 +69,7 @@ test.skip("should create privateNote if not exist, else update", async () => {
   console.log(res.body);
 });
 
-test.skip("should create readingState if not exist, else update", async () => {
+test("should create readingState if not exist, else update", async () => {
   const res = await request(app)
     .post("/set-reading-state/1")
     .send({ readingState: "Did not finish" })
@@ -99,7 +79,7 @@ test.skip("should create readingState if not exist, else update", async () => {
   console.log(res.body);
 });
 
-test.skip("should get reader book interaction data", async () => {
+test("should get reader book interaction data", async () => {
   const res = await request(app)
     .get("/get-reader-book-interaction-data/52")
     .expect("Content-Type", /json/)
@@ -108,7 +88,7 @@ test.skip("should get reader book interaction data", async () => {
   console.log(res.body);
 });
 
-test.skip("should get book statistics", async () => {
+test("should get book statistics", async () => {
   const res = await request(app)
     .get("/get-book-statistics/52")
     .expect("Content-Type", /json/)
@@ -117,7 +97,7 @@ test.skip("should get book statistics", async () => {
   console.log(res.body);
 });
 
-test.skip.each([
+test.each([
   "Read",
   "Currently-reading",
   "Want-to-read",
@@ -133,7 +113,7 @@ test.skip.each([
   console.log(res.body);
 });
 
-test.skip("should get book statistics", async () => {
+test("should get book statistics", async () => {
   const res = await request(app)
     .get("/get-book-statistics/52")
     .expect("Content-Type", /json/)
@@ -142,7 +122,7 @@ test.skip("should get book statistics", async () => {
   console.log(res.body);
 });
 
-test.skip.each([
+test.each([
   { q: "Read" },
   { q: "Want to read" },
   { q: "Liked" },
@@ -161,7 +141,7 @@ test.skip.each([
   }
 );
 
-test.skip("should get reader reviews", async () => {
+test("should get reader reviews", async () => {
   const res = await request(app)
     .get("/ben11w/get-reader-reviews")
     .expect("Content-Type", /json/)
@@ -169,7 +149,7 @@ test.skip("should get reader reviews", async () => {
   console.log(res.body);
 });
 
-test.skip("should update reader book dates", async () => {
+test("should update reader book dates", async () => {
   const res = await request(app)
     .post("/update-reader-book-dates/52")
     .send({ startingDate: "2000-05-05", finishingDate: "2500-05-05" })
@@ -178,7 +158,7 @@ test.skip("should update reader book dates", async () => {
   console.log(res.body);
 });
 
-test.skip("should upload image", async () => {
+test("should upload image", async () => {
   const filePath = path.join(__dirname, "img", "test2.png");
   const res = await request(app)
     .post("/upload")
@@ -188,7 +168,7 @@ test.skip("should upload image", async () => {
   console.log(res.body);
 });
 
-test.skip("should get reader bookshelf overview", async () => {
+test("should get reader bookshelf overview", async () => {
   const res = await request(app)
     .get("/profile/bookshelf/get-bookshelf-overview")
     .expect("Content-Type", /json/)
@@ -196,7 +176,7 @@ test.skip("should get reader bookshelf overview", async () => {
   console.log(res.body);
 });
 
-test.skip.each([
+test.each([
   { postType: "review", postId: 1 },
   { postType: "quote", postId: 1 },
   { postType: "thought", postId: 1 },
@@ -212,12 +192,16 @@ test.skip.each([
   }
 );
 
-test.skip.each([
-  { postType: "review", postId: 1, comment: "My test comment to review" },
-  { postType: "comment", postId: 1, comment: "My test comment to comment" },
+test.only.each([
+  { postType: "review", commentToId: 1, comment: "My test comment to review" },
+  {
+    postType: "comment",
+    commentToId: 1,
+    comment: "My test comment to comment",
+  },
 ])(
   "should save reader's comment to the db and update the post being commented on with body postType = $postType, commentToId = $commentToId, comment = $comment",
-  async ({ postType, commentToId }) => {
+  async ({ postType, comment, commentToId }) => {
     const res = await request(app)
       .post("/send-comment")
       .send({
@@ -231,7 +215,7 @@ test.skip.each([
   }
 );
 
-test.skip("should get reader comments", async () => {
+test("should get reader comments", async () => {
   const res = await request(app)
     .get("/get-reader-comments/0")
     .expect("Content-Type", /json/)
@@ -239,7 +223,7 @@ test.skip("should get reader comments", async () => {
   console.log(res.body);
 });
 
-test.skip("should get themed topics", async () => {
+test("should get themed topics", async () => {
   const res = await request(app)
     .get("/get-themed-topics/Literature")
     .expect("Content-Type", /json/)
@@ -247,9 +231,9 @@ test.skip("should get themed topics", async () => {
   console.log(res.body);
 });
 
-test.skip.each([
-  { topic: "test topic", category: ["Anime"] },
-  { topic: "test topic 5", category: ["Anime", "Literature"] },
+test.each([
+  { topic: "test topic test", category: ["Anime"] },
+  { topic: "test topic test 2", category: ["Anime", "Literature"] },
 ])(
   "should create topics with body topic = $topic, category = $category",
   async ({ topic, category }) => {
@@ -263,7 +247,7 @@ test.skip.each([
   }
 );
 
-test.skip("should get topic", async () => {
+test("should get topic", async () => {
   const res = await request(app)
     .get("/get-topic/Literature")
     .expect("Content-Type", /json/)
@@ -271,7 +255,7 @@ test.skip("should get topic", async () => {
   console.log(res.body);
 });
 
-test.skip.each([
+test.each([
   { topicName: "Literature", postType: "all" },
   { topicName: "Literature", postType: "review" },
   { topicName: "Literature", postType: "thought" },
@@ -291,7 +275,7 @@ test.skip.each([
   }
 );
 
-test.skip("should get topic readers", async () => {
+test("should get topic readers", async () => {
   const res = await request(app)
     .get("/get-topic-readers/Literature")
     .expect("Content-Type", /json/)
@@ -300,8 +284,8 @@ test.skip("should get topic readers", async () => {
 });
 
 test.each([
-  { isFollowed: true, topicId: 10 },
-  { isFollowed: false, topicId: 4 },
+  { isFollowed: true, topicId: 11 },
+  { isFollowed: false, topicId: 10 },
 ])(
   "should set following state with body isFollowed = $isFollowed, topicId = $topicId",
   async ({ isFollowed, topicId }) => {
@@ -313,3 +297,133 @@ test.each([
     console.log(res.body);
   }
 );
+
+test.each([
+  { q: undefined, index: undefined },
+  { q: undefined, index: 50 },
+  { q: "a", index: undefined },
+  { q: "b", index: 100 },
+])(
+  "should get book categories with query q = $q, index = $index",
+  async ({ q, index }) => {
+    let url;
+
+    if (q && index) {
+      url = `/get-book-categories?q=${q}&index=${index}`;
+    } else if (!q && !index) {
+      url = `/get-book-categories`;
+    } else if (!q) {
+      url = `/get-book-categories?index=${index}`;
+    } else {
+      url = `/get-book-categories?q=${q}`;
+    }
+
+    const res = await request(app)
+      .get(url)
+      .expect("Content-Type", /json/)
+      .expect(200);
+    console.log(res.body);
+  }
+);
+
+test("should create checkout session", async () => {
+  const res = await request(app)
+    .post("/create-checkout-session")
+    .send({ premiumType: "Annual" })
+    .expect("Content-Type", /json/)
+    .expect(200);
+  console.log(res.body);
+});
+
+test.each([
+  {
+    type: "checkout.session.completed",
+    data: {
+      object: {
+        id: "cs_test_a1b2c3d4e5f6g7h8i9j0",
+        object: "checkout.session",
+        customer: "cus_123456789",
+        customer_details: {
+          name: "John Doe",
+          email: "john.doe@example.com",
+          address: {
+            country: "US",
+            postal_code: "12345",
+          },
+        },
+        amount_total: 2000,
+        currency: "usd",
+        mode: "payment",
+        payment_status: "paid",
+        payment_method_configuration_details: {
+          id: "pmc_123456789",
+        },
+        subscription: "sub_123456789",
+        expires_at: 1698851832,
+        metadata: {
+          user_id: "6",
+        },
+      },
+    },
+  },
+  {
+    type: "checkout.session.expired",
+    data: {
+      object: {
+        id: "cs_test_a1b2c3d4e5f6g7h8i9j0",
+        object: "checkout.session",
+        amount_total: 2000,
+        currency: "usd",
+        mode: "payment",
+        payment_status: "expired",
+        payment_method_configuration_details: {
+          id: "pmc_123456789",
+        },
+        metadata: {
+          user_id: "6",
+        },
+      },
+    },
+  },
+  {
+    type: "customer.subscription.updated",
+    data: {
+      object: {
+        id: "sub_123456789",
+        object: "subscription",
+        cancel_at: 1698851832,
+        canceled_at: 1698765432,
+        start_date: 1698765432,
+        billing_cycle_anchor: 1698765432,
+        plan: {
+          interval: "month",
+          amount: 2000,
+          currency: "usd",
+          product: "prod_123456789",
+        },
+        cancellation_details: {
+          comment: "User canceled subscription",
+          feedback: "too_expensive",
+          reason: "cancellation_requested",
+        },
+        customer: "cus_123456789",
+        status: "canceled",
+        metadata: {
+          user_id: "6",
+        },
+      },
+    },
+  },
+])("should listen webhooks type = $type", async ({ type, data }) => {
+  const dataObj = stripeProperties.webhooks.constructEvent.mockReturnValue({
+    type,
+    data,
+  });
+
+  const res = await request(app)
+    .post("/webhook")
+    .send({ data: dataObj })
+    .expect("Content-Type", /json/)
+    .expect(200);
+  console.log(res.body);
+});

@@ -28,8 +28,7 @@ const router = express.Router();
 
 router.post(
   "/create-checkout-session",
-  isUserActive,
-  body("premiumType").notEmpty().isString(),
+  [isUserActive, body("premiumType").notEmpty().isString()],
   userController.createCheckoutSession
 );
 router.post("/webhook", userController.listenWebhook);
@@ -65,7 +64,7 @@ router.get(
 
 router.get(
   "/get-book-reviews/:bookId",
-  isUserActive,
+  [isUserActive, param("bookId").notEmpty().isInt()],
   userController.getBookReviews
 );
 
@@ -105,7 +104,7 @@ router.get(
 
 router.post(
   "/set-reader-book-record/:bookId",
-  isUserActive,
+  [isUserActive, param("bookId").notEmpty().isInt()],
   userController.setUserBookRecord
 );
 
@@ -206,15 +205,16 @@ router.get(
 );
 router.get(
   "/get-book-category/:categoryId",
-  isUserActive,
-  param("categoryId").notEmpty().isInt(),
+  [isUserActive, param("categoryId").notEmpty().isInt()],
   userController.getCategoryBooks
 );
 router.get(
   "/get-book-categories",
-  isUserActive,
-  query("q").optional(),
-  query("index").optional().isNumeric(),
+  [
+    isUserActive,
+    query("q").optional().isString(),
+    query("index").optional().isInt(),
+  ],
   userController.getBookCategories
 );
 
@@ -272,8 +272,12 @@ router.get(
   userController.getReaderBookshelfOverview
 );
 router.get(
-  "/get-reader-comments/:index",
-  [isUserActive, param("index").notEmpty().isInt()],
+  "/get-reader-comments/:username/:index",
+  [
+    isUserActive,
+    param("index").notEmpty().isInt(),
+    param("username").notEmpty().isString(),
+  ],
   userController.getReaderComments
 );
 router.get(
@@ -292,8 +296,8 @@ router.get(
 );
 router.post(
   "/send-comment",
-  isUserActive,
   [
+    isUserActive,
     body("comment").notEmpty().isString(),
     body("commentToId").notEmpty().isInt(),
     body("postType").notEmpty().isString(),

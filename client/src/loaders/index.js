@@ -229,8 +229,11 @@ export const loadReaderProfile = async ({ params }) => {
   return data;
 };
 
-export const loadReaderComments = async () => {
-  const response = await fetch("/api/get-reader-comments/0");
+export const loadReaderComments = async ({ params }) => {
+  const { profile: username } = params;
+  console.log(params);
+
+  const response = await fetch(`/api/get-reader-comments/${username}/0`);
   const data = await response.json();
   if (!response.ok) {
     throw new Error(response);

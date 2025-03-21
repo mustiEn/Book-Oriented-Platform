@@ -26,7 +26,7 @@ const PostThought = ({ data }) => {
                 post.topic
               ) : (
                 <>
-                  {post.firstname} {post.lastname}
+                  {post.User.firstname} {post.User.lastname}
                 </>
               )}
             </div>
@@ -38,23 +38,23 @@ const PostThought = ({ data }) => {
                 }}
               >
                 {post.Topic != null
-                  ? post.firstname + " " + post.lastname
-                  : "@" + post.username}
+                  ? post.User.firstname + " " + post.User.lastname
+                  : "@" + post.User.username}
               </div>
               <span className="d-flex">
                 <div
                   // className="fw-bold"
                   style={{ fontSize: "0.9" + "rem" }}
                 >
-                  - {moment(post.createdAt).fromNow(false)}
+                  - {moment(post.User.createdAt).fromNow(false)}
                 </div>
               </span>
             </div>
           </div>
         </div>
         <div className="thought-body ms-2">
-          <div className="thought-title fw-bold fs-4">{post.title}</div>
-          <div>{post.thought}</div>
+          <div className="thought-title fw-bold fs-4">{post.User.title}</div>
+          <div>{post.User.thought}</div>
           {/* <div className="d-flex gap-2 mt-3">
             <img
             src={

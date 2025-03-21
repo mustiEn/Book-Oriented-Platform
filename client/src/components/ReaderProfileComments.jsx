@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FaComment } from "react-icons/fa6";
-import { Link, useLoaderData, useNavigate } from "react-router-dom";
+import { Link, useLoaderData, useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import "../css/reader_profile_comments.css";
 import InfiniteScroll from "react-infinite-scroll-component";
@@ -9,6 +9,7 @@ import Spinner from "../spinner/Spinner";
 
 const ReaderProfileComments = () => {
   const { comments } = useLoaderData();
+  const { profile: username } = useParams();
   const [items, setItems] = useState(comments);
   const [hasMore, setHasMore] = useState(true);
   const [index, setIndex] = useState(5);
@@ -16,7 +17,9 @@ const ReaderProfileComments = () => {
   console.log(comments);
 
   const fetchMoreData = async () => {
-    const response = await fetch(`/api/get-reader-comments/${index}`);
+    const response = await fetch(
+      `/api/get-reader-comments/${username}/${index}`
+    );
     const { comments } = await response.json();
     if (!response.ok) {
       throw new Error(response);
@@ -49,8 +52,8 @@ const ReaderProfileComments = () => {
                     <div className="comment-header ms-2">
                       <div className="d-flex align-items-center gap-2">
                         <div className="user-official-name fw-bold">
-                          {comment.commenter_firstname}{" "}
-                          {comment.commenter_lastname}
+                          {comment.commenterFirstname}{" "}
+                          {comment.commenterLastname}
                         </div>
                         <div
                           style={{
@@ -58,13 +61,13 @@ const ReaderProfileComments = () => {
                             color: "rgb(186, 180, 171)",
                           }}
                         >
-                          @{comment.commenter_username}
+                          @{comment.commenterUsername}
                         </div>
                         <div
                           className="d-flex"
                           style={{ fontSize: "0.9" + "rem" }}
                         >
-                          - {moment(comment.created_at).fromNow(false)}
+                          - {moment(comment.commentCreated).fromNow(false)}
                         </div>
                       </div>
                       <div
@@ -94,7 +97,7 @@ const ReaderProfileComments = () => {
                       >
                         <FaComment style={{ fill: "#b6b6b6" }} />
                         <span style={{ color: "#b6b6b6" }}>
-                          {comment.comment_count}
+                          {comment.commentCount}
                         </span>
                       </Link>
                       <Button
@@ -104,7 +107,7 @@ const ReaderProfileComments = () => {
                         }}
                         onClick={() => {
                           navigate(
-                            `/${comment.post_type}/${comment.commentToId}`
+                            `/${comment.postType}/${comment.commentToId}`
                           );
                         }}
                       >

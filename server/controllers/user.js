@@ -30,6 +30,8 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 dotenv.config();
 
 const shareReview = async (req, res, next) => {
+  //^ Gets topic, title, review and bookId.
+  //^ Checks if topic exists, if so, it creates a review
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
@@ -71,7 +73,20 @@ const shareReview = async (req, res, next) => {
 
 const getBookReviews = async (req, res, next) => {
   try {
-    const { bookId } = req.params;
+    //^ Gets bookId, and returns all reviews for that book.
+    //^ Creates a new Map for ratings and organises
+    //^ the data as rating (1-2-3-4-5):num of people that rated for that number
+    const result = validationResult(req);
+
+    if (!result.isEmpty()) {
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+    }
+
+    const { bookId } = matchedData(req);
     const totalRatingSql = `SELECT ROUND(AVG(rating),1) AS rate,
                           COUNT(*) AS total_people_rated
                         FROM rated_books
@@ -107,7 +122,7 @@ const getBookReviews = async (req, res, next) => {
                         FROM rated_books
                         WHERE bookId=${bookId}
                         GROUP BY rating`;
-    let [reviews, ratings, totalRating] = await Promise.all([
+    const [reviews, ratings, totalRating] = await Promise.all([
       returnRawQuery(reviewsSql),
       returnRawQuery(ratingsSql),
       returnRawQuery(totalRatingSql),
@@ -294,7 +309,6 @@ const setBookRate = async (req, res, next) => {
     }
 
     const { rate, bookId } = matchedData(req);
-
     const userRatedBook = await RatedBook.findOne({
       where: {
         bookId: bookId,
@@ -331,6 +345,7 @@ const setBookRate = async (req, res, next) => {
 };
 
 const getReaderBookInteractionData = async (req, res, next) => {
+  //^ Gets bookId and returns all data about whether it's liked, rated and read.
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
@@ -371,9 +386,21 @@ const getReaderBookInteractionData = async (req, res, next) => {
 };
 
 const setUserBookRecord = async (req, res, next) => {
+  //^ Gets bookId and creates records with default vals.
+  //^ this is to define views per book
   try {
-    const { bookId } = req.params;
     const userId = req.session.passport.user;
+    const result = validationResult(req);
+
+    if (!result.isEmpty()) {
+      throw new Error(
+        `Validation failed ==>\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+    }
+
+    const { bookId } = matchedData(req);
 
     const userBookInteraction = await LikedBook.findOne({
       where: {
@@ -383,27 +410,28 @@ const setUserBookRecord = async (req, res, next) => {
     });
 
     if (!userBookInteraction) {
-      await LikedBook.create({
-        bookId: bookId,
-        userId: userId,
-        is_liked: false,
-      });
-      await PrivateNote.create({
-        bookId: bookId,
-        userId: userId,
-        private_note: null,
-      });
-      await BookReadingState.create({
-        bookId: bookId,
-        userId: userId,
-        reading_state: null,
-      });
-
-      await RatedBook.create({
-        bookId: bookId,
-        userId: userId,
-        rating: null,
-      });
+      await Promise.all([
+        LikedBook.create({
+          bookId: bookId,
+          userId: userId,
+          is_liked: false,
+        }),
+        PrivateNote.create({
+          bookId: bookId,
+          userId: userId,
+          private_note: null,
+        }),
+        BookReadingState.create({
+          bookId: bookId,
+          userId: userId,
+          reading_state: null,
+        }),
+        RatedBook.create({
+          bookId: bookId,
+          userId: userId,
+          rating: null,
+        }),
+      ]);
     }
 
     res.status(200).json({
@@ -415,6 +443,7 @@ const setUserBookRecord = async (req, res, next) => {
 };
 
 const getBookStatistics = async (req, res, next) => {
+  //^ Gets bookId and returns book readers per age, male - female ratio
   try {
     const result = validationResult(req);
 
@@ -424,8 +453,8 @@ const getBookStatistics = async (req, res, next) => {
           result.array()[0].path
         }`
       );
-    const { bookId } = matchedData(req);
 
+    const { bookId } = matchedData(req);
     const readerAgeRange = {};
     const ageRangeArr = [
       [0, 18],
@@ -522,6 +551,10 @@ const getBookStatistics = async (req, res, next) => {
 };
 
 const getReaderProfiles = async (req, res, next) => {
+  //^ Gets bookId and returns book readers based
+  //^ on q which colud be Read, Did not finished,
+  //^ Finished,Currently reading.
+
   try {
     const result = validationResult(req);
 
@@ -537,30 +570,62 @@ const getReaderProfiles = async (req, res, next) => {
     let readerProfilesSql;
 
     if (q !== "Liked") {
-      readerProfilesSql = `SELECT userId,a.username,a.firstname,a.lastname
-                          ,a.profile_photo,book_read 
-                          FROM users a 
-                          INNER JOIN (SELECT userId,COUNT(CASE WHEN reading_state="Read" THEN 1 END) AS book_read
-                          FROM book_reading_states
-                          WHERE userId IN (SELECT userId
-                          FROM book_reading_states
-                          WHERE reading_state="${q}"
-                          AND bookId=${bookId})
-                          GROUP BY userId) b
-                          ON b.userId=a.id`;
+      readerProfilesSql = `SELECT 
+                              userId, 
+                              a.username, 
+                              a.firstname, 
+                              a.lastname, 
+                              a.profile_photo, 
+                              book_read 
+                            FROM 
+                              users a 
+                              INNER JOIN (
+                                SELECT 
+                                  userId, 
+                                  COUNT(
+                                    CASE WHEN reading_state = "Read" THEN 1 END
+                                  ) AS book_read 
+                                FROM 
+                                  book_reading_states 
+                                WHERE 
+                                  userId IN (
+                                    SELECT 
+                                      userId 
+                                    FROM 
+                                      book_reading_states 
+                                    WHERE 
+                                      reading_state = "${q}" 
+                                      AND bookId = ${bookId}
+                                  ) 
+                                GROUP BY 
+                                  userId
+                              ) b ON b.userId = a.id
+                            `;
     } else {
-      readerProfilesSql = `SELECT a.userId,c.username,c.firstname,
-                            c.lastname,c.profile_photo,
-                            COUNT(CASE WHEN reading_state="Read" THEN 1 END) AS book_read
-                            FROM (SELECT *
-                            FROM liked_books
-                            WHERE is_liked = 1
-                            AND bookId = ${bookId}) a
-                            LEFT JOIN book_reading_states b
-                            ON b.userId=a.userId
-                            INNER JOIN users c
-                            ON c.id=a.userId
-                            GROUP BY a.userId `;
+      readerProfilesSql = `SELECT 
+                              a.userId, 
+                              c.username, 
+                              c.firstname, 
+                              c.lastname, 
+                              c.profile_photo, 
+                              COUNT(
+                                CASE WHEN reading_state = "Read" THEN 1 END
+                              ) AS book_read 
+                            FROM 
+                              (
+                                SELECT 
+                                  * 
+                                FROM 
+                                  liked_books 
+                                WHERE 
+                                  is_liked = 1 
+                                  AND bookId = ${bookId}
+                              ) a 
+                              LEFT JOIN book_reading_states b ON b.userId = a.userId 
+                              INNER JOIN users c ON c.id = a.userId 
+                            GROUP BY 
+                              a.userId
+                            `;
     }
 
     const readerProfiles = await returnRawQuery(readerProfilesSql);
@@ -1154,6 +1219,7 @@ const getReaderBookshelfOverview = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     let yearlyReadBooks = [];
+
     Array.from({ length: 12 }, (_, i) => {
       yearlyReadBooks.push({
         MONTH: new Date(0, i).toLocaleString("en-US", { month: "short" }),
@@ -1256,30 +1322,34 @@ const getLoggedInReader = async (req, res, next) => {
 
 const getReaderPostComments = async (req, res, next) => {
   //^ Gets reader's comments depending on postType.
-  //^ PostId is the foreign key for the post
+  //^ postId is the foreign key for the post to
+  //^ find it in Posts table
   try {
     const result = validationResult(req);
     let comments, post;
-    logger.log(req.params);
-    if (!result.isEmpty())
+
+    if (!result.isEmpty()) {
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
         }`
       );
+    }
 
-    const { postType, postId: fkPostId } = matchedData(req);
+    const { postType, postId } = matchedData(req);
     const userId = req.session.passport.user;
     const user = await User.findByPk(userId, {
       attributes: ["profile_photo"],
     });
-    const pkPostId = await Post.findOne({
-      attributes: ["id"],
-      where: {
-        postId: fkPostId,
-        post_type: postType,
-      },
-    });
+    const pkPostId = (
+      await Post.findOne({
+        attributes: ["postId"],
+        where: {
+          id: postId,
+          post_type: postType,
+        },
+      })
+    ).toJSON();
 
     if (!pkPostId) {
       throw new Error("Post id not found");
@@ -1292,7 +1362,7 @@ const getReaderPostComments = async (req, res, next) => {
                           FROM posts p
                           INNER JOIN comments c
                           ON c.commentToId=p.id
-                          AND p.id=${pkPostId.toJSON().id}
+                          AND p.id=${postId}
                           AND p.post_type="${postType}") te
                           ON te.id=p.postId
                           AND p.post_type="comment"
@@ -1325,7 +1395,6 @@ const getReaderPostComments = async (req, res, next) => {
             `),
             "authors",
           ],
-          // Using sequelize.col() for prefixed attributes
           [Sequelize.col("User.username"), "username"],
           [Sequelize.col("User.firstname"), "firstname"],
           [Sequelize.col("User.lastname"), "lastname"],
@@ -1357,7 +1426,7 @@ const getReaderPostComments = async (req, res, next) => {
           },
         ],
         where: {
-          id: fkPostId,
+          id: pkPostId.postId,
         },
         raw: true,
         group: ["Review.id", "Book_Collection.id", "Topic.id"],
@@ -1415,7 +1484,7 @@ const getReaderPostComments = async (req, res, next) => {
           },
         ],
         where: {
-          id: fkPostId,
+          id: pkPostId.postId,
         },
       });
     } else if (postType == "thought") {
@@ -1447,13 +1516,13 @@ const getReaderPostComments = async (req, res, next) => {
           },
         ],
         where: {
-          id: fkPostId,
+          id: pkPostId.postId,
         },
       });
     } else {
       post = Comment.findOne({
         where: {
-          id: fkPostId,
+          id: pkPostId.postId,
         },
         include: {
           model: User,
@@ -1492,12 +1561,13 @@ const sendComment = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty())
+    if (!result.isEmpty()) {
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
         }`
       );
+    }
 
     const { comment, commentToId, postType } = matchedData(req);
     const userId = req.session.passport.user;
@@ -1536,7 +1606,7 @@ const sendComment = async (req, res, next) => {
     if (!post) {
       throw new Error("Post not found");
     }
-
+    logger.log("1");
     if (postType != "comment") {
       const newComment = (
         await Comment.create(
@@ -1558,6 +1628,7 @@ const sendComment = async (req, res, next) => {
         },
         { transaction: t }
       );
+      logger.log(2);
     } else {
       const commentPost = await Comment.findOne({
         where: {
@@ -1587,6 +1658,7 @@ const sendComment = async (req, res, next) => {
         },
         { transaction: t }
       );
+      logger.log(3);
     }
 
     await Post.update(
@@ -1615,61 +1687,65 @@ const sendComment = async (req, res, next) => {
 };
 
 const getReaderComments = async (req, res, next) => {
+  //^ Gets index -offset- and username from url and
+  //^ returns reader's all comments from database with offset and
+  //^ username.
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty())
+    if (!result.isEmpty()) {
       throw new Error(
         `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
           result.array()[0].path
         }`
       );
+    }
 
-    const { index } = matchedData(req);
-    const commentsSql = `SELECT te.post_id,
-                          te.post_type,
-                          u.username,
-                          te.comment_id,
-                          te.rootParentId,
-                          te.commentToId,
-                          te.comment,
-                          te.commenter_username,
-                          te.commenter_firstname,
-                          te.commenter_lastname,
-                          te.profile_photo,
-                          p.comment_count,
-                          te.createdAt
-                    FROM users u
-                    INNER JOIN
-                    (SELECT
-                          p.id AS post_id,
-                          p.post_type,
-                          c.id AS comment_id,
-                          c.rootParentId,
-                    c.commentToId,
-                          c.comment,
-                          u.username AS commenter_username,
-                          u.firstname AS commenter_firstname,
-                          u.lastname AS commenter_lastname,
-                          u.profile_photo,
-                          c.createdAt
-
-                        FROM
-                          comments c
-                          INNER JOIN posts p ON p.id = c.commentToId -- get comments' root parents
-                          INNER JOIN users u ON u.username = "435ttt" -- get commenter's profile
-                        WHERE
-                          #c.commentToId = c.rootParentId -- get only the first level comments
-                          c.userId = u.id) te -- get only this person's comments
-                    ON u.id=te.post_id
-                    INNER JOIN posts p
-                    ON p.postId=te.comment_id
-                    AND p.post_type="comment"
-                    Limit 5 offset ${index}
-                                        `;
+    const { index, username } = matchedData(req);
+    const commentsSql = `SELECT 
+                            rootParentId, 
+                                commentToId, 
+                                u.username,
+                                postType,
+                                posterId, 
+                                commentId,  
+                                comment, 
+                                commenterUsername, 
+                                commenterFirstname, 
+                                commenterLastname, 
+                                p.comment_count commentCount,
+                                commenterPhoto, 
+                                commentCreated
+                          FROM 
+                            users u 
+                            INNER JOIN (
+                              SELECT  
+                                p.post_type postType,
+                                p.userId AS posterId, 
+                                c.id AS commentId, 
+                                c.rootParentId, 
+                                c.commentToId, 
+                                c.comment, 
+                                u.username AS commenterUsername, 
+                                u.firstname AS commenterFirstname, 
+                                u.lastname AS commenterLastname, 
+                                u.profile_photo AS commenterPhoto, 
+                                c.createdAt AS commentCreated
+                              FROM 
+                                comments c 
+                                INNER JOIN posts p ON p.id = c.commentToId -- get comments' root parents
+                                INNER JOIN users u ON u.username = "${username}" -- get commenter's profile
+                              WHERE 
+                                c.userId = u.id
+                            ) te -- get only this person's comments
+                            ON u.id = te.posterId 
+                            INNER JOIN posts p ON p.postId = te.commentId 
+                            AND p.post_type = "comment" 
+                            LIMIT 
+                            5 OFFSET ${index} `;
 
     const comments = await returnRawQuery(commentsSql);
-
+    // logger.log(comments);
     res.status(200).json({
       comments,
     });
@@ -2585,11 +2661,15 @@ const getBookCategories = async (req, res, next) => {
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error({ error: result.array() });
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     }
 
     const { q, index } = matchedData(req);
-    const offset = index == undefined ? "OFFSET 0" : `OFFSET ${index}`;
+    const offset = index ? `OFFSET ${index}` : "OFFSET 0";
     const where = q ? `WHERE c.category LIKE '${q}%'` : "";
     const bookCategoriesSql = `SELECT 
                                   * 
@@ -2907,15 +2987,18 @@ const createCheckoutSession = async (req, res, next) => {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     if (!result.isEmpty()) {
-      throw new Error({ error: result.array() });
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
     }
 
     const { premiumType } = matchedData(req);
-
     const userId = req.session.passport.user;
-    const prices = await stripe.prices.list({
-      lookup_keys: [premiumType],
-    });
+    // const prices = await stripe.prices.list({
+    //   lookup_keys: [premiumType],
+    // });
     const priceId =
       premiumType == "Annual"
         ? "price_1QlxgDHBAbJebqsa0nRY5sF3"
@@ -2950,7 +3033,6 @@ const listenWebhook = async (req, res, next) => {
   const signature = req.headers["stripe-signature"];
   let event;
   let paymentIntent;
-
   if (endpointSecret) {
     try {
       event = stripe.webhooks.constructEvent(
@@ -2964,6 +3046,7 @@ const listenWebhook = async (req, res, next) => {
     }
   }
 
+  // logger.log(event.data.object);
   // Handle the event
   if (event.type === "checkout.session.completed") {
     paymentIntent = event.data.object;
@@ -2986,6 +3069,7 @@ const listenWebhook = async (req, res, next) => {
     });
   } else if (event.type === "checkout.session.expired") {
     paymentIntent = event.data.object;
+    logger.log("2");
     await Transaction.create({
       cardholder_name: null,
       email: null,
@@ -3005,6 +3089,7 @@ const listenWebhook = async (req, res, next) => {
     });
   } else if (event.type === "customer.subscription.updated") {
     paymentIntent = event.data.object;
+    logger.log(3);
     await Subscription.create({
       cancel_at: paymentIntent.cancel_at,
       canceled_at: paymentIntent.canceled_at,
