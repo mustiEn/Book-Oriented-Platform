@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon starter.js",
+    "start": "nodemon server.js",
     "test": "vitest run",
     "coverage": "vitest run --coverage"
   },

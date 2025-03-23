@@ -24,7 +24,7 @@ const Login = () => {
     console.log(data);
 
     if (res.ok) {
-      navigate("/");
+      navigate("/home");
     }
   };
 
@@ -90,7 +90,7 @@ const Login = () => {
         </div>
 
         <button type="submit" className="btn btn-outline-info mt-3">
-          Sign Up
+          Login
         </button>
       </form>
     </div>

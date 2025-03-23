@@ -61,7 +61,7 @@ const Search = () => {
         </InputGroup>
       </Form>
 
-      <ul className="p-2">
+      <ul className="p-2 books">
         {/* {books.length === 0 && search !== "" && <li>No books found</li>} */}
         {books.length !== 0
           ? books.map((book) => (

@@ -19,7 +19,7 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log(formData);
-    
+
     const res = await fetch("/api/signup", {
       method: "POST",
       headers: {
@@ -32,7 +32,7 @@ const Signup = () => {
     console.log(data);
 
     if (res.ok) {
-      navigate("/");
+      navigate("/home");
     }
   };
 
@@ -72,6 +72,7 @@ const Signup = () => {
             <input
               type="text"
               name="firstname"
+              id="firstname"
               className="form-control text-white bg-dark"
               value={formData.firstname}
               onChange={(e) => handleChange(e)}
@@ -85,6 +86,7 @@ const Signup = () => {
             <input
               type="text"
               name="lastname"
+              id="lastname"
               className="form-control text-white bg-dark"
               value={formData.lastname}
               onChange={(e) => handleChange(e)}
@@ -114,6 +116,7 @@ const Signup = () => {
             <input
               type="email"
               name="email"
+              id="email"
               className="form-control text-white bg-dark"
               value={formData.email}
               onChange={(e) => handleChange(e)}
@@ -137,14 +140,14 @@ const Signup = () => {
             />
           </div>
           <div className="field-wrapper w-100 d-flex flex-column gap-2">
-            <label htmlFor="password" className="text-white">
+            <label htmlFor="confirmedPassword" className="text-white">
               Confirm Password
             </label>
             <input
               type="password"
               name="confirmedPassword"
               className="form-control text-white bg-dark"
-              id="password"
+              id="confirmedPassword"
               value={formData.confirmedPassword}
               onChange={(e) => handleChange(e)}
               required
@@ -159,6 +162,7 @@ const Signup = () => {
             <input
               type="date"
               name="DOB"
+              id="DOB"
               className="form-control text-white bg-dark"
               value={formData.DOB}
               onChange={(e) => handleChange(e)}
@@ -171,7 +175,7 @@ const Signup = () => {
             </label>
             <select
               name="gender"
-              id=""
+              id="gender"
               className="form-select"
               value={formData.gender}
               onChange={(e) => handleChange(e)}

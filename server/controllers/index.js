@@ -80,6 +80,8 @@ const login = async (req, res, next) => {
   //^ If the password matches, it logs the user in and returns a success message.
 
   try {
+    console.log("Checking");
+
     const result = validationResult(req);
 
     if (!result.isEmpty()) {

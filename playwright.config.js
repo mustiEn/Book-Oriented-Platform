@@ -18,7 +18,9 @@ export default defineConfig({
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
+
+  testMatch: "*.spec.js",
+
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
@@ -27,7 +29,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    // baseURL: 'http://127.0.0.1:3000',
+    baseURL: "http://localhost:8080",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
@@ -50,21 +52,24 @@ export default defineConfig({
 
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: "playwright/.auth/user.json",
+      },
       dependencies: ["setup db"],
     },
 
-    {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
-      dependencies: ["setup db"],
-    },
+    // {
+    //   name: "firefox",
+    //   use: { ...devices["Desktop Firefox"] },
+    //   dependencies: ["setup db"],
+    // },
 
-    {
-      name: "webkit",
-      use: { ...devices["Desktop Safari"] },
-      dependencies: ["setup db"],
-    },
+    // {
+    //   name: "webkit",
+    //   use: { ...devices["Desktop Safari"] },
+    //   dependencies: ["setup db"],
+    // },
 
     /* Test against mobile viewports. */
     // {
@@ -88,9 +93,24 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://127.0.0.1:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
+  // webServer: [
+  //   {
+  //     command: "npm run start",
+  //     url: "http://localhost:8081",
+  //     reuseExistingServer: !process.env.CI,
+  //     // timeout: 240 * 1000,
+  //     stdout: "pipe", // Capture logs
+  //     stderr: "pipe",
+  //     cwd: "./server",
+  //   },
+  //   {
+  //     command: "npm run serve",
+  //     url: "http://localhost:8080",
+  //     reuseExistingServer: !process.env.CI,
+  //     timeout: 120 * 1000,
+  //     stdout: "pipe", // Capture logs
+  //     stderr: "pipe",
+  //     cwd: "./client",
+  //   },
+  // ],
 });

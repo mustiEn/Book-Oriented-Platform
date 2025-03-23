@@ -5,7 +5,7 @@ dotenv.config();
 const db = process.env.NODE_ENV === "test" ? "book-app-test" : "book-app";
 
 export const sequelize = new Sequelize(
-  db,
+  "book-app-test",
   process.env.DB_USER,
   process.env.DB_PASS,
   {
