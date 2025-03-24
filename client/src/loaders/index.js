@@ -168,6 +168,8 @@ export const loadBookDetails = async ({ params }) => {
     const data = await Promise.all(
       response.map(async (item) => await item.json())
     );
+    console.log(data);
+
     return data;
     // return { bookDetails: data1, readerBookDetailsHeader: data2 };
   } catch (error) {

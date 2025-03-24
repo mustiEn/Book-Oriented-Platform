@@ -9,10 +9,10 @@ const BookDetails = () => {
     <>
       <BookDetailsSection
         bookDetails={bookDetails[0]}
-        readerBookInteractionData={readerBookInteractionData}
+        readerBookInteractionData={readerBookInteractionData[0]}
       />
       <div className="w-100 p-4">
-        <Outlet context={bookDetails} />
+        <Outlet context={bookDetails[0]} />
       </div>
     </>
   );

@@ -7,6 +7,7 @@ import { Link, useOutletContext } from "react-router-dom";
 
 const BookDetailsAbout = () => {
   let data = useOutletContext();
+  console.log(data);
 
   // const [isLoading, setIsLoading] = useState(false);
   // useEffect(() => {
@@ -64,7 +65,7 @@ const BookDetailsAbout = () => {
       <hr />
       <div className="about-author fw-bold fs-5">About Author</div>
       <br />
-      <div>{data.author_info}</div>
+      <div id="authorInfo">{data.author_info}</div>
     </>
   );
 };

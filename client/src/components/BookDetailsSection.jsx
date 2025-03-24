@@ -25,7 +25,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
   const navigate = useNavigate();
   const navigation = useNavigation();
   const bookPageCount = { [bookDetails.id]: bookDetails.page_count };
-  console.log(bookDetails);
+  console.log(readerBookInteractionData);
 
   const ref = useRef({
     effect1: false,
@@ -159,6 +159,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
                 return (
                   <li
                     key={star}
+                    id={"star-" + star}
                     style={{
                       backgroundColor:
                         bookState.rate == star ? "yellow" : "gray",
@@ -208,6 +209,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
               }}
             />
             <Link
+              id="share-review-btn"
               to={`/share-review/${bookDetails.id}`}
               className="btn btn-light ms-auto"
             >
@@ -217,6 +219,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
         </div>
         <div className="w-100 d-flex justify-content-between gap-4">
           <Button
+            id="add-to-booklist-btn"
             variant="light"
             className="flex-grow-1"
             onClick={() => {
@@ -231,6 +234,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
             Add to my booklist
           </Button>
           <Button
+            id="like-btn"
             className="d-flex align-items-center gap-1"
             variant={bookState.isBookLiked ? "danger" : "light"}
             onClick={() => {
@@ -261,7 +265,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
           )}
         </div>
         <ul className="d-flex gap-2">
-          <li>
+          <li id="li-about">
             <NavLink
               to={`/book/${slugify(
                 bookDetails.title.replace(/[...,:;]/g, "")
@@ -274,7 +278,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
               About
             </NavLink>
           </li>
-          <li>
+          <li id="li-reviews">
             <NavLink
               to={`/book/${slugify(
                 bookDetails.title.replace(/[...,:;]/g, "")
@@ -286,7 +290,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
               Reviews
             </NavLink>
           </li>
-          <li>
+          <li id="li-statistics">
             <NavLink
               to={`/book/${slugify(
                 bookDetails.title.replace(/[...,:;]/g, "")
@@ -298,7 +302,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
               Statistics
             </NavLink>
           </li>
-          <li>
+          <li id="li-readers">
             <NavLink
               to={`/book/${slugify(
                 bookDetails.title.replace(/[...,:;]/g, "")

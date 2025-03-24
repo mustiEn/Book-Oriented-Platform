@@ -237,6 +237,7 @@ const ReaderBookModalDetails = ({ modalProps }) => {
               return (
                 <Button
                   key={item}
+                  id={item.replaceAll(" ", "-")}
                   variant={
                     modalState.readingState == item ? "primary" : "light"
                   }
@@ -300,6 +301,7 @@ const ReaderBookModalDetails = ({ modalProps }) => {
           )}
           {modalState.readingState == "Read" ? (
             <Form
+              id="bookDates"
               className="d-flex flex-column gap-3 m-3"
               onSubmit={(e) => {
                 e.preventDefault();

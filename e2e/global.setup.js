@@ -1,13 +1,13 @@
-import { expect, test as setup } from "@playwright/test";
-import { Login as LoginClass } from "./poms/login";
+import { expect, test as setup } from "./utils/fixture";
+import { Login as LoginClass } from "./utils/poms/login";
 import path from "path";
 
 const authFile = path.join(__dirname, "../playwright/.auth/user.json");
 setup("setup and login", async ({ page }) => {
   console.log("SETTING UP!!!");
   const userDetails = {
-    username: "fakeUsername",
-    password: "fakePassword",
+    username: "ben11w",
+    password: "aa",
   };
   const Login = new LoginClass(page);
 

@@ -35,8 +35,7 @@ router.post("/webhook", userController.listenWebhook);
 
 router.get(
   "/get-reader-book-modal-details/:bookId",
-  isUserActive,
-  param("bookId").notEmpty().isInt(),
+  [isUserActive, param("bookId").notEmpty().isInt()],
   userController.getReaderBookModalDetails
 );
 router.get(
@@ -90,11 +89,23 @@ router.post(
 
 router.post(
   "/set-book-liked/:bookId",
-  isUserActive,
+  [
+    isUserActive,
+    param("bookId").notEmpty().isInt(),
+    body("isBookLiked").notEmpty().isBoolean(),
+  ],
   userController.setBookLiked
 );
 
-router.post("/set-book-rate/:bookId", isUserActive, userController.setBookRate);
+router.post(
+  "/set-book-rate/:bookId",
+  [
+    isUserActive,
+    param("bookId").notEmpty().isInt(),
+    body("rate").notEmpty().isInt(),
+  ],
+  userController.setBookRate
+);
 
 router.get(
   "/get-reader-book-interaction-data/:bookId",
@@ -126,8 +137,7 @@ router.get(
 
 router.get(
   "/:username/display-reader-profile",
-  isUserActive,
-  check("username").notEmpty(),
+  [isUserActive, param("username").notEmpty().isString()],
   userController.displayReaderProfile
 );
 
@@ -151,12 +161,12 @@ router.get(
 );
 router.get(
   "/:username/get-reader-thoughts",
-  isUserActive,
+  [isUserActive, param("username").notEmpty().isString()],
   userController.getReaderThoughts
 );
 router.get(
   "/:username/get-reader-quotes",
-  isUserActive,
+  [isUserActive, param("username").notEmpty().isString()],
   userController.getReaderQuotes
 );
 

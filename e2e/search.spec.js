@@ -1,5 +1,5 @@
 // @ts-check
-import { expect, test } from "@playwright/test";
+import { test, expect } from "./utils/fixture.js";
 
 test.describe.configure({ mode: "serial" });
 
@@ -21,7 +21,7 @@ test.describe("test search page", () => {
     });
   });
 
-  test.only(`click on a book`, async ({ page }) => {
+  test(`click on a book`, async ({ page }) => {
     await page.goto("/search");
 
     const resPromise = page.waitForResponse(`/api/books/v1?q=a`);
@@ -29,17 +29,18 @@ test.describe("test search page", () => {
     await page.getByPlaceholder("Search in BookNest").fill("a");
 
     const res = await resPromise;
-    const data = await res.json();
-    console.log(
-      await page
-        .locator(".books")
-        .getByRole("listitem")
-        .nth(0)
-        .locator("a")
-        .getAttribute("href", { timeout: 5000 })
-    );
-    await page.locator(".books").getByRole("listitem").nth(0).click();
-    // await page.waitForURL("")
-    // await expect(page).toHaveURL(/book)
+    const link = page
+      .locator(".books")
+      .getByRole("listitem")
+      .nth(0)
+      .locator("a");
+    const href = await link.getAttribute("href", { timeout: 5000 });
+
+    console.log(href);
+
+    await link.click();
+    await page.waitForLoadState();
+    expect(res.status()).toBe(200);
+    await expect(page).toHaveURL(`${href}`);
   });
 });
