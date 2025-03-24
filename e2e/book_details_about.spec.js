@@ -2,7 +2,7 @@
 import { test, expect } from "./utils/fixture.js";
 import { ShareReview as ShareReviewClass } from "./utils/poms/share_review.js";
 
-test.describe.configure({ mode: "serial" });
+test.describe.configure({ mode: "parallel" });
 test.describe("visit /book/it-s-a-book/1 page, component = book-details-about", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/book/it-s-a-book/1");
@@ -75,7 +75,7 @@ test.describe("visit /book/it-s-a-book/1 page, component = book-details-about", 
     };
 
     await shareReviewBtn.click();
-    await expect(page.locator("form")).toBeVisible();
+    await expect(page.getByText("Review")).toBeVisible();
     await ShareReview.fillDetails(reviewData);
 
     const resPromise = page.waitForResponse(`/api/share-review`);
@@ -90,11 +90,11 @@ test.describe("visit /book/it-s-a-book/1 page, component = book-details-about", 
   });
 
   [
-    // { next: "Want to read", active: "Did not finish" },
-    // { next: "Currently reading", active: "Want to read" },
+    { next: "Want to read", active: "Did not finish" },
+    { next: "Currently reading", active: "Want to read" },
     { next: "Read", active: "Currently reading" },
   ].forEach(({ next, active }) => {
-    test.only(`change book reading states with state = ${next}`, async ({
+    test(`change book reading states with state = ${next}`, async ({
       page,
       toast,
       css,
@@ -105,7 +105,7 @@ test.describe("visit /book/it-s-a-book/1 page, component = book-details-about", 
       await modal.waitFor({ state: "attached" });
       await expect(modal).toBeVisible();
 
-      test.step("check active btn", async () => {
+      await test.step("check active btn", async () => {
         const btn = page.locator(`#${active.replaceAll(" ", "-")}`);
         await css.haveCSS(btn, "background-color", "rgb(13, 110, 253)");
         await css.haveCSS(btn, "color", "rgb(255, 255, 255)");
@@ -129,29 +129,67 @@ test.describe("visit /book/it-s-a-book/1 page, component = book-details-about", 
       await css.haveCSS(btn, "background-color", "rgb(13, 110, 253)");
       await css.haveCSS(btn, "color", "rgb(255, 255, 255)");
 
-      // if (next === "Currently reading") {
-      //   test.step(`when btn state is = ${next}`, async () => {
-      //     await expect(page.getByText("Where I left off")).toBeVisible();
-      //   });
-      // if (next === "Read") {
-      test.step(`when btn state is = ${next}`, async () => {
-        if (next === "Read") {
-          const form = page.locator("#bookDates");
-          const finishDate = page.getByText("Finish Date");
-          const startDate = page.getByText("Start Date");
-          const updateBtn = page.getByRole("button", { name: "Update" });
+      if (next === "Currently reading") {
+        await test.step(`when btn state = ${next},check if element exists.`, async () => {
+          await expect(page.getByText("Where I left off")).toBeVisible();
 
-          await form.waitFor();
-          await startDate.waitFor();
-          await updateBtn.waitFor();
+          await test.step(`when btn state = ${next}, update page number.`, async () => {
+            await page.locator("#pageNumberInp").fill("22");
+            const resPromise = page.waitForResponse(
+              `/api/update-reader-page-number/1`
+            );
+            await page.getByRole("button", { name: "Update" }).click();
+
+            const res = await resPromise;
+
+            expect(res.status()).toBe(200);
+            await toast.getToast("Page number updated");
+          });
+        });
+      } else if (next === "Read") {
+        await test.step(`when btn state = ${next},check if element exists.`, async () => {
+          const finishDate = page.getByText("Finish Date");
+
           await finishDate.waitFor();
-          await expect(form).toBeVisible();
           await expect(finishDate).toBeVisible();
-          await expect(startDate).toBeVisible();
-          await expect(updateBtn).toBeVisible();
-        }
-      });
-      // }
+
+          await test.step(`when btn state = ${next}, update book dates.`, async () => {
+            const finishInp = page.locator("#finishingDate");
+            const startInp = page.locator("#startingDate");
+
+            await finishInp.waitFor();
+            await startInp.waitFor();
+            await finishInp.fill("2022-11-27");
+            await startInp.fill("2022-01-27");
+            const resPromise = page.waitForResponse(
+              `/api/update-reader-book-dates/1`
+            );
+            await page.getByRole("button", { name: "Update" }).click();
+
+            const res = await resPromise;
+
+            expect(res.status()).toBe(200);
+            await toast.getToast("Book dates updated");
+          });
+        });
+      }
     });
+  });
+
+  test("set private note", async ({ page, toast }) => {
+    await page.getByText("Add to my booklist").click();
+
+    const modal = page.locator(".modal-content");
+    await modal.waitFor({ state: "attached" });
+    await expect(modal).toBeVisible();
+
+    const resPromise = page.waitForResponse("/api/set-private-note/1");
+    await page.getByPlaceholder("Your private note..").fill("This is a note");
+    await page.waitForTimeout(1000);
+    const res = await resPromise;
+
+    expect(res.status()).toBe(200);
+
+    await toast.getToast("Private note updated");
   });
 });

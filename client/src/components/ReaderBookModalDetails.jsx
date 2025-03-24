@@ -275,6 +275,7 @@ const ReaderBookModalDetails = ({ modalProps }) => {
                       </InputGroup.Text>
                       <Form.Control
                         type="number"
+                        id="pageNumberInp"
                         min="0"
                         max={bookPageCounts[modalState.bookId]}
                         aria-describedby="pageNumber"
@@ -314,6 +315,7 @@ const ReaderBookModalDetails = ({ modalProps }) => {
                     <Form.Label>Start Date</Form.Label>
                     <Form.Control
                       type="date"
+                      id="startingDate"
                       value={
                         modalState.startingDate != null
                           ? modalState.startingDate
@@ -333,6 +335,7 @@ const ReaderBookModalDetails = ({ modalProps }) => {
                   <Form.Group>
                     <Form.Label>Finish Date</Form.Label>
                     <Form.Control
+                      id="finishingDate"
                       type="date"
                       value={
                         modalState.finishingDate != null
@@ -371,7 +374,8 @@ const ReaderBookModalDetails = ({ modalProps }) => {
           </div>
           <textarea
             name=""
-            id=""
+            id="privateNote"
+            placeholder="Your private note.."
             className="w-100 border-0 rounded-5 p-2"
             value={modalState.privateNote == null ? "" : modalState.privateNote}
             onChange={(e) => {
