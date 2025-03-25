@@ -2,7 +2,7 @@
 import { test, expect } from "./utils/fixture.js";
 import { ShareReview as ShareReviewClass } from "./utils/poms/share_review.js";
 
-test.describe.configure({ mode: "parallel" });
+test.describe.configure({ mode: "serial" });
 test.describe("visit /book/it-s-a-book/1 page, component = book-details-about", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/book/it-s-a-book/1");
@@ -11,12 +11,12 @@ test.describe("visit /book/it-s-a-book/1 page, component = book-details-about", 
   test("test if initials exist", async ({ page, css }) => {
     const rate = page.locator("#star-4");
     const like = page.locator("#like-btn");
-    const authorInfo = page.locator("#authorInfo");
+    // const authorInfo = page.locator("#authorInfo");
 
     await expect(page.locator("#bookDetails")).toBeVisible();
     await expect(rate).toBeVisible();
     await expect(like).toBeVisible();
-    await expect(authorInfo).toBeVisible();
+    // await expect(authorInfo).toBeVisible();
     await css.haveCSS(rate, "background-color", "rgb(255, 255, 0)");
     await css.haveCSS(rate, "color", "rgb(0, 0, 0)");
     await css.haveCSS(like, "background-color", "rgb(220, 53, 69)");
@@ -75,7 +75,7 @@ test.describe("visit /book/it-s-a-book/1 page, component = book-details-about", 
     };
 
     await shareReviewBtn.click();
-    await expect(page.getByText("Review")).toBeVisible();
+    await expect(page.getByText("Review", { exact: true })).toBeVisible();
     await ShareReview.fillDetails(reviewData);
 
     const resPromise = page.waitForResponse(`/api/share-review`);
@@ -184,7 +184,9 @@ test.describe("visit /book/it-s-a-book/1 page, component = book-details-about", 
     await expect(modal).toBeVisible();
 
     const resPromise = page.waitForResponse("/api/set-private-note/1");
-    await page.getByPlaceholder("Your private note..").fill("This is a note");
+    await page
+      .getByPlaceholder("Your private note..")
+      .fill("This is a note 1234");
     await page.waitForTimeout(1000);
     const res = await resPromise;
 

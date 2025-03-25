@@ -28,6 +28,7 @@ const BookDetailsReaders = () => {
           return (
             <li key={index}>
               <NavLink
+                id={option}
                 className={({ isActive }) =>
                   isActive && location.search === `?q=${option}`
                     ? "btn btn-danger"
