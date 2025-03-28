@@ -15,10 +15,6 @@ import PostReview from "./PostReview";
 
 const ReaderProfileReviews = () => {
   const data = useLoaderData();
-  const [, readerUsername] = useOutletContext();
-  const { profile } = useParams();
-
-  console.log(data);
 
   return (
     <>

@@ -5,6 +5,7 @@ import {
   NavLink,
   useOutletContext,
   useLocation,
+  Link,
 } from "react-router-dom";
 import slugify from "react-slugify";
 
@@ -56,9 +57,12 @@ const BookDetailsReaders = () => {
                     className="userPP rounded-circle"
                   />
                   <div className="d-flex flex-column">
-                    <div className="user-official-name fw-bold">
+                    <Link
+                      to={`/${reader.username}`}
+                      className="user-official-name fw-bold"
+                    >
                       {reader.firstname} {reader.lastname}
-                    </div>
+                    </Link>
                     <div
                       className="fst-italic"
                       style={{ fontSize: "0.9" + "rem" }}

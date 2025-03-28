@@ -16,7 +16,7 @@ const Layout = () => {
           id="MainContent"
           className="border-end border-opacity-50 border-secondary border-start"
         >
-          <Outlet context={loggedInReader} />
+          <Outlet context={[loggedInReader]} />
         </div>
         <RightSidebar topics={sidebarTopics} />
       </div>

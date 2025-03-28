@@ -649,14 +649,31 @@ const displayReaderProfile = async (req, res, next) => {
       );
 
     const { username } = matchedData(req);
-    const reader = await User.findOne({
-      attributes: {
-        exclude: ["password", "updatedAt", "email"],
-      },
-      where: {
-        username: username,
-      },
-    });
+    const readerSql = `SELECT 
+                        u.username, 
+                        u.firstname, 
+                        u.lastname,
+                        u.readership, 
+                        u.DOB, 
+                        u.gender, 
+                        u.profile_photo, 
+                        u.background_photo, 
+                        u.createdAt, 
+                        u.updatedAt, 
+                        COUNT(p.id) postCount 
+                      FROM 
+                        users u 
+                        JOIN posts p ON p.userId = u.id 
+                        AND post_type != "comment" 
+                      WHERE 
+                        u.username = "${username}"`;
+
+    const reader = await returnRawQuery(readerSql);
+
+    if (!reader) {
+      throw new Error(`User not found`);
+    }
+
     res.status(200).json(reader);
   } catch (error) {
     next(error);
@@ -1169,14 +1186,29 @@ const uploadImage = async (req, res, next) => {
         ? "profile_photo"
         : "background_photo";
 
-    let userImage = await User.findOne({
-      attributes: [imageColumnName],
-      where: {
-        id: userId,
-      },
-    });
-
-    userImage = userImage.toJSON();
+    const userImage = (
+      await User.findOne({
+        attributes: [imageColumnName],
+        where: {
+          id: userId,
+        },
+      })
+    ).toJSON();
+    logger.log(userImage);
+    if (userImage[imageColumnName] != null) {
+      if (fs.existsSync(filePath)) {
+        fs.rm(filePath + `/${userImage[imageColumnName]}`, (err) => {
+          if (err) {
+            throw new Error("No such image exists");
+          }
+        });
+      } else {
+        throw new Error("No such file exists");
+      }
+    }
+    //  else {
+    //   throw new Error("Invalid data");
+    // }
 
     await User.update(
       {
@@ -1188,23 +1220,6 @@ const uploadImage = async (req, res, next) => {
         },
       }
     );
-
-    if (userImage[imageColumnName] != null) {
-      if (fs.existsSync(filePath)) {
-        fs.rm(filePath + `/${userImage[imageColumnName]}`, (err) => {
-          if (err) {
-            throw new Error("No such image exists");
-          }
-
-          // console.log("File deleted successfully", userImage[imageColumnName]);
-        });
-      } else {
-        throw new Error("No such file exists");
-      }
-    } else {
-      throw new Error("Invalid data");
-    }
-
     res.status(200).json({
       message: "success",
     });

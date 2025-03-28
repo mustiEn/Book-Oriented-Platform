@@ -12,23 +12,23 @@ import { toast } from "react-hot-toast";
 import { FaCalendar, FaClockRotateLeft } from "react-icons/fa6";
 import Button from "react-bootstrap/Button";
 import "../css/reader_profile.css";
+import BackNavigation from "../components/BackNavigation";
 
 const ReaderProfile = () => {
-  const reader = useOutletContext();
   const [readerProfileData, setReaderProfileData] = useState({});
-  const data = useLoaderData();
+  const [editBtns, setEditBtns] = useState(false);
+  const reader = useOutletContext()[0];
+  const data = useLoaderData()[0];
   const regex = /^[a-zA-Z0-9-_]+(\.(jpg|jpeg|png||webp))$/i;
   const bgRef = useRef(null);
   const ppRef = useRef(null);
   const { profile } = useParams();
-
   const handleBgRef = () => {
     bgRef.current.click();
   };
   const handlePpRef = () => {
     ppRef.current.click();
   };
-
   const updatePp = async (fileInput) => {
     try {
       const formData = new FormData();
@@ -77,7 +77,6 @@ const ReaderProfile = () => {
       toast.error(error.message);
     }
   };
-
   const getUpdatedReaderProfile = async (photo) => {
     try {
       const res = await fetch(
@@ -98,12 +97,20 @@ const ReaderProfile = () => {
 
   useEffect(() => {
     setReaderProfileData(data);
-    console.log(`loggedin reader \n ${reader}`);
-    console.log(`readerprofiledata \n ${readerProfileData}`);
   }, []);
 
   return (
     <>
+      <BackNavigation
+        innerHtml={
+          <div>
+            {readerProfileData.firstname} {readerProfileData.lastname}
+            <div className="text-pale" style={{ fontSize: 13 + "px" }}>
+              {readerProfileData.postCount} posts
+            </div>
+          </div>
+        }
+      />
       <div className="profile-header">
         <div
           style={{
@@ -131,7 +138,11 @@ const ReaderProfile = () => {
               }}
             />
             <button
-              className="p-0 rounded-5 border border-1 border-light d-flex justify-content-center align-items-center"
+              className={
+                editBtns
+                  ? "p-0 rounded-5 border border-1 border-light d-flex justify-content-center align-items-center"
+                  : "d-none"
+              }
               style={{
                 backgroundColor: "#1d1f20",
                 width: 50 + "px",
@@ -183,7 +194,11 @@ const ReaderProfile = () => {
                 }}
               />
               <button
-                className="p-0 rounded-5 border border-1 border-light d-flex justify-content-center align-items-center"
+                className={
+                  editBtns
+                    ? "p-0 rounded-5 border border-1 border-light d-flex justify-content-center align-items-center"
+                    : "d-none"
+                }
                 style={{
                   backgroundColor: "#1d1f20",
                   width: 50 + "px",
@@ -205,8 +220,12 @@ const ReaderProfile = () => {
             </div>
           </div>
           <div>
-            <Button variant="primary">Edit</Button>
-            <Button variant="primary">Share</Button>
+            <Button
+              variant="primary"
+              onClick={() => setEditBtns((prev) => !prev)}
+            >
+              Edit
+            </Button>
           </div>
         </div>
         <div className="profile-info d-flex flex-column gap-2 px-3 mb-3">
