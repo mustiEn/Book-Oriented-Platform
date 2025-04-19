@@ -1,13 +1,16 @@
 #leftSidebar {
   width: 250px;
-  height: 100vh;
   background-color: inherit;
   color: #fff;
-  padding: 20px;
 }
 
 .left-sidebar-item {
   height: 45px;
+  width: max-content;
+}
+
+.left-sidebar-item {
+  margin-bottom: 10px;
 }
 
 .left-sidebar-item:hover {
@@ -16,15 +19,13 @@
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
 }
 
-#leftSidebar ul li {
-  margin-bottom: 10px;
+li:not(:first-child) .left-sidebar-a-inner-icon {
+  width: 22px;
+  height: 22px;
 }
 
-#leftSidebar ul a {
-  color: #fff;
-  text-decoration: none;
-  display: block;
-  padding: 10px;
+.left-sidebar-a-inner-text {
+  font-size: 28px;
 }
 
 .profile-dropdown button {

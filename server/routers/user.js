@@ -31,7 +31,14 @@ router.post(
   [isUserActive, body("premiumType").notEmpty().isString()],
   userController.createCheckoutSession
 );
+
 router.post("/webhook", userController.listenWebhook);
+
+router.get(
+  "/get-home-page-posts/:index",
+  [isUserActive, param("index").notEmpty().isInt()],
+  userController.getHomePagePosts
+);
 
 router.get(
   "/get-reader-book-modal-details/:bookId",
@@ -280,6 +287,7 @@ router.get(
   isUserActive,
   userController.getReaderBookshelfOverview
 );
+
 router.get(
   "/get-reader-comments/:username/:index",
   [
@@ -289,11 +297,13 @@ router.get(
   ],
   userController.getReaderComments
 );
+
 router.get(
   "/get-themed-topics/:category",
   [isUserActive, param("category").notEmpty().isString()],
   userController.getThemedTopics
 );
+
 router.get(
   "/:postType/:postId",
   [
@@ -303,6 +313,7 @@ router.get(
   ],
   userController.getReaderPostComments
 );
+
 router.post(
   "/send-comment",
   [
@@ -313,6 +324,7 @@ router.post(
   ],
   userController.sendComment
 );
+
 router.post(
   "/create-topic",
   [

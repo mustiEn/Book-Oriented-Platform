@@ -8,7 +8,7 @@ const RightSidebar = ({ topics }) => {
 
   return (
     <>
-      <div className="position-sticky top-0 h-100">
+      <div className="align-self-start position-sticky top-0 p-2">
         <ul>
           {topics.map((topic, i) => (
             <li key={topic.id} className="topic-li px-2 py-1">

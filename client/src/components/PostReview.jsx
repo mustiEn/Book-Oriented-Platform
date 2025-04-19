@@ -1,17 +1,28 @@
-import moment from "moment";
-import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
+import React, { useEffect } from "react";
 import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
-import {
-  useLoaderData,
-  useNavigate,
-  Link,
-  useLocation,
-  useParams,
-} from "react-router-dom";
+import { Link } from "react-router-dom";
+
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const PostReview = ({ data }) => {
   const post = data;
+
+  const formatDate = (date) => {
+    const time = dayjs(date).local();
+    if (dayjs().diff(time, "year") >= 1) {
+      // Format as DD/MM/YYYY
+      return time.format("DD.MM.YYYY");
+    } else {
+      // Format as "X minutes/hours/days ago"
+      return time.fromNow();
+    }
+  };
   return (
     <>
       {post.topic != null ? (
@@ -68,7 +79,7 @@ const PostReview = ({ data }) => {
                   // className="fw-bold"
                   style={{ fontSize: "0.9" + "rem" }}
                 >
-                  - {moment(post.created_at).fromNow(false)}
+                  - {formatDate(post.createdAt)}
                 </div>
               </span>
             </div>

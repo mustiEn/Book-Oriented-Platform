@@ -1,16 +1,27 @@
-import moment from "moment";
-import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import React from "react";
 import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
-import {
-  useLoaderData,
-  useNavigate,
-  Link,
-  useLocation,
-  useParams,
-} from "react-router-dom";
+
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 const PostThought = ({ data }) => {
   const post = data;
+  const now = dayjs();
+  const formatDate = (date) => {
+    const time = dayjs(date).local();
+    if (dayjs().diff(time, "year") >= 1) {
+      // Format as DD/MM/YYYY
+      return time.format("DD.MM.YYYY");
+    } else {
+      // Format as "X minutes/hours/days ago"
+      return time.fromNow();
+    }
+  };
   return (
     <>
       <img
@@ -22,11 +33,11 @@ const PostThought = ({ data }) => {
         <div className="thought-header gap-2 ms-2">
           <div className="d-flex flex-column">
             <div className="fw-bold">
-              {post.Topic != null ? (
+              {post.topic != null ? (
                 post.topic
               ) : (
                 <>
-                  {post.User.firstname} {post.User.lastname}
+                  {post.firstname} {post.lastname}
                 </>
               )}
             </div>
@@ -37,24 +48,24 @@ const PostThought = ({ data }) => {
                   color: "rgb(186, 180, 171)",
                 }}
               >
-                {post.Topic != null
-                  ? post.User.firstname + " " + post.User.lastname
-                  : "@" + post.User.username}
+                {post.topic != null
+                  ? post.firstname + " " + post.lastname
+                  : "@" + post.username}
               </div>
               <span className="d-flex">
                 <div
                   // className="fw-bold"
                   style={{ fontSize: "0.9" + "rem" }}
                 >
-                  - {moment(post.User.createdAt).fromNow(false)}
+                  - {formatDate(post.createdAt)}
                 </div>
               </span>
             </div>
           </div>
         </div>
         <div className="thought-body ms-2">
-          <div className="thought-title fw-bold fs-4">{post.User.title}</div>
-          <div>{post.User.thought}</div>
+          <div className="thought-title fw-bold fs-4">{post.title}</div>
+          <div>{post.thought}</div>
           {/* <div className="d-flex gap-2 mt-3">
             <img
             src={

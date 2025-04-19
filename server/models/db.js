@@ -10,6 +10,7 @@ export const sequelize = new Sequelize(
   process.env.DB_PASS,
   {
     host: "localhost",
+    timezone: "+01:00", // or your actual local offset
     dialect: "mysql",
     logging: false,
   }

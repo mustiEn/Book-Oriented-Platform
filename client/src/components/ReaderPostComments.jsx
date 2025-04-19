@@ -1,14 +1,11 @@
-import moment from "moment";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
-import {
-  useLoaderData,
-  useNavigate,
-  Link,
-  useLocation,
-  useParams,
-} from "react-router-dom";
+import { useLoaderData, Link, useParams } from "react-router-dom";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import "../css/reader_post_comments.css";
@@ -18,13 +15,15 @@ import PostReview from "./PostReview";
 import PostQuote from "./PostQuote";
 import PostThought from "./PostThought";
 import BackNavigation from "./BackNavigation";
-import RightSidebar from "./RightSidebar";
+
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const ReaderPostComments = () => {
   console.log(useLoaderData());
-  const commentsData = useLoaderData();
-  let { post, comments, user } = commentsData;
-  const navigate = useNavigate();
+  const postCommentsData = useLoaderData();
+  let { post, comments, user } = postCommentsData;
   const [commentList, setCommentList] = useState(comments);
   const { postType, postId } = useParams();
   const [comment, setComment] = useState("");
@@ -42,7 +41,9 @@ const ReaderPostComments = () => {
         }),
       });
       const data = await res.json();
+
       if (!res) throw new Error("Failed to send comment");
+
       setCommentList(data.comments);
       toast.success("Comment sent");
       setComment("");
@@ -50,6 +51,16 @@ const ReaderPostComments = () => {
     } catch (error) {
       toast.error(error.message);
       console.log(error);
+    }
+  };
+  const formatDate = (date) => {
+    const time = dayjs(date).local();
+    if (dayjs().diff(time, "year") >= 1) {
+      // Format as DD/MM/YYYY
+      return time.format("DD.MM.YYYY");
+    } else {
+      // Format as "X minutes/hours/days ago"
+      return time.fromNow();
     }
   };
   const returnPostComponent = () => {
@@ -65,8 +76,6 @@ const ReaderPostComments = () => {
     }
     return comp;
   };
-
-  console.log(post, comments);
 
   // useEffect(() => {
   //   setCommentList(comments);
@@ -112,7 +121,7 @@ const ReaderPostComments = () => {
                         className="d-flex"
                         style={{ fontSize: "0.9" + "rem" }}
                       >
-                        - {moment(comment.created_at).fromNow(false)}
+                        - {formatDate(comment.createdAt)}
                       </div>
                     </div>
                   </div>

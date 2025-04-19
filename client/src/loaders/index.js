@@ -16,6 +16,17 @@ export const loadInitials = async () => {
   return data;
 };
 
+export const loadHomePagePosts = async () => {
+  const res = await fetch("/api/get-home-page-posts/0");
+
+  if (!res.ok) {
+    throw new Error(res.error);
+  }
+
+  const data = await res.json();
+  return data;
+};
+
 export const loadExploreGeneral = async () => {
   const response = await Promise.all([
     fetch("/api/get-topic-categories"),

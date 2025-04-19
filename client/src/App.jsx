@@ -54,8 +54,8 @@ import BookCategoriesList from "./components/BookCategoriesList.jsx";
 import AdminLayout from "./layout/AdminLayout.jsx";
 import Admin from "./views/Admin.jsx";
 
+import ScrollToTop from "./components/ScrollToTop.jsx";
 import * as Loader from "./loaders/index.js";
-import Payment from "./views/Payment.jsx";
 import Completion from "./views/Completion.jsx";
 import Premium from "./views/Premium.jsx";
 
@@ -84,12 +84,18 @@ function App() {
       ],
     },
     {
-      element: <Layout />,
+      element: (
+        <>
+          <ScrollToTop />
+          <Layout />
+        </>
+      ),
       loader: Loader.loadInitials,
       children: [
         {
           path: "/home",
           element: <Home />,
+          loader: Loader.loadHomePagePosts,
         },
         {
           path: "/search",
@@ -233,7 +239,7 @@ function App() {
         {
           path: "/book-categories",
           element: <BookCategories />,
-          loader: Loader.loadBookCategories,
+          // loader: Loader.loadBookCategories,
           children: [
             {
               index: true,

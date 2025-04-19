@@ -16,6 +16,7 @@ Comment.addHook("afterCreate", async (comment, options) => {
       {
         postId: comment.id,
         post_type: "comment",
+        userId: comment.userId,
       },
       { transaction: options.t }
     );

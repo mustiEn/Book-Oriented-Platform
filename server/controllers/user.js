@@ -55,7 +55,7 @@ const shareReview = async (req, res, next) => {
       throw new Error("Topic not found");
     }
 
-    await Review.create({
+    const rr = await Review.create({
       title,
       review,
       topicId: topic.id,
@@ -63,9 +63,187 @@ const shareReview = async (req, res, next) => {
       userId,
     });
 
+    logger.log(rr);
+
     return res.status(200).json({
       message: "Review added successfully",
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getHomePagePosts = async (req, res, next) => {
+  try {
+    const results = validationResult(req);
+
+    if (!results.isEmpty()) {
+      throw new Error(
+        `Validation failed.\n Msg: ${results.array()[0].msg}.\n Path: ${
+          results.array()[0].path
+        }`
+      );
+    }
+
+    const { index: offset } = matchedData(req);
+    const limit = 20;
+    const reviewsSql = `SELECT
+                          MAX(p.id) id,
+                          MAX(p.post_type) AS type,
+                          r.bookId, 
+                          u.id AS userId, 
+                          u.username, 
+                          u.firstname, 
+                          u.lastname, 
+                          u.profile_photo, 
+                          r.title, 
+                          r.review, 
+                          MAX(rb.rating) rating, 
+                          MAX(lb.is_liked) is_liked, 
+                          MAX(brs.reading_state) reading_state, 
+                          MAX(top.topic) topic, 
+                          MAX(top.image) AS topic_image, 
+                          MAX(p.comment_count) AS comment_count, 
+                          bc.people_read, 
+                          CASE WHEN MAX(
+                            LENGTH(bc.title)
+                          ) > 80 THEN CONCAT(
+                            SUBSTRING(
+                              MAX(bc.title), 
+                              1, 
+                              80
+                            ), 
+                            '...'
+                          ) ELSE MAX(bc.title) END AS truncated_title, 
+                          GROUP_CONCAT(
+                            DISTINCT pu.publisher SEPARATOR ', '
+                          ) AS publishers, 
+                          GROUP_CONCAT(DISTINCT au.author SEPARATOR ', ') AS authors_, 
+                          bc.thumbnail, 
+                          bc.published_date, 
+                          r.createdAt 
+                        FROM 
+                          reviews r 
+                          LEFT JOIN book_collections bc ON r.bookId = bc.id 
+                          LEFT JOIN publisher_book_association pba ON pba.bookId = r.bookId 
+                          JOIN publishers pu ON pu.id = pba.publisherId 
+                          LEFT JOIN author_book_association abo ON abo.bookId = r.bookId 
+                          INNER JOIN AUTHORS au ON au.id = abo.authorId 
+                          INNER JOIN users u ON u.id = r.userId 
+                          LEFT JOIN rated_books rb ON rb.bookId = r.bookId 
+                          AND rb.userId = r.userId 
+                          LEFT JOIN book_reading_states brs ON brs.bookId = r.bookId 
+                          AND brs.userId = r.userId 
+                          LEFT JOIN liked_books lb ON lb.bookId = r.bookId 
+                          AND lb.userId = r.userId 
+                          LEFT JOIN topics top ON r.topicId = top.id 
+                          INNER JOIN posts p ON p.postId = r.id 
+                          AND p.post_type = "review"
+                        GROUP BY 
+                          r.id
+                        ORDER BY 
+                          r.createdAt DESC
+                        LIMIT ${limit} OFFSET ${offset};`;
+
+    const thoughtsSql = `SELECT 
+                            MAX(p.id) id,
+                            MAX(p.post_type) AS type, 
+                            MAX(t.title) thought_title, 
+                            MAX(t.thought) thought, 
+                            JSON_ARRAYAGG(ti.image) images, 
+                            MAX(p.comment_count) comment_count, 
+                            MAX(bc.title) title, 
+                            CASE WHEN LENGTH(
+                              MAX(bc.title)
+                            ) > 80 THEN CONCAT(
+                              SUBSTRING(
+                                MAX(bc.title), 
+                                1, 
+                                80
+                              ), 
+                              '...'
+                            ) ELSE MAX(bc.title) END AS truncated_title, 
+                            MAX(top.topic) topic, 
+                            MAX(top.image) AS topic_image, 
+                            MAX(u.username) username, 
+                            MAX(u.firstname) firstname, 
+                            MAX(u.lastname) lastname, 
+                            MAX(u.profile_photo) profile_photo, 
+                            t.createdAt 
+                          FROM 
+                            thoughts t 
+                            JOIN thought_images ti ON t.id = ti.thoughtId 
+                            LEFT JOIN book_collections bc ON t.bookId = bc.id 
+                            LEFT JOIN topics top ON t.topicId = top.id 
+                            JOIN users u ON t.userId = u.id 
+                            JOIN posts p ON p.postId = t.id 
+                            AND p.post_type = "thought" 
+                          GROUP BY 
+                            t.id
+                          ORDER BY 
+                            t.createdAt DESC
+                          LIMIT ${limit} OFFSET ${offset};  
+                          `;
+    const quotesSql = `SELECT 
+                        MAX(p.id) id,
+                        MAX(p.post_type) AS type,
+                        q.bookId,
+                        u.id AS userId,
+                        u.username, 
+                        u.firstname, 
+                        u.lastname,
+                        u.profile_photo, 
+                        q.title, 
+                        q.quote,
+                        q.page, 
+                        MAX(p.comment_count) AS comment_count,
+                        MAX(top.topic) topic, 
+                        MAX(top.image) AS topic_image,    
+                        CASE WHEN MAX(
+                          LENGTH(bc.title)
+                        ) > 80 THEN CONCAT(
+                          SUBSTRING(
+                          MAX(bc.title), 
+                          1, 
+                          80
+                              ), 
+                              '...'
+                            ) ELSE MAX(bc.title) END AS truncated_title, 
+                        GROUP_CONCAT(
+                          DISTINCT pu.publisher SEPARATOR ', '
+                        ) AS publishers, 
+                        GROUP_CONCAT(DISTINCT au.author SEPARATOR ', ') AS authors_, 
+                        bc.thumbnail, 
+                        bc.published_date,
+                        q.createdAt 
+                      FROM 
+                        quotes q 
+                        LEFT JOIN book_collections bc ON q.bookId = bc.id 
+                        LEFT JOIN publisher_book_association pba ON pba.bookId = q.bookId 
+                        JOIN publishers pu ON pu.id = pba.publisherId 
+                        LEFT JOIN author_book_association abo ON abo.bookId = q.bookId 
+                        INNER JOIN AUTHORS au ON au.id = abo.authorId  
+                        LEFT JOIN topics top ON q.topicId = top.id
+                        INNER JOIN users u ON u.id = q.userId
+                        INNER JOIN posts p ON p.postId = q.id
+                        AND p.post_type = "quote"
+                      GROUP BY 
+                        q.id
+                      ORDER BY 
+                        q.createdAt DESC
+                      LIMIT ${limit} OFFSET ${offset};`;
+
+    const [reviews, thoughts, quotes] = await Promise.all([
+      returnRawQuery(reviewsSql),
+      returnRawQuery(thoughtsSql),
+      returnRawQuery(quotesSql),
+    ]);
+    let posts;
+
+    posts = [...reviews, ...thoughts, ...quotes];
+    posts = posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.status(200).json(posts);
   } catch (error) {
     next(error);
   }
@@ -1370,170 +1548,161 @@ const getReaderPostComments = async (req, res, next) => {
       throw new Error("Post id not found");
     }
 
-    const commentsSql = `SELECT p.id,u.username,u.firstname,u.lastname,
-                          te.comment,te.createdAt,p.comment_count
-                          FROM posts p
-                          INNER JOIN(SELECT c.id,c.comment,c.createdAt,c.userId
-                          FROM posts p
-                          INNER JOIN comments c
-                          ON c.commentToId=p.id
-                          AND p.id=${postId}
-                          AND p.post_type="${postType}") te
-                          ON te.id=p.postId
-                          AND p.post_type="comment"
-                          INNER JOIN users u
-                          ON u.id=te.userId`;
+    const commentsSql = `SELECT 
+                            p.id, 
+                            c.comment, 
+                            p.comment_count, 
+                            c.createdAt, 
+                            c.userId, 
+                            u.username, 
+                            u.firstname, 
+                            u.lastname 
+                          FROM 
+                            comments c 
+                            INNER JOIN posts p ON c.id = p.postId 
+                            AND p.post_type = "comment" 
+                            INNER JOIN users u ON u.id = c.userId 
+                          WHERE 
+                            c.commentToId = ${postId}
+                          `;
 
     if (postType == "review") {
-      post = await Review.findOne({
-        attributes: [
-          "id",
-          "bookId",
-          "title",
-          "review",
-          "createdAt",
-          [
-            Sequelize.literal(`
-              (SELECT GROUP_CONCAT(DISTINCT Publishers.publisher SEPARATOR ', ')
-               FROM Publisher_Book_Association AS pba
-               JOIN Publishers ON pba.publisherId = Publishers.id
-               WHERE pba.bookId = Book_Collection.id) 
-            `),
-            "publishers",
-          ],
-          [
-            Sequelize.literal(`
-             (SELECT GROUP_CONCAT(DISTINCT Authors.author SEPARATOR ', ')
-               FROM Author_Book_Association AS aut
-               JOIN Authors ON aut.authorId = Authors.id
-               WHERE aut.bookId = Book_Collection.id) 
-            `),
-            "authors",
-          ],
-          [Sequelize.col("User.username"), "username"],
-          [Sequelize.col("User.firstname"), "firstname"],
-          [Sequelize.col("User.lastname"), "lastname"],
-          [Sequelize.col("User.profile_photo"), "profile_photo"],
-          [Sequelize.col("Book_Collection.thumbnail"), "thumbnail"],
-          [Sequelize.col("Book_Collection.published_date"), "published_date"],
-          [
-            Sequelize.literal(`CASE WHEN LENGTH(Book_Collection.title) > 100
-              THEN CONCAT(SUBSTRING(Book_Collection.title, 1, 100), '...')
-              ELSE Book_Collection.title END`),
-            "truncated_title",
-          ],
-          [Sequelize.col("Topic.topic"), "topic"],
-          [Sequelize.col("Topic.image"), "topic_image"],
-        ],
-        include: [
-          {
-            model: User,
-            attributes: [], // No need to include attributes here since we're using sequelize.col()
-            required: true,
-          },
-          {
-            model: BookCollection,
-            attributes: [], // No need to include attributes here since we're using sequelize.col()
-          },
-          {
-            model: Topic,
-            attributes: [], // No need to include attributes here since we're using sequelize.col()
-          },
-        ],
-        where: {
-          id: pkPostId.postId,
-        },
-        raw: true,
-        group: ["Review.id", "Book_Collection.id", "Topic.id"],
-      });
+      post = `SELECT 
+                r.id, 
+                r.bookId, 
+                r.title, 
+                r.review, 
+                r.createdAt, 
+                (
+                  SELECT 
+                    GROUP_CONCAT(
+                      DISTINCT Publishers.publisher SEPARATOR ', '
+                    ) 
+                  FROM 
+                    Publisher_Book_Association pba 
+                    JOIN Publishers ON pba.publisherId = Publishers.id 
+                  WHERE 
+                    pba.bookId = bc.id
+                ) publishers, 
+                (
+                  SELECT 
+                    GROUP_CONCAT(
+                      DISTINCT Authors.author SEPARATOR ', '
+                    ) 
+                  FROM 
+                    Author_Book_Association aut 
+                    JOIN Authors ON aut.authorId = Authors.id 
+                  WHERE 
+                    aut.bookId = bc.id
+                ) authors, 
+                u.username username, 
+                u.firstname firstname, 
+                u.lastname lastname, 
+                u.profile_photo profile_photo, 
+                bc.thumbnail thumbnail, 
+                bc.published_date published_date, 
+                CASE WHEN LENGTH(bc.title) > 100 THEN CONCAT(
+                  SUBSTRING(bc.title, 1, 100), 
+                  '...'
+                ) ELSE bc.title END AS truncated_title, 
+                p.comment_count, 
+                t.topic topic, 
+                t.image topic_image 
+              FROM 
+                Reviews r 
+                JOIN users u ON r.userId = u.id 
+                JOIN book_Collections bc ON r.bookId = bc.id 
+                JOIN topics t ON r.topicId = t.id 
+                JOIN posts p on p.id = ${postId} 
+              WHERE 
+                r.id = ${postId} 
+              GROUP BY 
+                r.id, 
+                bc.id, 
+                t.id 
+              LIMIT 
+                1;
+              `;
+      [post] = await returnRawQuery(post);
     } else if (postType == "quote") {
-      post = await Quote.findOne({
-        attributes: [
-          "id",
-          "bookId",
-          "title",
-          "quote",
-          "page",
-          "createdAt",
-          [
-            Sequelize.literal(`
-              (SELECT GROUP_CONCAT(DISTINCT Publishers.publisher SEPARATOR ', ')
-               FROM Publisher_Book_Association AS pba
-               JOIN Publishers ON pba.publisherId = Publishers.id
-               WHERE pba.bookId = Book_Collection.id) 
-            `),
-            "publishers",
-          ],
-          [
-            Sequelize.literal(`
-             (SELECT GROUP_CONCAT(DISTINCT Authors.author SEPARATOR ', ')
-               FROM Author_Book_Association AS aut
-               JOIN Authors ON aut.authorId = Authors.id
-               WHERE aut.bookId = Book_Collection.id) 
-            `),
-            "authors",
-          ],
-        ],
-        include: [
-          {
-            model: User,
-            attributes: ["username", "firstname", "lastname", "profile_photo"],
-            required: true,
-          },
-          {
-            model: BookCollection,
-            attributes: [
-              "thumbnail",
-              "published_date",
-              [
-                Sequelize.literal(`CASE WHEN LENGTH(book_collection.title) > 100
-              THEN CONCAT(SUBSTRING(book_collection.title, 1, 100), '...')
-              ELSE book_collection.title END`),
-                "truncated_title",
-              ],
-            ],
-          },
-          {
-            model: Topic,
-            attributes: ["topic", ["image", "topic_image"]],
-          },
-        ],
-        where: {
-          id: pkPostId.postId,
-        },
-      });
+      post = `SELECT 
+                q.id,
+                q.bookId,
+                q.title,
+                q.quote,
+                q.page,
+                q.createdAt,
+                (
+                  SELECT GROUP_CONCAT(DISTINCT Publishers.publisher SEPARATOR ', ')
+                  FROM Publisher_Book_Association AS pba
+                  JOIN Publishers ON pba.publisherId = Publishers.id
+                  WHERE pba.bookId = bc.id
+                ) AS publishers,
+                (
+                  SELECT GROUP_CONCAT(DISTINCT Authors.author SEPARATOR ', ')
+                  FROM Author_Book_Association AS aut
+                  JOIN Authors ON aut.authorId = Authors.id
+                  WHERE aut.bookId = bc.id
+                ) AS authors,
+                u.username AS username,
+                u.firstname AS firstname,
+                u.lastname AS lastname,
+                u.profile_photo AS profile_photo,
+                bc.thumbnail AS "bc.thumbnail",
+                bc.published_date AS "bc.published_date",
+                CASE 
+                  WHEN LENGTH(bc.title) > 100 
+                  THEN CONCAT(SUBSTRING(bc.title, 1, 100), '...') 
+                  ELSE bc.title 
+                END AS "bc.truncated_title",
+                p.comment_count,
+                t.topic AS topic,
+                t.image AS topic_image
+              FROM 
+                Quotes AS q
+              JOIN 
+                Users AS u ON q.userId = u.id
+              JOIN 
+                Book_Collections AS bc ON q.bookId = bc.id
+              JOIN 
+                Topics AS t ON q.topicId = t.id
+              JOIN posts p on p.id = ${postId}
+              WHERE 
+                q.id = ${postId}
+              LIMIT 1;`;
+      [post] = await returnRawQuery(post);
     } else if (postType == "thought") {
-      post = await Thought.findOne({
-        attributes: [
-          "id",
-          "title",
-          "thought",
-          "createdAt",
-          [
-            Sequelize.literal(
-              `(SELECT GROUP_CONCAT(thi.image SEPARATOR ', ')
-              FROM thoughts t
-              JOIN thought_images thi ON t.id=thi.thoughtId)`
-            ),
-            "post_images",
-          ],
-        ],
-        include: [
-          {
-            model: User,
-            attributes: ["username", "firstname", "lastname", "profile_photo"],
-            required: true,
-          },
-          { model: ThoughtImage, attributes: [], required: true },
-          {
-            model: Topic,
-            attributes: ["topic", ["image", "topic_image"]],
-          },
-        ],
-        where: {
-          id: pkPostId.postId,
-        },
-      });
+      post = `SELECT 
+                t.id,
+                t.title,
+                t.thought,
+                t.createdAt,
+                (
+                  SELECT GROUP_CONCAT(thi.image SEPARATOR ', ')
+                  FROM thoughts t
+                  JOIN thought_images thi ON t.id = thi.thoughtId
+                  WHERE t.id = t.id
+                ) AS post_images,
+                u.username AS username,
+                u.firstname AS firstname,
+                u.lastname AS lastname,
+                u.profile_photo AS profile_photo,
+                p.comment_count,
+                top.topic AS topic,
+                top.image AS topic_image
+              FROM 
+                Thoughts AS t
+              JOIN 
+                Users AS u ON t.userId = u.id
+              JOIN 
+                Thought_Images AS ThoughtImage ON t.id = ThoughtImage.thoughtId
+              JOIN 
+                Topics AS top ON t.topicId = top.id
+              JOIN posts p on p.id = ${postId}
+              WHERE 
+                t.id = ${postId}
+              LIMIT 1;`;
+      [post] = await returnRawQuery(post);
     } else {
       post = Comment.findOne({
         where: {
@@ -1588,28 +1757,20 @@ const sendComment = async (req, res, next) => {
     const userId = req.session.passport.user;
     const commentsSql = `SELECT 
                             p.id, 
+                            c.comment, 
+                            p.comment_count, 
+                            c.createdAt, 
+                            c.userId, 
                             u.username, 
                             u.firstname, 
-                            u.lastname, 
-                            te.comment, 
-                            te.createdAt, 
-                            p.comment_count 
+                            u.lastname 
                           FROM 
-                            posts p 
-                            INNER JOIN(
-                              SELECT 
-                                c.id, 
-                                c.comment, 
-                                c.createdAt, 
-                                c.userId 
-                              FROM 
-                                posts p 
-                                INNER JOIN comments c ON c.commentToId = p.id 
-                                AND p.id = ${commentToId} 
-                                AND p.post_type = "${postType}"
-                            ) te ON te.id = p.postId 
+                            comments c 
+                            INNER JOIN posts p ON c.id = p.postId 
                             AND p.post_type = "comment" 
-                            INNER JOIN users u ON u.id = te.userId
+                            INNER JOIN users u ON u.id = c.userId 
+                          WHERE 
+                            c.commentToId = ${commentToId}
                           `;
 
     const post = await Post.findOne({
@@ -1621,29 +1782,26 @@ const sendComment = async (req, res, next) => {
     if (!post) {
       throw new Error("Post not found");
     }
-    logger.log("1");
-    if (postType != "comment") {
-      const newComment = (
-        await Comment.create(
-          {
-            comment: comment,
-            commentToId: post.id,
-            rootParentId: post.id,
-            userId: userId,
-          },
-          { transaction: t }
-        )
-      ).toJSON();
 
-      await Post.create(
+    if (postType != "comment") {
+      await Comment.create(
         {
-          post_type: "comment",
-          postId: newComment.id,
+          comment: comment,
+          commentToId: post.id,
+          rootParentId: post.id,
           userId: userId,
         },
         { transaction: t }
       );
-      logger.log(2);
+
+      // await Post.create(
+      //   {
+      //     post_type: "comment",
+      //     postId: newComment.id,
+      //     userId: userId,
+      //   },
+      //   { transaction: t }
+      // );
     } else {
       const commentPost = await Comment.findOne({
         where: {
@@ -1692,7 +1850,6 @@ const sendComment = async (req, res, next) => {
     const comments = await returnRawQuery(commentsSql);
 
     res.status(200).json({
-      success: "comment sent",
       comments,
     });
   } catch (error) {
@@ -2132,7 +2289,7 @@ const getTopicPosts = async (req, res, next) => {
                         thoughts t
                     JOIN 
                         thought_images ti ON t.id = ti.thoughtId
-                    JOIN 
+                    Left JOIN 
                         book_collections bc ON t.bookId = bc.id
                     JOIN 
                         topics top ON t.topicId = top.id
@@ -3141,6 +3298,7 @@ const listenWebhook = async (req, res, next) => {
 
 export {
   listenWebhook,
+  getHomePagePosts,
   createCheckoutSession,
   shareReview,
   getBookReviews,

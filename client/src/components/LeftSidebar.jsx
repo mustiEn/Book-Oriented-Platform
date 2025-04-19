@@ -1,10 +1,16 @@
 import React, { useEffect, useState } from "react";
 import "../css/left_sidebar.css";
-import { Link, useNavigate, useLoaderData } from "react-router-dom";
-import { FaEllipsis } from "react-icons/fa6";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { FaBook, FaEllipsis } from "react-icons/fa6";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 import Dropdown from "react-bootstrap/Dropdown";
+import { FaRegUser, FaMagnifyingGlass, FaBell, FaUser } from "react-icons/fa6";
+import { AiOutlineHome } from "react-icons/ai";
+import { MdOutlineExplore } from "react-icons/md";
+import { MdOutlineWorkspacePremium } from "react-icons/md";
+import { IoBookOutline } from "react-icons/io5";
+import { LiaCubesSolid } from "react-icons/lia";
 
 const LeftSidebar = ({ loggedInReader }) => {
   const navigate = useNavigate();
@@ -62,70 +68,200 @@ const LeftSidebar = ({ loggedInReader }) => {
     <>
       <div
         id="leftSidebar"
-        className="d-flex flex-column position-sticky top-0"
+        className="d-flex align-self-start p-2 gap-2 flex-column position-sticky top-0 "
       >
-        <div id="brandName">BookNest</div>
-        <ul className="mt-4">
+        <ul>
           <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to="/home">
-              Home
+            <Link
+              className="left-sidebar-a text-decoration-none text-white d-block p-2"
+              to="/home"
+            >
+              <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                <img
+                  src="logo.png"
+                  loading="lazy"
+                  className="left-sidebar-a-inner-icon"
+                />
+              </div>
             </Link>
           </li>
           <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to="/search">
-              Search
-            </Link>
+            <NavLink
+              className="left-sidebar-a text-decoration-none text-white d-block p-2"
+              to="/home"
+            >
+              {({ isActive }) => (
+                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                  <AiOutlineHome className="left-sidebar-a-inner-icon" />
+                  <span
+                    className={
+                      isActive
+                        ? "left-sidebar-a-inner-text fs-5 fw-bold"
+                        : "left-sidebar-a-inner-text fs-5"
+                    }
+                  >
+                    Home
+                  </span>
+                </div>
+              )}
+            </NavLink>
           </li>
           <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to="/explore">
-              Explore
-            </Link>
+            <NavLink
+              className="left-sidebar-a text-decoration-none text-white d-block p-2"
+              to="/search"
+            >
+              {({ isActive }) => (
+                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                  <FaMagnifyingGlass className="left-sidebar-a-inner-icon" />
+                  <span
+                    className={
+                      isActive
+                        ? "left-sidebar-a-inner-text fs-5 fw-bold"
+                        : "left-sidebar-a-inner-text fs-5"
+                    }
+                  >
+                    Search
+                  </span>
+                </div>
+              )}
+            </NavLink>
           </li>
           <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to="/explore/topics">
-              Topics
-            </Link>
-          </li>
-          <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to="/explore/books">
-              Books
-            </Link>
-          </li>
-          <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to="/book-categories">
-              Book Categories
-            </Link>
+            <NavLink
+              className="left-sidebar-a text-decoration-none text-white d-block p-2"
+              to="/explore"
+            >
+              {({ isActive }) => (
+                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                  <MdOutlineExplore className="left-sidebar-a-inner-icon" />
+                  <span
+                    className={
+                      isActive
+                        ? "left-sidebar-a-inner-text fs-5 fw-bold"
+                        : "left-sidebar-a-inner-text fs-5"
+                    }
+                  >
+                    Explore
+                  </span>
+                </div>
+              )}
+            </NavLink>
           </li>
           {/* <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to="/authors">
-              Authors
-            </Link>
+            <NavLink
+              className="left-sidebar-a text-decoration-none text-white d-block p-2"
+              to="/explore/topics"
+            >
+              {({ isActive }) => (
+                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                  <TfiPalette className="left-sidebar-a-inner-icon" />
+                  <span
+                    className={
+                      isActive
+                        ? "left-sidebar-a-inner-text fs-5 fw-bold"
+                        : "left-sidebar-a-inner-text fs-5"
+                    }
+                  >
+                    Topics
+                  </span>
+                </div>
+              )}
+            </NavLink>
           </li> */}
           <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to="/premium">
-              Premium
-            </Link>
+            <NavLink
+              className="left-sidebar-a text-decoration-none text-white d-block p-2"
+              to="/explore/books"
+            >
+              {({ isActive }) => (
+                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                  <IoBookOutline className="left-sidebar-a-inner-icon" />
+                  <span
+                    className={
+                      isActive
+                        ? "left-sidebar-a-inner-text fs-5 fw-bold"
+                        : "left-sidebar-a-inner-text fs-5"
+                    }
+                  >
+                    Books
+                  </span>
+                </div>
+              )}
+            </NavLink>
           </li>
           <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to="#">
-              Contact
-            </Link>
+            <NavLink
+              className="left-sidebar-a text-decoration-none text-white d-block p-2"
+              to="/book-categories"
+            >
+              {({ isActive }) => (
+                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                  <LiaCubesSolid className="left-sidebar-a-inner-icon" />
+                  <span
+                    className={
+                      isActive
+                        ? "left-sidebar-a-inner-text fs-5 fw-bold"
+                        : "left-sidebar-a-inner-text fs-5"
+                    }
+                  >
+                    Book Categories
+                  </span>
+                </div>
+              )}
+            </NavLink>
           </li>
           <li className="left-sidebar-item">
-            <Link className="left-sidebar-a" to={`/${reader.username}`}>
-              Profile
-            </Link>
+            <NavLink
+              className="left-sidebar-a text-decoration-none text-white d-block p-2"
+              to="/premium"
+            >
+              {({ isActive }) => (
+                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                  <MdOutlineWorkspacePremium className="left-sidebar-a-inner-icon" />
+                  <span
+                    className={
+                      isActive
+                        ? "left-sidebar-a-inner-text fs-5 fw-bold"
+                        : "left-sidebar-a-inner-text fs-5"
+                    }
+                  >
+                    Premium
+                  </span>
+                </div>
+              )}
+            </NavLink>
           </li>
-          <li>
-            <Button variant="primary">Create Post</Button>
-          </li>
-          <li>
-            <Button variant="primary" onClick={() => navigate("/create-topic")}>
-              Create Topic
-            </Button>
+          <li className="left-sidebar-item">
+            <NavLink
+              className="left-sidebar-a text-decoration-none text-white d-block p-2"
+              to={`/${reader.username}`}
+            >
+              {({ isActive }) => (
+                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                  <FaRegUser className="left-sidebar-a-inner-icon" />
+                  <span
+                    className={
+                      isActive
+                        ? "left-sidebar-a-inner-text fs-5 fw-bold"
+                        : "left-sidebar-a-inner-text fs-5"
+                    }
+                  >
+                    Profile
+                  </span>
+                </div>
+              )}
+            </NavLink>
           </li>
         </ul>
-        <Dropdown className="profile-dropdown mt-auto" dark-bs-theme="dark">
+        <Button variant="outline-light">Create Post</Button>
+        <Button
+          variant="outline-light"
+          onClick={() => navigate("/create-topic")}
+        >
+          Create Topic
+        </Button>
+        <Dropdown className="profile-dropdown" dark-bs-theme="dark">
           <Dropdown.Toggle
             id="dropdown-basic"
             className="w-100 p-0"
@@ -185,9 +321,9 @@ const LeftSidebar = ({ loggedInReader }) => {
                       handleClose();
                     }}
                   >
-                    {book.volumeInfo.imageLinks ? (
+                    {book.volumeInfo.imageNavLinks ? (
                       <img
-                        src={book.volumeInfo.imageLinks.smallThumbnail}
+                        src={book.volumeInfo.imageNavLinks.smallThumbnail}
                         width={50 + "px"}
                         alt=""
                       />
