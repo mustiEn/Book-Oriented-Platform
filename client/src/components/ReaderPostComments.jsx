@@ -77,10 +77,9 @@ const ReaderPostComments = () => {
     return comp;
   };
 
-  // useEffect(() => {
-  //   setCommentList(comments);
-  //   console.log(comments);
-  // }, [comments]);
+  useEffect(() => {
+    setCommentList(comments);
+  }, [comments]);
 
   return (
     <>

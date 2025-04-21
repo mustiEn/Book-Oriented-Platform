@@ -3,6 +3,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import React from "react";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 
@@ -29,7 +30,7 @@ const PostQuote = ({ data }) => {
           className="topic-userPp position-relative float-start"
           style={{ width: 55 + "px" }}
         >
-          <img
+          <LazyLoadImage
             src={`/Topics/${post.topic_image}`}
             width="35"
             height="35"
@@ -88,7 +89,7 @@ const PostQuote = ({ data }) => {
         <div className="quote-body ms-2">
           <div>{post.quote}</div>
           <div className="d-flex gap-2 mt-3">
-            <img
+            <LazyLoadImage
               src={
                 post.thumbnail != null
                   ? post.thumbnail

@@ -258,7 +258,6 @@ export const loadReaderComments = async ({ params }) => {
 
 export const loadReaderPostComments = async ({ params }) => {
   const { postType, postId } = params;
-  console.log(postType, postId);
 
   const response = await fetch(`/api/${postType}/${postId}`);
 
@@ -267,6 +266,8 @@ export const loadReaderPostComments = async ({ params }) => {
   }
 
   const data = await response.json();
+  console.log("index load reader post comments", data);
+
   return data;
 };
 
@@ -326,7 +327,7 @@ export const loadBookDetailsShareReview = async ({ params }) => {
   const { bookId } = params;
   const response = await Promise.all([
     fetch(`/api/books/v1/${bookId}`),
-    fetch("/api/get-explore-topics"),
+    fetch("/api/get-topics"),
   ]);
   for (const res of response) {
     if (!res.ok) {

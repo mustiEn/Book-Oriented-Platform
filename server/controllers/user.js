@@ -14,14 +14,10 @@ import { Post } from "../models/Post.js";
 import { Comment } from "../models/Comment.js";
 import { TopicCategory } from "../models/TopicCategory.js";
 import { Topic } from "../models/Topic.js";
-import { Thought } from "../models/Thought.js";
-import { ThoughtImage } from "../models/ThoughtImage.js";
 import { BookCollection } from "../models/BookCollection.js";
-import { Quote } from "../models/Quote.js";
 import { trendingTopics, trendingTopicsSql } from "../crons/index.js";
 import { Transaction } from "../models/Transaction.js";
 import { Category } from "../models/Category.js";
-import FormData from "form-data";
 import Stripe from "stripe";
 import dotenv from "dotenv";
 import { Subscription } from "../models/Subscription.js";
@@ -62,8 +58,6 @@ const shareReview = async (req, res, next) => {
       bookId,
       userId,
     });
-
-    logger.log(rr);
 
     return res.status(200).json({
       message: "Review added successfully",
@@ -1116,7 +1110,7 @@ const getReaderReviews = async (req, res, next) => {
                         `;
 
     const readerReviews = await returnRawQuery(reviewsSql);
-
+    logger.log(readerReviews);
     res.status(200).json({
       readerReviews,
     });
@@ -1137,6 +1131,7 @@ const getReaderQuotes = async (req, res, next) => {
       );
     const { username } = matchedData(req);
     const user = await User.findOne({
+      attributes: ["id"],
       where: {
         username: username,
       },
@@ -1147,7 +1142,7 @@ const getReaderQuotes = async (req, res, next) => {
     }
 
     const quotesSql = `SELECT 
-                        q.id, 
+                        p.id, 
                         q.bookId, 
                         u.username, 
                         u.firstname, 
@@ -1199,11 +1194,11 @@ const getReaderQuotes = async (req, res, next) => {
                           INNER JOIN AUTHORS au ON au.id = aubo.authorId 
                           LEFT JOIN topics t ON t.id = q.topicId 
                           WHERE 
-                          q.userId = ${userId} 
+                          q.userId = ${user.id} 
                           GROUP BY 
                           q.bookId
                         ) temp2 ON temp2.bcId = q.bookId 
-                        AND q.userId = ${userId}
+                        AND q.userId = ${user.id}
                         INNER JOIN posts p ON p.postId = q.id
                         AND p.post_type = "quote" 
                         INNER JOIN users u ON u.id = q.userId
@@ -1232,6 +1227,7 @@ const getReaderThoughts = async (req, res, next) => {
     const { username } = matchedData(req);
 
     const user = await User.findOne({
+      attributes: ["id"],
       where: {
         username: username,
       },
@@ -1242,38 +1238,39 @@ const getReaderThoughts = async (req, res, next) => {
     }
 
     const thoughtsSql = `SELECT 
-                          MAX(t.id) id,
-                          MAX(t.title) title,
-                          MAX(t.thought) thought,
-                          JSON_ARRAYAGG(ti.image) images,
-                          MAX(p.comment_count) comment_count,
-                          MAX(bc.title) title,
-                          CASE 
-                              WHEN LENGTH(MAX(bc.title)) > 80 
-                              THEN CONCAT(SUBSTRING(MAX(bc.title), 1, 80), '...') 
-                              ELSE MAX(bc.title) 
-                          END AS truncated_title,
-                          MAX(top.topic) topic,
-                          MAX(top.image) AS topic_image,
-                          u.username,
-                          u.firstname,
-                          u.lastname,
-                          u.profile_photo
-                      FROM 
-                          thoughts t
-                      JOIN 
-                          thought_images ti ON t.id = ti.thoughtId
-                      JOIN 
-                          book_collections bc ON t.bookId = bc.id
-                      JOIN 
-                          topics top ON t.topicId = top.id
-                      JOIN 
-                          users u ON t.userId = u.id
-                      JOIN
-                        posts p ON p.postId = t.id
-                        AND p.post_type = "thought"
-                      WHERE 
-                          u.id = ${userId};`;
+                            MAX(p.id) id, 
+                            MAX(t.title) title, 
+                            MAX(t.thought) thought, 
+                            JSON_ARRAYAGG(ti.image) images, 
+                            MAX(p.comment_count) comment_count, 
+                            MAX(bc.title) title, 
+                            CASE WHEN LENGTH(
+                              MAX(bc.title)
+                            ) > 80 THEN CONCAT(
+                              SUBSTRING(
+                                MAX(bc.title), 
+                                1, 
+                                80
+                              ), 
+                              '...'
+                            ) ELSE MAX(bc.title) END AS truncated_title, 
+                            MAX(top.topic) topic, 
+                            MAX(top.image) AS topic_image, 
+                            MAX(u.username) username, 
+                            MAX(u.firstname) firstname, 
+                            MAX(u.lastname) lastname, 
+                            MAX(u.profile_photo) profile_photo 
+                          FROM 
+                            thoughts t 
+                            LEFT JOIN thought_images ti ON t.id = ti.thoughtId 
+                            LEFT JOIN book_collections bc ON t.bookId = bc.id 
+                            LEFT JOIN topics top ON t.topicId = top.id 
+                            JOIN users u ON t.userId = u.id 
+                            JOIN posts p ON p.postId = t.id 
+                            AND p.post_type = "thought" 
+                          WHERE 
+                            t.userId = ${user.toJSON().id};
+                          `;
     const thoughts = await returnRawQuery(thoughtsSql);
 
     res.status(200).json({ thoughts });
@@ -1534,15 +1531,13 @@ const getReaderPostComments = async (req, res, next) => {
     const user = await User.findByPk(userId, {
       attributes: ["profile_photo"],
     });
-    const pkPostId = (
-      await Post.findOne({
-        attributes: ["postId"],
-        where: {
-          id: postId,
-          post_type: postType,
-        },
-      })
-    ).toJSON();
+    const pkPostId = await Post.findOne({
+      attributes: ["postId"],
+      where: {
+        id: postId,
+        post_type: postType,
+      },
+    });
 
     if (!pkPostId) {
       throw new Error("Post id not found");
@@ -1568,7 +1563,7 @@ const getReaderPostComments = async (req, res, next) => {
 
     if (postType == "review") {
       post = `SELECT 
-                r.id, 
+                p.id, 
                 r.bookId, 
                 r.title, 
                 r.review, 
@@ -1591,10 +1586,10 @@ const getReaderPostComments = async (req, res, next) => {
                     ) 
                   FROM 
                     Author_Book_Association aut 
-                    JOIN Authors ON aut.authorId = Authors.id 
+                    JOIN AUTHORS ON aut.authorId = Authors.id 
                   WHERE 
                     aut.bookId = bc.id
-                ) authors, 
+                ) AUTHORS, 
                 u.username username, 
                 u.firstname firstname, 
                 u.lastname lastname, 
@@ -1612,109 +1607,116 @@ const getReaderPostComments = async (req, res, next) => {
                 Reviews r 
                 JOIN users u ON r.userId = u.id 
                 JOIN book_Collections bc ON r.bookId = bc.id 
-                JOIN topics t ON r.topicId = t.id 
-                JOIN posts p on p.id = ${postId} 
-              WHERE 
-                r.id = ${postId} 
-              GROUP BY 
-                r.id, 
-                bc.id, 
-                t.id 
-              LIMIT 
-                1;
+                LEFT JOIN topics t ON r.topicId = t.id 
+                JOIN posts p ON p.postId = r.id 
+                AND p.id = ${postId} 
+                AND p.post_type = "review"
               `;
-      [post] = await returnRawQuery(post);
     } else if (postType == "quote") {
       post = `SELECT 
-                q.id,
-                q.bookId,
-                q.title,
-                q.quote,
-                q.page,
-                q.createdAt,
+                p.id, 
+                q.bookId, 
+                q.title, 
+                q.quote, 
+                q.page, 
+                q.createdAt, 
                 (
-                  SELECT GROUP_CONCAT(DISTINCT Publishers.publisher SEPARATOR ', ')
-                  FROM Publisher_Book_Association AS pba
-                  JOIN Publishers ON pba.publisherId = Publishers.id
-                  WHERE pba.bookId = bc.id
-                ) AS publishers,
+                  SELECT 
+                    GROUP_CONCAT(
+                      DISTINCT Publishers.publisher SEPARATOR ', '
+                    ) 
+                  FROM 
+                    Publisher_Book_Association AS pba 
+                    JOIN Publishers ON pba.publisherId = Publishers.id 
+                  WHERE 
+                    pba.bookId = bc.id
+                ) AS publishers, 
                 (
-                  SELECT GROUP_CONCAT(DISTINCT Authors.author SEPARATOR ', ')
-                  FROM Author_Book_Association AS aut
-                  JOIN Authors ON aut.authorId = Authors.id
-                  WHERE aut.bookId = bc.id
-                ) AS authors,
-                u.username AS username,
-                u.firstname AS firstname,
-                u.lastname AS lastname,
-                u.profile_photo AS profile_photo,
-                bc.thumbnail AS "bc.thumbnail",
-                bc.published_date AS "bc.published_date",
-                CASE 
-                  WHEN LENGTH(bc.title) > 100 
-                  THEN CONCAT(SUBSTRING(bc.title, 1, 100), '...') 
-                  ELSE bc.title 
-                END AS "bc.truncated_title",
-                p.comment_count,
-                t.topic AS topic,
-                t.image AS topic_image
+                  SELECT 
+                    GROUP_CONCAT(
+                      DISTINCT Authors.author SEPARATOR ', '
+                    ) 
+                  FROM 
+                    Author_Book_Association AS aut 
+                    JOIN AUTHORS ON aut.authorId = Authors.id 
+                  WHERE 
+                    aut.bookId = bc.id
+                ) AS AUTHORS, 
+                u.username AS username, 
+                u.firstname AS firstname, 
+                u.lastname AS lastname, 
+                u.profile_photo AS profile_photo, 
+                bc.thumbnail AS "bc.thumbnail", 
+                bc.published_date AS "bc.published_date", 
+                CASE WHEN LENGTH(bc.title) > 100 THEN CONCAT(
+                  SUBSTRING(bc.title, 1, 100), 
+                  '...'
+                ) ELSE bc.title END AS "bc.truncated_title", 
+                p.comment_count, 
+                top.topic AS topic, 
+                top.image AS topic_image 
               FROM 
-                Quotes AS q
-              JOIN 
-                Users AS u ON q.userId = u.id
-              JOIN 
-                Book_Collections AS bc ON q.bookId = bc.id
-              JOIN 
-                Topics AS t ON q.topicId = t.id
-              JOIN posts p on p.id = ${postId}
-              WHERE 
-                q.id = ${postId}
-              LIMIT 1;`;
-      [post] = await returnRawQuery(post);
+                Quotes AS q 
+                JOIN Users AS u ON q.userId = u.id 
+                JOIN Book_Collections AS bc ON q.bookId = bc.id 
+                LEFT JOIN Topics AS top ON q.topicId = top.id 
+                JOIN posts p ON p.postId = q.id 
+                AND p.id = ${postId} 
+                AND p.post_type = "quote"
+              `;
     } else if (postType == "thought") {
       post = `SELECT 
-                t.id,
-                t.title,
-                t.thought,
-                t.createdAt,
+                t.id, 
+                t.title, 
+                t.thought, 
+                t.createdAt, 
                 (
-                  SELECT GROUP_CONCAT(thi.image SEPARATOR ', ')
-                  FROM thoughts t
-                  JOIN thought_images thi ON t.id = thi.thoughtId
-                  WHERE t.id = t.id
-                ) AS post_images,
-                u.username AS username,
-                u.firstname AS firstname,
-                u.lastname AS lastname,
-                u.profile_photo AS profile_photo,
-                p.comment_count,
-                top.topic AS topic,
-                top.image AS topic_image
+                  SELECT 
+                    GROUP_CONCAT(thi.image SEPARATOR ', ') 
+                  FROM 
+                    thoughts t 
+                    JOIN thought_images thi ON t.id = thi.thoughtId 
+                  WHERE 
+                    t.id = t.id
+                ) AS post_images, 
+                u.username AS username, 
+                u.firstname AS firstname, 
+                u.lastname AS lastname, 
+                u.profile_photo AS profile_photo, 
+                p.comment_count, 
+                top.topic AS topic, 
+                top.image AS topic_image 
               FROM 
-                Thoughts AS t
-              JOIN 
-                Users AS u ON t.userId = u.id
-              JOIN 
-                Thought_Images AS ThoughtImage ON t.id = ThoughtImage.thoughtId
-              JOIN 
-                Topics AS top ON t.topicId = top.id
-              JOIN posts p on p.id = ${postId}
-              WHERE 
-                t.id = ${postId}
-              LIMIT 1;`;
-      [post] = await returnRawQuery(post);
+                Thoughts AS t 
+                JOIN Users AS u ON t.userId = u.id 
+                LEFT JOIN Thought_Images AS ThoughtImage ON t.id = ThoughtImage.thoughtId 
+                LEFT JOIN Topics AS top ON t.topicId = top.id 
+                JOIN posts p ON p.postId = t.id 
+                AND p.id = 24 
+                AND p.post_type = "thought"
+              `;
     } else {
-      post = Comment.findOne({
-        where: {
-          id: pkPostId.postId,
-        },
-        include: {
-          model: User,
-          attributes: ["username", "firstname", "lastname", "profile_photo"],
-        },
-      });
+      post = `SELECT 
+                p.id,
+                c.comment, 
+                c.createdAt, 
+                c.commentToId, 
+                c.rootParentId, 
+                c.userId, 
+                u.username, 
+                u.firstname, 
+                u.lastname, 
+                u.profile_photo 
+              FROM 
+                Comments AS c 
+                JOIN Users AS u ON c.userId = u.id
+                JOIN posts p ON p.postId = c.id 
+                AND p.id = ${postId} 
+                AND p.post_type = "comment"
+              `;
     }
 
+    [post] = await returnRawQuery(post);
     comments = await returnRawQuery(commentsSql);
     res.status(200).json({
       post,
@@ -1793,15 +1795,6 @@ const sendComment = async (req, res, next) => {
         },
         { transaction: t }
       );
-
-      // await Post.create(
-      //   {
-      //     post_type: "comment",
-      //     postId: newComment.id,
-      //     userId: userId,
-      //   },
-      //   { transaction: t }
-      // );
     } else {
       const commentPost = await Comment.findOne({
         where: {
@@ -1811,27 +1804,15 @@ const sendComment = async (req, res, next) => {
 
       if (!commentPost) throw new Error("Comment post not found");
 
-      const newComment = (
-        await Comment.create(
-          {
-            comment: comment,
-            commentToId: post.id,
-            rootParentId: commentPost.rootParentId,
-            userId: userId,
-          },
-          { transaction: t }
-        )
-      ).toJSON();
-
-      await Post.create(
+      await Comment.create(
         {
-          post_type: "comment",
-          postId: newComment.id,
+          comment: comment,
+          commentToId: post.id,
+          rootParentId: commentPost.rootParentId,
           userId: userId,
         },
         { transaction: t }
       );
-      logger.log(3);
     }
 
     await Post.update(
@@ -2551,7 +2532,7 @@ const getExploreGenerals = async (req, res, next) => {
   }
 };
 
-const getExploreTopics = async (req, res, next) => {
+const getExplorePopularTopics = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const popularTopicsSql = `SELECT 
@@ -2572,6 +2553,21 @@ const getExploreTopics = async (req, res, next) => {
     const popularTopics = await returnRawQuery(popularTopicsSql);
 
     res.status(200).json({ trendingTopics, popularTopics });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getAllTopics = async (req, res, next) => {
+  try {
+    const topicsSql = `SELECT 
+                          id "value",
+                          topic label
+                        FROM 
+                          topics`;
+    const topics = await returnRawQuery(topicsSql);
+
+    res.status(200).json(topics);
   } catch (error) {
     next(error);
   }
@@ -3299,6 +3295,7 @@ const listenWebhook = async (req, res, next) => {
 export {
   listenWebhook,
   getHomePagePosts,
+  getAllTopics,
   createCheckoutSession,
   shareReview,
   getBookReviews,
@@ -3330,7 +3327,7 @@ export {
   getReaderBookModalDetails,
   getTopicReaders,
   getExploreGenerals,
-  getExploreTopics,
+  getExplorePopularTopics,
   getExploreBooks,
   getTopicCategories,
   setFollowingState,

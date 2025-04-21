@@ -1,7 +1,8 @@
 import React from "react";
 import slugify from "react-slugify";
 import { useState, useEffect } from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";
 import { FaMagnifyingGlass } from "react-icons/fa6";
@@ -78,8 +79,9 @@ const Search = () => {
                   style={{ height: 170 + "px" }}
                 >
                   {book.thumbnail ? (
-                    <img
+                    <LazyLoadImage
                       src={book.thumbnail}
+                      loading="lazy"
                       width={90 + "px"}
                       height={140 + "px"}
                       alt=""

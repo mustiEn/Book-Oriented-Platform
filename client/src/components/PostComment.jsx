@@ -1,7 +1,27 @@
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import React from "react";
+import { FaBookmark, FaHeart } from "react-icons/fa6";
+
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const PostComment = ({ data }) => {
-  const { post } = data;
+  const post = data;
+  const formatDate = (date) => {
+    const time = dayjs(date).local();
+    if (dayjs().diff(time, "year") >= 1) {
+      // Format as DD/MM/YYYY
+      return time.format("DD.MM.YYYY");
+    } else {
+      // Format as "X minutes/hours/days ago"
+      return time.fromNow();
+    }
+  };
+
   return (
     <>
       <img
@@ -12,7 +32,7 @@ const PostComment = ({ data }) => {
       <div className="d-flex flex-column gap-2">
         <div className="post-header d-flex gap-2 ms-2">
           <div className="user-official-name fw-bold">
-            {post.User.firstname} {post.User.lastname}
+            {post.firstname} {post.lastname}
           </div>
           <div className="username d-flex gap-3">
             <div
@@ -21,11 +41,11 @@ const PostComment = ({ data }) => {
                 color: "rgb(186, 180, 171)",
               }}
             >
-              @{post.User.username}
+              @{post.username}
             </div>
             <span className="d-flex">
               <div style={{ fontSize: "0.9" + "rem" }}>
-                - {moment(post.createdAt).fromNow(false)}
+                - {formatDate(post.createdAt)}
               </div>
             </span>
           </div>

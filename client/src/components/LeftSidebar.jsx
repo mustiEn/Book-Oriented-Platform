@@ -78,7 +78,7 @@ const LeftSidebar = ({ loggedInReader }) => {
             >
               <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
                 <img
-                  src="logo.png"
+                  src={"/logo.png"}
                   loading="lazy"
                   className="left-sidebar-a-inner-icon"
                 />

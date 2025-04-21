@@ -11,14 +11,12 @@ import PostQuote from "./PostQuote";
 
 const ReaderProfileQuotes = () => {
   const data = useLoaderData();
-  const [, readerUsername] = useOutletContext();
-  const { profile } = useParams();
+  // const [, readerUsername] = useOutletContext();
 
   console.log(data);
 
   return (
     <>
-      <div>profile reader quotes</div>
       <ul id="quotes" className="d-flex flex-column gap-3">
         {data.readerQuotes.length > 0 ? (
           data.readerQuotes.map((quote) => {

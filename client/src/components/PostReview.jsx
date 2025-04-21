@@ -4,6 +4,7 @@ import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
 import React, { useEffect } from "react";
 import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 import { Link } from "react-router-dom";
 
 dayjs.extend(relativeTime);
@@ -142,7 +143,7 @@ const PostReview = ({ data }) => {
         <div className="review-body ms-2">
           <div>{post.review}</div>
           <div className="d-flex gap-2 mt-3">
-            <img
+            <LazyLoadImage
               src={
                 post.thumbnail != null
                   ? post.thumbnail

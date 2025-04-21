@@ -1,26 +1,17 @@
 import React from "react";
-import {
-  Link,
-  useLoaderData,
-  useOutletContext,
-  useParams,
-} from "react-router-dom";
+import { Link, useLoaderData } from "react-router-dom";
 import moment from "moment";
 import { FaComment } from "react-icons/fa6";
-import Button from "react-bootstrap/Button";
-import Modal from "react-bootstrap/Modal";
 
 const ReaderProfileThoughts = () => {
   const { thoughts } = useLoaderData();
-  // const thoughts = data.thoughts;
 
   console.log(thoughts);
 
   return (
     <>
-      <div>asdsadasd</div>
       <ul id="thoughts" className="d-flex flex-column gap-3">
-        {thoughts.length > 0 ? (
+        {thoughts[0].id != null ? (
           thoughts.map((thought) => {
             return (
               <li key={thought.id} className="thought p-3">

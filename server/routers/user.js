@@ -52,8 +52,9 @@ router.get(
 );
 router.post(
   "/share-review",
-  isUserActive,
+
   [
+    isUserActive,
     body("topic").notEmpty().isString(),
     body("review").notEmpty().isString(),
     body("title").notEmpty().isString(),
@@ -208,22 +209,29 @@ router.get(
   isUserActive,
   userController.getExploreGenerals
 );
+
+router.get("/get-topics", isUserActive, userController.getAllTopics);
+
 router.get(
   "/get-explore-topics",
   isUserActive,
-  userController.getExploreTopics
+  userController.getExplorePopularTopics
 );
+
 router.get("/get-explore-books", isUserActive, userController.getExploreBooks);
+
 router.get(
   "/get-trending-topics",
   isUserActive,
   userController.getTrendingTopics
 );
+
 router.get(
   "/get-book-category/:categoryId",
   [isUserActive, param("categoryId").notEmpty().isInt()],
   userController.getCategoryBooks
 );
+
 router.get(
   "/get-book-categories",
   [

@@ -1,29 +1,33 @@
 import React from "react";
-import { useParams, useLoaderData, useNavigate } from "react-router-dom";
+import { useLoaderData, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
-import slugify from "react-slugify";
 import { toast } from "react-hot-toast";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
+import Dropdown from "react-bootstrap/Dropdown";
+import DropdownButton from "react-bootstrap/esm/DropdownButton";
+import Select from "react-select";
 
 const ShareReview = () => {
   const navigate = useNavigate();
-  const [bookData, topicCategories] = useLoaderData();
+  const [bookData, topics] = useLoaderData();
   const [review, setReview] = useState({
     title: "",
     topic: "",
     review: "",
   });
-  const book = bookData[0];
-
-  console.log(book);
-
+  const selectStyle = {
+    option: (provided, state) => ({
+      ...provided,
+      color: "black",
+      backgroundColor: state.isSelected ? "#e0e0e0" : "white",
+    }),
+  };
+  const [book] = bookData;
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (review.title === "" || review.review === "" || review.topic === "") {
-      console.log(review);
-
       toast.error("Please fill all the fields");
       return;
     } else {
@@ -49,7 +53,6 @@ const ShareReview = () => {
         toast.error("Something went wrong");
       }
     }
-    console.log(review);
   };
 
   return (
@@ -73,23 +76,17 @@ const ShareReview = () => {
         </div>
         <div className="fw-bold fs-5 mt-4">Your Review</div>
         <Form className="d-flex flex-column gap-3 border p-3">
-          <Form.Group controlId="formBasicTopic">
-            <Form.Label className="fw-bold mb-1 fs-6">Topic</Form.Label>
-            <Form.Select
-              name="topic"
-              value={review.topic}
-              onChange={(e) => {
-                setReview({
-                  ...review,
-                  topic: e.target.value,
-                });
-              }}
-            >
-              <option value="--" hidden></option>
-              <option value="Literature">Literature</option>
-              <option value="History">History</option>
-            </Form.Select>
-          </Form.Group>
+          <Select
+            options={topics}
+            styles={selectStyle}
+            name="topic"
+            onChange={(e) => {
+              setReview({
+                ...review,
+                topic: e.label,
+              });
+            }}
+          />
           <Form.Group controlId="formBasicTitle">
             <Form.Label className="fw-bold mb-1 fs-6">Title</Form.Label>
             <Form.Control

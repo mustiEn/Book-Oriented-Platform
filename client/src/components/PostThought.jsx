@@ -11,7 +11,6 @@ dayjs.extend(timezone);
 
 const PostThought = ({ data }) => {
   const post = data;
-  const now = dayjs();
   const formatDate = (date) => {
     const time = dayjs(date).local();
     if (dayjs().diff(time, "year") >= 1) {
@@ -22,6 +21,7 @@ const PostThought = ({ data }) => {
       return time.fromNow();
     }
   };
+  console.log(post);
   return (
     <>
       <img
