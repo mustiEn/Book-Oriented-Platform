@@ -4,13 +4,13 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { FaBook, FaEllipsis } from "react-icons/fa6";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
-import Dropdown from "react-bootstrap/Dropdown";
 import { FaRegUser, FaMagnifyingGlass, FaBell, FaUser } from "react-icons/fa6";
 import { AiOutlineHome } from "react-icons/ai";
 import { MdOutlineExplore } from "react-icons/md";
 import { MdOutlineWorkspacePremium } from "react-icons/md";
-import { IoBookOutline } from "react-icons/io5";
 import { LiaCubesSolid } from "react-icons/lia";
+import DropdownButton from "react-bootstrap/esm/DropdownButton";
+import Dropdown from "react-bootstrap/Dropdown";
 
 const LeftSidebar = ({ loggedInReader }) => {
   const navigate = useNavigate();
@@ -172,27 +172,6 @@ const LeftSidebar = ({ loggedInReader }) => {
           <li className="left-sidebar-item">
             <NavLink
               className="left-sidebar-a text-decoration-none text-white d-block p-2"
-              to="/explore/books"
-            >
-              {({ isActive }) => (
-                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
-                  <IoBookOutline className="left-sidebar-a-inner-icon" />
-                  <span
-                    className={
-                      isActive
-                        ? "left-sidebar-a-inner-text fs-5 fw-bold"
-                        : "left-sidebar-a-inner-text fs-5"
-                    }
-                  >
-                    Books
-                  </span>
-                </div>
-              )}
-            </NavLink>
-          </li>
-          <li className="left-sidebar-item">
-            <NavLink
-              className="left-sidebar-a text-decoration-none text-white d-block p-2"
               to="/book-categories"
             >
               {({ isActive }) => (
@@ -254,7 +233,20 @@ const LeftSidebar = ({ loggedInReader }) => {
             </NavLink>
           </li>
         </ul>
-        <Button variant="outline-light">Create Post</Button>
+        <DropdownButton id="dropdown-basic-button" title="Dropdown button">
+          <Dropdown.Item as={Link} to="/share-thought">
+            Thought
+          </Dropdown.Item>
+          <Dropdown.Item as={Link} to="/share-review">
+            Review
+          </Dropdown.Item>
+          <Dropdown.Item as={Link} to="/share-quote">
+            Quote
+          </Dropdown.Item>
+        </DropdownButton>
+        <Button variant="outline-light" className="mt-auto">
+          Create Post
+        </Button>
         <Button
           variant="outline-light"
           onClick={() => navigate("/create-topic")}

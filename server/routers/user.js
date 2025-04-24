@@ -45,22 +45,36 @@ router.get(
   [isUserActive, param("bookId").notEmpty().isInt()],
   userController.getReaderBookModalDetails
 );
+
 router.get(
   "/get-reader-username",
   isUserActive,
   userController.getLoggedInReader
 );
+
 router.post(
   "/share-review",
-
   [
     isUserActive,
-    body("topic").notEmpty().isString(),
+    body("topic").optional(),
     body("review").notEmpty().isString(),
     body("title").notEmpty().isString(),
     body("bookId").notEmpty().isInt(),
   ],
   userController.shareReview
+);
+
+router.post(
+  "/share-quote",
+  [
+    isUserActive,
+    body("topic").optional().isString(),
+    body("quote").notEmpty().isString(),
+    body("page").notEmpty().isInt(),
+    body("title").notEmpty().isString(),
+    body("bookId").notEmpty().isInt(),
+  ],
+  userController.shareQuote
 );
 
 router.get(

@@ -58,6 +58,7 @@ import ScrollToTop from "./components/ScrollToTop.jsx";
 import * as Loader from "./loaders/index.js";
 import Completion from "./views/Completion.jsx";
 import Premium from "./views/Premium.jsx";
+import ShareQuote from "./views/ShareQuote.jsx";
 
 function App() {
   const router = createBrowserRouter([
@@ -107,10 +108,20 @@ function App() {
           element: <Premium />,
         },
         {
-          path: "/share-review/:bookId",
+          path: "/share-review",
           element: <ShareReview />,
-          loader: Loader.loadBookDetailsShareReview,
+          loader: Loader.loadBookDetailsForPost,
         },
+        {
+          path: "/share-quote",
+          element: <ShareQuote />,
+          loader: Loader.loadBookDetailsForPost,
+        },
+        // {
+        //   path: "/share-thought",
+        //   element: <ShareThought />,
+        //   loader: Loader.loadBookDetailsForPost,
+        // },
         {
           path: "/create-topic",
           element: <CreateTopic />,

@@ -1,16 +1,16 @@
 import { logger, returnRawQuery } from "../utils/constants.js";
 import fs from "fs";
 import { matchedData, validationResult } from "express-validator";
-import { Op, QueryTypes, Sequelize, where } from "sequelize";
+import { QueryTypes, Sequelize } from "sequelize";
 import { Review } from "../models/Review.js";
 import { User } from "../models/User.js";
-import moment from "moment";
 import { sequelize } from "../models/db.js";
 import { PrivateNote } from "../models/PrivateNote.js";
 import { LikedBook } from "../models/LikedBook.js";
 import { RatedBook } from "../models/RatedBook.js";
 import { BookReadingState } from "../models/BookReadingState.js";
 import { Post } from "../models/Post.js";
+import { Quote } from "../models/Quote.js";
 import { Comment } from "../models/Comment.js";
 import { TopicCategory } from "../models/TopicCategory.js";
 import { Topic } from "../models/Topic.js";
@@ -31,6 +31,7 @@ const shareReview = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
+    let topic;
 
     if (!result.isEmpty()) {
       throw new Error(
@@ -41,6 +42,57 @@ const shareReview = async (req, res, next) => {
     }
 
     const { topic: topicName, title, review, bookId } = matchedData(req);
+
+    if (topicName != null) {
+      topic = await Topic.findOne({
+        where: {
+          topic: topicName,
+        },
+      });
+
+      if (!topic) {
+        throw new Error("Topic not found");
+      }
+    }
+
+    await Review.create({
+      title,
+      review,
+      topicId: topicName == null ? null : topic.toJSON().id,
+      bookId,
+      userId,
+    });
+
+    return res.status(200).json({
+      message: "Review added successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const shareQuote = async (req, res, next) => {
+  //^ Gets topic, title, quote and bookId.
+  //^ Checks if topic exists, if so, it creates a quote
+  try {
+    const userId = req.session.passport.user;
+    const result = validationResult(req);
+
+    if (!result.isEmpty()) {
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+    }
+
+    const {
+      topic: topicName,
+      title,
+      page_count: page,
+      quote,
+      bookId,
+    } = matchedData(req);
     const topic = await Topic.findOne({
       where: {
         topic: topicName,
@@ -51,16 +103,17 @@ const shareReview = async (req, res, next) => {
       throw new Error("Topic not found");
     }
 
-    const rr = await Review.create({
+    await Quote.create({
       title,
-      review,
+      quote,
+      page,
       topicId: topic.id,
       bookId,
       userId,
     });
 
     return res.status(200).json({
-      message: "Review added successfully",
+      message: "Quote added successfully",
     });
   } catch (error) {
     next(error);
@@ -3296,6 +3349,7 @@ export {
   listenWebhook,
   getHomePagePosts,
   getAllTopics,
+  shareQuote,
   createCheckoutSession,
   shareReview,
   getBookReviews,

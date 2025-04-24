@@ -10,13 +10,13 @@ import BackNavigation from "../components/BackNavigation";
 import * as motion from "motion/react-client";
 import { AnimatePresence } from "motion/react";
 
-const ShareReview = () => {
-  const [selectedBook, setSelectedBook] = useState(null);
-  const [validated, setValidated] = useState(false);
-  const [review, setReview] = useState({
+const ShareQuote = () => {
+  const [selectedBook, setSelectedBook] = useState({});
+  const [quote, setQuote] = useState({
     title: "",
-    topic: null,
-    review: "",
+    topic: "",
+    quote: "",
+    page_count: "",
     bookId: null,
   });
   const topics = useLoaderData();
@@ -25,12 +25,6 @@ const ShareReview = () => {
       ...provided,
       color: "black",
       backgroundColor: state.isSelected ? "#e0e0e0" : "white",
-    }),
-  };
-  const asyncSelectStyle = {
-    control: (base, state) => ({
-      ...base,
-      border: validated && !selectedBook ? "1px solid red" : "none",
     }),
   };
   const customOption = ({ data, innerRef, innerProps }) => (
@@ -60,39 +54,37 @@ const ShareReview = () => {
   );
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setValidated(true);
-
-    if (!review.bookId || !e.currentTarget.checkValidity()) {
-      e.stopPropagation();
+    if (
+      quote.title === "" ||
+      quote.quote === "" ||
+      quote.page_count === "" ||
+      quote.bookId == null
+    ) {
+      toast.error("Please fill all the fields");
       return;
-    }
+    } else {
+      console.log(quote);
 
-    console.log(review);
-
-    try {
-      const res = await fetch(`/api/share-review`, {
+      const res = await fetch(`/api/share-quote`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(review),
+        body: JSON.stringify(quote),
       });
 
       if (res.ok) {
-        toast.success("Review added successfully");
-        setReview({
+        toast.success("quote added successfully");
+        setQuote({
           title: "",
-          topic: null,
-          review: "",
+          topic: "",
+          quote: "",
           bookId: null,
         });
-        setSelectedBook(null);
-        setValidated(false);
+        setSelectedBook({});
       } else {
         toast.error("Something went wrong");
       }
-    } catch (error) {
-      toast.error("Something went wrong");
     }
   };
   const loadBooks = async (val) => {
@@ -115,42 +107,30 @@ const ShareReview = () => {
 
   return (
     <>
-      <BackNavigation innerHtml={"Review"} />
-      <div className="fw-bold fs-5 mt-4 mx-3">Your Review</div>
-      <Form
-        className="d-flex flex-column gap-3 p-3"
-        noValidate
-        validated={validated}
-        onSubmit={handleSubmit}
-      >
+      <BackNavigation innerHtml={"Quote"} />
+      <div className="fw-bold fs-5 mt-4 mx-3">Your Quote</div>
+      <Form className="d-flex flex-column gap-3 p-3">
         <Form.Group controlId="formBasicBook">
-          <Form.Label className="fw-bold mb-1 fs-6">Book *</Form.Label>
+          <Form.Label className="fw-bold mb-1 fs-6">Book</Form.Label>
           <AsyncSelect
             cacheOptions
             placeholder="Search for a book..."
             loadOptions={loadBooks}
-            required
             components={{ Option: customOption }}
             isClearable
-            styles={asyncSelectStyle}
-            value={selectedBook ?? null}
+            value={Object.keys(selectedBook).length > 0 ? selectedBook : null}
             onChange={(newValue) => {
-              setReview({
-                ...review,
+              setQuote((prevState) => ({
+                ...prevState,
                 bookId: newValue ? newValue.id : null,
-              });
-              setSelectedBook(newValue ?? null);
+              }));
+              setSelectedBook(newValue ?? {});
               console.log(newValue);
             }}
-            // className={validated && !selectedBook ? "border border-danger" : ""}
           />
-          {validated && !selectedBook && (
-            <div className="invalid-feedback d-block">Please select a book</div>
-          )}
         </Form.Group>
-
         <AnimatePresence>
-          {selectedBook && (
+          {Object.keys(selectedBook).length > 0 && (
             <motion.div
               layout
               initial={{ opacity: 0, scale: 0, height: 0 }}
@@ -163,36 +143,56 @@ const ShareReview = () => {
               className="text-white d-flex align-items-center gap-3 p-2"
             >
               <img
-                src={selectedBook?.thumbnail}
+                src={selectedBook.thumbnail}
                 width={80}
                 height={110}
                 style={{ objectFit: "cover", borderRadius: "4px" }}
                 alt="Book"
               />
               <div className="d-flex flex-column">
-                <span className="fw-bold fs-4" title={selectedBook?.title}>
-                  {selectedBook?.truncatedTitle}
+                <span className="fw-bold fs-4" title={selectedBook.title}>
+                  {selectedBook.truncatedTitle}
                 </span>
-                <span className="fw-light" title={selectedBook?.publishers}>
-                  {selectedBook?.publishers == null
+                <span className="fw-light" title={selectedBook.publishers}>
+                  {selectedBook.publishers == null
                     ? "Publisher not found"
-                    : selectedBook?.publishers.length > 60
+                    : selectedBook.publishers.length > 60
                     ? "Publisher: " +
-                      selectedBook?.publishers.slice(0, 60) +
+                      selectedBook.publishers.slice(0, 60) +
                       "..."
-                    : "Publisher: " + selectedBook?.publishers}
+                    : "Publisher: " + selectedBook.publishers}
                 </span>
-                <span className="fw-light" title={selectedBook?.authors}>
-                  {selectedBook?.authors == null
+                <span className="fw-light" title={selectedBook.authors}>
+                  {selectedBook.authors == null
                     ? "Author not found"
-                    : selectedBook?.authors.length > 60
-                    ? "Author: " + selectedBook?.authors.slice(0, 60) + "..."
-                    : "Author: " + selectedBook?.authors}
+                    : selectedBook.authors.length > 60
+                    ? "Author: " + selectedBook.authors.slice(0, 60) + "..."
+                    : "Author: " + selectedBook.authors}
                 </span>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+        <Form.Group controlId="formBasicPageCount">
+          <Form.Label className="fw-bold mb-1 fs-6">Page Count</Form.Label>
+          <Form.Control
+            type="number"
+            value={quote?.page_count}
+            min={1}
+            disabled={Object.keys(selectedBook).length == 0 ? true : false}
+            max={
+              Object.keys(selectedBook).length > 0
+                ? selectedBook.page_count
+                : 1000
+            }
+            onChange={(e) =>
+              setQuote((prevState) => ({
+                ...prevState,
+                page_count: e.target.value,
+              }))
+            }
+          ></Form.Control>
+        </Form.Group>
         <Form.Group controlId="formBasicTopic">
           <Form.Label className="fw-bold mb-1 fs-6">Topic</Form.Label>
           <Select
@@ -200,50 +200,42 @@ const ShareReview = () => {
             styles={selectStyle}
             name="topic"
             placeholder="Select a topic"
-            value={topics.find((option) => option.label == review.topic) || ""}
+            value={topics.find((option) => option.label == quote.topic) || ""}
             onChange={(e) => {
-              setReview({
-                ...review,
+              setQuote({
+                ...quote,
                 topic: e.label,
               });
             }}
           />
         </Form.Group>
         <Form.Group controlId="formBasicTitle">
-          <Form.Label className="fw-bold mb-1 fs-6">Title *</Form.Label>
+          <Form.Label className="fw-bold mb-1 fs-6">Title</Form.Label>
           <Form.Control
             type="text"
-            value={review.title}
-            required
+            value={quote.title}
             onChange={(e) => {
-              setReview({
-                ...review,
+              setQuote({
+                ...quote,
                 title: e.target.value,
               });
             }}
           ></Form.Control>
-          <Form.Control.Feedback type="invalid">
-            Please enter a title.
-          </Form.Control.Feedback>
         </Form.Group>
-        <Form.Group controlId="formBasicReview">
-          <Form.Label className="fw-bold mb-1 fs-6">Review *</Form.Label>
+        <Form.Group controlId="formBasicQuote">
+          <Form.Label className="fw-bold mb-1 fs-6">Quote</Form.Label>
           <Form.Control
             as="textarea"
-            value={review.review}
-            required
+            value={quote.quote}
             onChange={(e) => {
-              setReview({
-                ...review,
-                review: e.target.value,
+              setQuote({
+                ...quote,
+                quote: e.target.value,
               });
             }}
           ></Form.Control>
-          <Form.Control.Feedback type="invalid">
-            Please enter a review.
-          </Form.Control.Feedback>
         </Form.Group>
-        <Button variant="outline-light" type="submit">
+        <Button variant="outline-light" onClick={handleSubmit}>
           Share
         </Button>
       </Form>
@@ -251,4 +243,4 @@ const ShareReview = () => {
   );
 };
 
-export default ShareReview;
+export default ShareQuote;

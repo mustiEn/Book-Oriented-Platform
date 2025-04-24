@@ -34,8 +34,11 @@ router.post(
 
 router.get(
   "/books/v1/:bookId?",
-  isUserActive,
-  [query("q").optional().isString(), param("bookId").optional().isInt()],
+  [
+    isUserActive,
+    query("q").optional().isString(),
+    param("bookId").optional().isInt(),
+  ],
   indexController.bookCollection
 );
 

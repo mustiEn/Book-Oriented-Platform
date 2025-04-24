@@ -323,20 +323,15 @@ export const loadReaderBookshelfOverview = async () => {
   return data;
 };
 
-export const loadBookDetailsShareReview = async ({ params }) => {
-  const { bookId } = params;
-  const response = await Promise.all([
-    fetch(`/api/books/v1/${bookId}`),
-    fetch("/api/get-topics"),
-  ]);
-  for (const res of response) {
-    if (!res.ok) {
-      throw new Error(res.error);
-    }
+export const loadBookDetailsForPost = async () => {
+  const res = await fetch("/api/get-topics");
+
+  if (!res.ok) {
+    throw new Error(res.error);
   }
-  const data = await Promise.all(
-    response.map(async (item) => await item.json())
-  );
+
+  const data = await res.json();
+
   return data;
 };
 

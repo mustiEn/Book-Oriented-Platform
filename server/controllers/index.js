@@ -201,51 +201,81 @@ const bookCollection = async (req, res, next) => {
     } else {
       //& Gets 20 books from the database with the query
 
-      const sql = `SELECT book_id,
-                      MAX(book_key) AS book_key,
-                      CASE WHEN MAX(LENGTH(title)) > 100
-                        THEN CONCAT(SUBSTRING(MAX(title), 1, 100), '...')
-                        ELSE MAX(title) END AS truncatedTitle,
-                      MAX(title) AS title,
-                      MAX(thumbnail) AS thumbnail,
-                      GROUP_CONCAT(DISTINCT publisher SEPARATOR ', ') AS publishers,
-                      GROUP_CONCAT(DISTINCT author SEPARATOR ', ') AS authors FROM
-                      (SELECT bo.id AS book_id, bo.book_key AS book_key, bo.title AS title,
-                      bo.thumbnail AS thumbnail,au.author AS author,
-                      pu.publisher AS publisher
-                      FROM book_collections AS bo
-                      LEFT JOIN author_book_association AS aubo ON aubo.bookId=bo.id
-                      LEFT JOIN publisher_book_association AS pubo ON pubo.bookId=bo.id
-                      JOIN AUTHORS AS au ON au.id=aubo.authorId
-                      JOIN publishers AS pu ON pu.id=pubo.publisherId
-                      WHERE bo.title LIKE '%${q}%'
+      const sql = `SELECT 
+                      id, 
+                      CASE WHEN MAX(
+                        LENGTH(title)
+                      ) > 100 THEN CONCAT(
+                        SUBSTRING(
+                          MAX(title), 
+                          1, 
+                          100
+                        ), 
+                        '...'
+                      ) ELSE MAX(title) END AS truncatedTitle, 
+                      MAX(title) AS title, 
+                      MAX(thumbnail) AS thumbnail, 
+                      GROUP_CONCAT(DISTINCT publisher SEPARATOR ', ') AS publishers, 
+                      GROUP_CONCAT(DISTINCT author SEPARATOR ', ') AS authors, 
+                      MAX(page_count) page_count 
+                    FROM 
+                      (
+                        SELECT 
+                          bo.id, 
+                          bo.title AS title, 
+                          bo.thumbnail AS thumbnail, 
+                          au.author AS author, 
+                          pu.publisher AS publisher, 
+                          bo.page_count 
+                        FROM 
+                          book_collections AS bo 
+                          LEFT JOIN author_book_association AS aubo ON aubo.bookId = bo.id 
+                          LEFT JOIN publisher_book_association AS pubo ON pubo.bookId = bo.id 
+                          JOIN AUTHORS AS au ON au.id = aubo.authorId 
+                          JOIN publishers AS pu ON pu.id = pubo.publisherId 
+                        WHERE 
+                          bo.title LIKE '%${q}%' 
 
-                      UNION
+                        UNION 
 
-                      SELECT bo.id AS book_id, bo.book_key AS book_key, bo.title AS title,
-                      bo.thumbnail AS thumbnail,au.author AS author,
-                      pu.publisher AS publisher
-                      FROM author_book_association AS aubo
-                      LEFT JOIN book_collections AS bo ON aubo.bookId=bo.id
-                      LEFT JOIN publisher_book_association AS pubo ON pubo.bookId=bo.id
-                      JOIN AUTHORS AS au ON au.id=aubo.authorId
-                      JOIN publishers AS pu ON pu.id=pubo.publisherId
-                      WHERE au.author LIKE '%${q}%'
+                        SELECT 
+                          bo.id, 
+                          bo.title AS title, 
+                          bo.thumbnail AS thumbnail, 
+                          au.author AS author, 
+                          pu.publisher AS publisher, 
+                          bo.page_count 
+                        FROM 
+                          author_book_association AS aubo 
+                          LEFT JOIN book_collections AS bo ON aubo.bookId = bo.id 
+                          LEFT JOIN publisher_book_association AS pubo ON pubo.bookId = bo.id 
+                          JOIN AUTHORS AS au ON au.id = aubo.authorId 
+                          JOIN publishers AS pu ON pu.id = pubo.publisherId 
+                        WHERE 
+                          au.author LIKE '%${q}%' 
 
-                      UNION
+                        UNION 
 
-                      SELECT bo.id AS book_id, bo.book_key AS book_key, bo.title AS title,
-                      bo.thumbnail AS thumbnail,au.author AS author,
-                      pu.publisher AS publisher
-                      FROM publisher_book_association AS pubo
-                      LEFT JOIN book_collections AS bo ON pubo.bookId=bo.id
-                      LEFT JOIN author_book_association AS aubo ON aubo.bookId=bo.id
-                      JOIN AUTHORS AS au ON au.id=aubo.authorId
-                      JOIN publishers AS pu ON pu.id=pubo.publisherId
-                      WHERE pu.publisher LIKE '%${q}%') AS df
-                      GROUP BY book_id
-                      LIMIT 20
-                      `;
+                        SELECT 
+                          bo.id, 
+                          bo.title AS title, 
+                          bo.thumbnail AS thumbnail, 
+                          au.author AS author, 
+                          pu.publisher AS publisher, 
+                          bo.page_count 
+                        FROM 
+                          publisher_book_association AS pubo 
+                          LEFT JOIN book_collections AS bo ON pubo.bookId = bo.id 
+                          LEFT JOIN author_book_association AS aubo ON aubo.bookId = bo.id 
+                          JOIN AUTHORS AS au ON au.id = aubo.authorId 
+                          JOIN publishers AS pu ON pu.id = pubo.publisherId 
+                        WHERE 
+                          pu.publisher LIKE '%${q}%'
+                      ) AS df 
+                    GROUP BY 
+                      id 
+                    LIMIT 
+                      20`;
 
       data = await returnRawQuery(sql);
     }

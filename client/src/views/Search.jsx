@@ -18,7 +18,7 @@ const Search = () => {
   const getBooks = async () => {
     try {
       const res = await fetch(`/api/books/v1?q=${search}`);
-      const data = await res.json();
+      let data = await res.json();
 
       if (!res.ok) {
         throw new Error(res.error);
@@ -95,14 +95,18 @@ const Search = () => {
                     <span className="fw-bold fs-5" title={book.title}>
                       {book.truncatedTitle}
                     </span>
-                    <span className="fw-light">
+                    <span className="fw-light" title={book.publishers}>
                       {book.publishers == null
                         ? "Publisher not found"
+                        : book.publishers.length > 60
+                        ? "Publisher: " + book.publishers.slice(0, 60) + "..."
                         : "Publisher: " + book.publishers}
                     </span>
-                    <span className="fw-light">
+                    <span className="fw-light" title={book.authors}>
                       {book.authors == null
                         ? "Author not found"
+                        : book.authors.length > 60
+                        ? "Author: " + book.authors.slice(0, 60) + "..."
                         : "Author: " + book.authors}
                     </span>
                   </div>
