@@ -1,5 +1,7 @@
 import { sequelize } from "./db.js";
 import { DataTypes } from "sequelize";
+import { Post } from "./Post.js";
+import { Notification } from "./Notification.js";
 
 export const RestrictedPost = sequelize.define("restricted_post", {
   request_id: {
@@ -34,8 +36,25 @@ export const RestrictedPost = sequelize.define("restricted_post", {
     type: DataTypes.DECIMAL(3, 2),
     allowNull: false,
   },
-  post_type: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
+});
+
+RestrictedPost.addHook("afterCreate", async (post, options) => {
+  await Post.update(
+    {
+      restricted: true,
+    },
+    {
+      where: {
+        postId: post.postId,
+      },
+    }
+  );
+  await Notification.create({
+    content: {
+      text: post.context,
+      postId: post.postId,
+    },
+    type: "post",
+    receiverId: post.userId,
+  });
 });

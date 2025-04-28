@@ -11,6 +11,7 @@ import { RatedBook } from "../models/RatedBook.js";
 import { BookReadingState } from "../models/BookReadingState.js";
 import { Post } from "../models/Post.js";
 import { Quote } from "../models/Quote.js";
+import { Thought } from "../models/Thought.js";
 import { Comment } from "../models/Comment.js";
 import { TopicCategory } from "../models/TopicCategory.js";
 import { Topic } from "../models/Topic.js";
@@ -21,7 +22,9 @@ import { Category } from "../models/Category.js";
 import Stripe from "stripe";
 import dotenv from "dotenv";
 import { Subscription } from "../models/Subscription.js";
+import { Notification } from "../models/Notification.js";
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 dotenv.config();
 
@@ -77,6 +80,7 @@ const shareQuote = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
+    let topic;
 
     if (!result.isEmpty()) {
       throw new Error(
@@ -93,21 +97,24 @@ const shareQuote = async (req, res, next) => {
       quote,
       bookId,
     } = matchedData(req);
-    const topic = await Topic.findOne({
-      where: {
-        topic: topicName,
-      },
-    });
 
-    if (!topic) {
-      throw new Error("Topic not found");
+    if (topicName != null) {
+      topic = await Topic.findOne({
+        where: {
+          topic: topicName,
+        },
+      });
+
+      if (!topic) {
+        throw new Error("Topic not found");
+      }
     }
 
     await Quote.create({
       title,
       quote,
       page,
-      topicId: topic.id,
+      topicId: topicName == null ? null : topic.toJSON().id,
       bookId,
       userId,
     });
@@ -120,9 +127,56 @@ const shareQuote = async (req, res, next) => {
   }
 };
 
+const shareThought = async (req, res, next) => {
+  //^ Gets topic, title, quote and bookId.
+  //^ Checks if topic exists, if so, it creates a quote
+  try {
+    const userId = req.session.passport.user;
+    const result = validationResult(req);
+    let topic;
+
+    if (!result.isEmpty()) {
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+    }
+
+    const { topic: topicName, title, thought, bookId } = matchedData(req);
+    logger.log(matchedData(req));
+    if (topicName != null) {
+      topic = await Topic.findOne({
+        where: {
+          topic: topicName,
+        },
+      });
+
+      if (!topic) {
+        throw new Error("Topic not found");
+      }
+    }
+
+    await Thought.create({
+      title,
+      thought,
+      topicId: topicName == null ? null : topic.toJSON().id,
+      bookId: bookId ?? null,
+      userId,
+    });
+
+    return res.status(200).json({
+      message: "Thought added successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getHomePagePosts = async (req, res, next) => {
   try {
     const results = validationResult(req);
+    let posts;
 
     if (!results.isEmpty()) {
       throw new Error(
@@ -219,7 +273,7 @@ const getHomePagePosts = async (req, res, next) => {
                             t.createdAt 
                           FROM 
                             thoughts t 
-                            JOIN thought_images ti ON t.id = ti.thoughtId 
+                            LEFT JOIN thought_images ti ON t.id = ti.thoughtId 
                             LEFT JOIN book_collections bc ON t.bookId = bc.id 
                             LEFT JOIN topics top ON t.topicId = top.id 
                             JOIN users u ON t.userId = u.id 
@@ -285,11 +339,10 @@ const getHomePagePosts = async (req, res, next) => {
       returnRawQuery(thoughtsSql),
       returnRawQuery(quotesSql),
     ]);
-    let posts;
 
     posts = [...reviews, ...thoughts, ...quotes];
     posts = posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
+    // logger.log(posts);
     res.status(200).json(posts);
   } catch (error) {
     next(error);
@@ -775,6 +828,76 @@ const getBookStatistics = async (req, res, next) => {
   }
 };
 
+const getReaderNotifications = async (req, res, next) => {
+  try {
+    const userId = req.session.passport.user;
+    const unReadNotificationsSql = `UPDATE 
+                                      notifications
+                                    SET 
+                                      is_read = 1
+                                    WHERE 
+                                      receiverId = ${userId}`;
+
+    await returnRawQuery(unReadNotificationsSql, QueryTypes.UPDATE);
+
+    const notificationsSql = `SELECT 
+                                * 
+                              FROM 
+                                notifications n 
+                              WHERE 
+                                receiverId = ${userId}
+                              AND 
+                                TYPE != "comment"`;
+
+    const commentNotificationsSql = `SELECT 
+                                        u.username,
+                                        u.profile_photo, 
+                                        n.* 
+                                      FROM 
+                                        notifications n 
+                                        INNER JOIN users u ON u.id = JSON_UNQUOTE(
+                                          JSON_EXTRACT(n.content, '$.senderId')
+                                        ) 
+                                      WHERE 
+                                        receiverId = ${userId} 
+                                        AND TYPE = "comment"
+                                      `;
+
+    const [notifications, commentNotifications] = await Promise.all([
+      returnRawQuery(notificationsSql),
+      returnRawQuery(commentNotificationsSql),
+    ]);
+
+    const notificationsMerged = [
+      ...notifications,
+      ...commentNotifications,
+    ].sort((a, b) => {
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    res.status(200).json(notificationsMerged);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const markNotificationsAsRead = async (req, res, next) => {
+  try {
+    const userId = req.session.passport.user;
+    const unReadNotificationsSql = `UPDATE 
+                                        notifications
+                                      SET 
+                                        is_read = 1
+                                      WHERE 
+                                        receiverId = ${userId}`;
+
+    await returnRawQuery(unReadNotificationsSql, QueryTypes.UPDATE);
+    res.status(200).json({ message: "Success" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getReaderProfiles = async (req, res, next) => {
   //^ Gets bookId and returns book readers based
   //^ on q which colud be Read, Did not finished,
@@ -1163,7 +1286,6 @@ const getReaderReviews = async (req, res, next) => {
                         `;
 
     const readerReviews = await returnRawQuery(reviewsSql);
-    logger.log(readerReviews);
     res.status(200).json({
       readerReviews,
     });
@@ -1547,17 +1669,37 @@ const getReaderBookshelfOverview = async (req, res, next) => {
 const getLoggedInReader = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
-    let user = await User.findByPk(userId, {
-      attributes: ["id", "username", "firstname", "lastname", "profile_photo"],
-    });
+    const userSql = `SELECT 
+                        u.id, 
+                        u.username, 
+                        u.firstname, 
+                        u.lastname, 
+                        u.profile_photo, 
+                        MAX(s.customer_id) customer_id 
+                      FROM 
+                        users u 
+                        LEFT JOIN subscriptions s ON s.userId = u.id 
+                      WHERE 
+                        u.id = ${userId} 
+                      GROUP BY 
+                        u.id`;
+    const unReadNotificationsSql = `SELECT COUNT(*) unread
+                                    FROM 
+                                      notifications
+                                    WHERE 
+                                      is_read = 0
+                                    AND 
+                                      receiverId = 6`;
+    const [user, unReadNotifications] = await Promise.all([
+      returnRawQuery(userSql),
+      returnRawQuery(unReadNotificationsSql),
+    ]);
 
     if (!user) {
       throw new Error("User not found");
     }
 
-    user = user.toJSON();
-
-    res.status(200).json(user);
+    res.status(200).json({ user, unReadNotifications });
   } catch (error) {
     next(error);
   }
@@ -1719,7 +1861,7 @@ const getReaderPostComments = async (req, res, next) => {
               `;
     } else if (postType == "thought") {
       post = `SELECT 
-                t.id, 
+                p.id, 
                 t.title, 
                 t.thought, 
                 t.createdAt, 
@@ -1745,7 +1887,7 @@ const getReaderPostComments = async (req, res, next) => {
                 LEFT JOIN Thought_Images AS ThoughtImage ON t.id = ThoughtImage.thoughtId 
                 LEFT JOIN Topics AS top ON t.topicId = top.id 
                 JOIN posts p ON p.postId = t.id 
-                AND p.id = 24 
+                AND p.id =  ${postId} 
                 AND p.post_type = "thought"
               `;
     } else {
@@ -1845,6 +1987,7 @@ const sendComment = async (req, res, next) => {
           commentToId: post.id,
           rootParentId: post.id,
           userId: userId,
+          receiverId: post.userId,
         },
         { transaction: t }
       );
@@ -1863,6 +2006,7 @@ const sendComment = async (req, res, next) => {
           commentToId: post.id,
           rootParentId: commentPost.rootParentId,
           userId: userId,
+          receiverId: commentPost.userId,
         },
         { transaction: t }
       );
@@ -3261,10 +3405,8 @@ const createCheckoutSession = async (req, res, next) => {
 };
 
 const listenWebhook = async (req, res, next) => {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const signature = req.headers["stripe-signature"];
-  let event;
-  let paymentIntent;
+  let event, paymentIntent, sub, notification;
   if (endpointSecret) {
     try {
       event = stripe.webhooks.constructEvent(
@@ -3278,78 +3420,142 @@ const listenWebhook = async (req, res, next) => {
     }
   }
 
-  // logger.log(event.data.object);
+  logger.log(event.type);
+  logger.log(event.data);
+  paymentIntent = event.data.object;
   // Handle the event
-  if (event.type === "checkout.session.completed") {
-    paymentIntent = event.data.object;
-    await Transaction.create({
-      cardholder_name: paymentIntent.customer_details.name,
-      email: paymentIntent.customer_details.email,
-      country: paymentIntent.customer_details.address.country,
-      postal_code: paymentIntent.customer_details.address.postal_code,
-      customer_id: paymentIntent.customer,
-      checkout_session_id: paymentIntent.id,
-      amount_total: paymentIntent.amount_total,
-      currency: paymentIntent.currency,
-      mode: paymentIntent.mode,
-      payment_status: paymentIntent.payment_status,
-      payment_method_configuration_id:
-        paymentIntent.payment_method_configuration_details.id,
-      subscription_id: paymentIntent.subscription,
-      expires_at: paymentIntent.expires_at,
-      userId: paymentIntent.metadata.user_id,
-    });
-  } else if (event.type === "checkout.session.expired") {
-    paymentIntent = event.data.object;
-    logger.log("2");
-    await Transaction.create({
-      cardholder_name: null,
-      email: null,
-      country: null,
-      postal_code: null,
-      customer_id: null,
-      checkout_session_id: paymentIntent.id,
-      amount_total: paymentIntent.amount_total,
-      currency: paymentIntent.currency,
-      mode: paymentIntent.mode,
-      payment_status: paymentIntent.payment_status,
-      payment_method_configuration_id:
-        paymentIntent.payment_method_configuration_details.id,
-      subscription_id: null,
-      expires_at: null,
-      userId: paymentIntent.metadata.user_id,
-    });
-  } else if (event.type === "customer.subscription.updated") {
-    paymentIntent = event.data.object;
-    logger.log(3);
-    await Subscription.create({
-      cancel_at: paymentIntent.cancel_at,
-      canceled_at: paymentIntent.canceled_at,
-      start_date: paymentIntent.start_date,
-      billing_cycle_anchor: paymentIntent.billing_cycle_anchor,
-      interval: paymentIntent.plan.interval,
-      comment: paymentIntent.cancellation_details.comment,
-      feedback: paymentIntent.cancellation_details.feedback,
-      reason: paymentIntent.cancellation_details.reaosn,
-      subscription_id: paymentIntent.id,
-      customer_id: paymentIntent.customer,
-      product_id: paymentIntent.plan.product,
-      amount_total: paymentIntent.plan.amount,
-      currency: paymentIntent.plan.currency,
-      status: paymentIntent.status,
-      userId: paymentIntent.metadata.user_id,
-    });
-  } else logger.log(`Unhandled event type ${event.type}`);
+  switch (event.type) {
+    case "checkout.session.completed":
+      await Transaction.create({
+        cardholder_name: paymentIntent.customer_details.name,
+        email: paymentIntent.customer_details.email,
+        country: paymentIntent.customer_details.address.country,
+        postal_code: paymentIntent.customer_details.address.postal_code,
+        customer_id: paymentIntent.customer,
+        checkout_session_id: paymentIntent.id,
+        amount_total: paymentIntent.amount_total,
+        currency: paymentIntent.currency,
+        mode: paymentIntent.mode,
+        payment_status: paymentIntent.payment_status,
+        payment_method_configuration_id:
+          paymentIntent.payment_method_configuration_details.id,
+        subscription_id: paymentIntent.subscription,
+        expires_at: paymentIntent.expires_at,
+        userId: paymentIntent.metadata.user_id,
+      });
+      break;
+
+    case "checkout.session.expired":
+      await Transaction.create({
+        cardholder_name: null,
+        email: null,
+        country: null,
+        postal_code: null,
+        customer_id: null,
+        checkout_session_id: paymentIntent.id,
+        amount_total: paymentIntent.amount_total,
+        currency: paymentIntent.currency,
+        mode: paymentIntent.mode,
+        payment_status: paymentIntent.payment_status,
+        payment_method_configuration_id:
+          paymentIntent.payment_method_configuration_details.id,
+        subscription_id: null,
+        expires_at: null,
+        userId: paymentIntent.metadata.user_id,
+      });
+      break;
+
+    case "customer.subscription.created":
+      notification = Notification.create({
+        content: {
+          status: "created",
+          end_date: paymentIntent.current_period_end,
+        },
+        type: "premium",
+        receiverId: paymentIntent.metadata.user_id,
+      });
+      sub = Subscription.create({
+        start_date: paymentIntent.start_date,
+        end_date: paymentIntent.current_period_end,
+        interval: paymentIntent.plan.interval,
+        subscription_id: paymentIntent.id,
+        customer_id: paymentIntent.customer,
+        product_id: paymentIntent.plan.product,
+        amount_total: paymentIntent.plan.amount,
+        currency: paymentIntent.plan.currency,
+        status: paymentIntent.status,
+        userId: paymentIntent.metadata.user_id,
+      });
+      await Promise.all([sub, notification]);
+      break;
+
+    case "customer.subscription.deleted":
+      notification = Notification.create({
+        content: {
+          status: "deleted",
+          end_date: paymentIntent.current_period_end,
+        },
+        type: "premium",
+        receiverId: paymentIntent.metadata.user_id,
+      });
+      sub = Subscription.update(
+        { status: paymentIntent.status },
+        { where: { subscription_id: paymentIntent.id } }
+      );
+      await Promise.all([sub, notification]);
+      break;
+
+    case "customer.subscription.updated":
+      await Subscription.update(
+        { status: paymentIntent.status },
+        { where: { subscription_id: paymentIntent.id } }
+      );
+      break;
+
+    default:
+      logger.log(`Unhandled event type ${event.type}`);
+  }
 
   // Return a res to acknowledge receipt of the event
   return res.json({ received: true });
 };
 
+const createCustomerPortalSession = async (req, res, next) => {
+  try {
+    const userId = req.session.passport.user;
+    const userSubId = await Subscription.findOne({
+      attributes: ["customer_id"],
+      where: {
+        userId,
+        status: "active",
+      },
+    });
+    logger.log(userSubId);
+
+    if (!userSubId) {
+      throw new Error("No active customer found");
+    }
+
+    const session = await stripe.billingPortal.sessions.create({
+      customer: userSubId.toJSON().customer_id,
+      return_url: `${process.env.DOMAIN}/premium`,
+    });
+
+    res.status(200).json({ url: session.url });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   listenWebhook,
+  createCustomerPortalSession,
   getHomePagePosts,
+  getReaderNotifications,
+  markNotificationsAsRead,
   getAllTopics,
   shareQuote,
+  shareThought,
   createCheckoutSession,
   shareReview,
   getBookReviews,

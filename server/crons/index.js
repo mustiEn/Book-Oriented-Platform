@@ -13,7 +13,12 @@ const postsSql = `SELECT
                     id, post_type, postId, userId 
                   FROM
                     posts
-                  LIMIT 3`;
+                  WHERE 
+                    restricted = 0
+                  ORDER BY createdAt DESC
+                  LIMIT 3
+                  
+                  `;
 const returnContent = async (postType, postId) => {
   const contentSql = `SELECT ${postType}
                       FROM
@@ -83,7 +88,7 @@ export let trendingTopics = await returnRawQuery(trendingTopicsSql);
 //   trendingTopics = await returnRawQuery(sql);
 // });
 
-// export const cronRestrict = cron.schedule("*/10 * * * * *", async () => {
+// export const cronRestrict = cron.schedule("*/20 * * * * *", async () => {
 //   try {
 //     const posts = await returnRawQuery(postsSql);
 //     logger.log("POSTS =>> \n", posts);
@@ -91,7 +96,10 @@ export let trendingTopics = await returnRawQuery(trendingTopicsSql);
 //       let type = element.post_type;
 //       let postId = element.postId;
 //       let userId = element.userId;
-//       logger.log(`type: ${type}, postId: ${postId}, userId: ${userId}`);
+//       let id = element.id;
+//       logger.log(
+//         `id: ${element.id}, type: ${type}, postId: ${postId}, userId: ${userId}`
+//       );
 //       let text = await returnContent(type, postId);
 //       let result = await getContentSensitivity(text);
 //       logger.log("result ==> ", result, "\n post ==>", type, postId, text);
@@ -101,16 +109,11 @@ export let trendingTopics = await returnRawQuery(trendingTopicsSql);
 //       );
 
 //       if (newArr.length > 0) {
-//         await Post.update(
-//           { restricted: true },
-//           { where: { postId: postId, post_type: type } }
-//         );
 //         logger.log(11111111);
 //         await RestrictedPost.create({
-//           postId: postId,
+//           postId: id,
 //           userId: userId,
-//           context:text,
-//           post_type:type,
+//           context: text,
 //           request_id: result.request.id,
 //           sexual: result.moderation_classes.sexual,
 //           discriminatory: result.moderation_classes.discriminatory,

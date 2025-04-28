@@ -31,15 +31,15 @@ const Home = () => {
     }
 
     setItems((prevItems) => [...prevItems, ...posts]);
-
-    posts.length > 0 ? setHasMore(true) : setHasMore(false);
     setIndex(index + 20);
-    console.log("index", index);
-    console.log("post.length", posts.length);
-  };
 
-  console.log("items length", items.length);
-  console.log("items", items);
+    if (items.length >= 500) {
+      setHasMore(false);
+    }
+    if (posts.length == 0) {
+      setHasMore(false);
+    }
+  };
 
   return (
     <>

@@ -19,7 +19,8 @@ Review.addHook("afterCreate", async (review, options) => {
     await Post.create({
       postId: review.id,
       post_type: "review",
-      topicId: review.topicId,
+      topicId: review.topicId ?? null,
+      userId: review.userId,
     });
   } catch (error) {
     logger.log(error);

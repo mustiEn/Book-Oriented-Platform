@@ -59,6 +59,8 @@ import * as Loader from "./loaders/index.js";
 import Completion from "./views/Completion.jsx";
 import Premium from "./views/Premium.jsx";
 import ShareQuote from "./views/ShareQuote.jsx";
+import ShareThought from "./views/ShareThought.jsx";
+import Notifications from "./views/Notifications.jsx";
 
 function App() {
   const router = createBrowserRouter([
@@ -108,6 +110,11 @@ function App() {
           element: <Premium />,
         },
         {
+          path: "/notifications",
+          element: <Notifications />,
+          loader: Loader.loadReaderNotifications,
+        },
+        {
           path: "/share-review",
           element: <ShareReview />,
           loader: Loader.loadBookDetailsForPost,
@@ -117,11 +124,11 @@ function App() {
           element: <ShareQuote />,
           loader: Loader.loadBookDetailsForPost,
         },
-        // {
-        //   path: "/share-thought",
-        //   element: <ShareThought />,
-        //   loader: Loader.loadBookDetailsForPost,
-        // },
+        {
+          path: "/share-thought",
+          element: <ShareThought />,
+          loader: Loader.loadBookDetailsForPost,
+        },
         {
           path: "/create-topic",
           element: <CreateTopic />,

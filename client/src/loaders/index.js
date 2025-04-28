@@ -2,7 +2,7 @@ import toast from "react-hot-toast";
 
 export const loadInitials = async () => {
   const response = await Promise.all([
-    fetch("/api/get-reader-username"),
+    fetch("/api/get-reader-info"),
     fetch("/api/get-sidebar-topics"),
   ]);
   const data = await Promise.all(
@@ -16,6 +16,22 @@ export const loadInitials = async () => {
   return data;
 };
 
+export const loadReaderNotifications = async () => {
+  try {
+    const res = await fetch("/api/get-reader-notifications");
+
+    if (!res.ok) {
+      throw new Error(res.error);
+    }
+
+    const data = await res.json();
+
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 export const loadHomePagePosts = async () => {
   const res = await fetch("/api/get-home-page-posts/0");
 
@@ -24,6 +40,8 @@ export const loadHomePagePosts = async () => {
   }
 
   const data = await res.json();
+  console.log(data);
+
   return data;
 };
 

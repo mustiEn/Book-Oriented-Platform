@@ -10,14 +10,13 @@ import BackNavigation from "../components/BackNavigation";
 import * as motion from "motion/react-client";
 import { AnimatePresence } from "motion/react";
 
-const ShareQuote = () => {
+const ShareThought = () => {
   const [selectedBook, setSelectedBook] = useState(null);
   const [validated, setValidated] = useState(false);
-  const [quote, setQuote] = useState({
+  const [thought, setThought] = useState({
     title: "",
     topic: null,
-    quote: "",
-    page_count: "",
+    thought: "",
     bookId: null,
   });
   const topics = useLoaderData();
@@ -26,12 +25,6 @@ const ShareQuote = () => {
       ...provided,
       color: "black",
       backgroundColor: state.isSelected ? "#e0e0e0" : "white",
-    }),
-  };
-  const asyncSelectStyle = {
-    control: (base, state) => ({
-      ...base,
-      border: validated && !selectedBook ? "1px solid red" : "none",
     }),
   };
   const customOption = ({ data, innerRef, innerProps }) => (
@@ -63,32 +56,38 @@ const ShareQuote = () => {
     e.preventDefault();
     setValidated(true);
 
-    if (!quote.bookId || !e.currentTarget.checkValidity()) {
+    if (!e.currentTarget.checkValidity()) {
       e.stopPropagation();
       return;
     }
-    const res = await fetch(`/api/share-quote`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(quote),
-    });
 
-    const data = await res.json();
+    console.log(thought);
 
-    if (res.ok) {
-      toast.success(data.message);
-      setQuote({
-        title: "",
-        topic: null,
-        page_count: "",
-        quote: "",
-        bookId: null,
+    try {
+      const res = await fetch(`/api/share-thought`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(thought),
       });
-      setSelectedBook(null);
-      setValidated(false);
-    } else {
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success(data.message);
+        setThought({
+          title: "",
+          topic: null,
+          thought: "",
+          bookId: null,
+        });
+        setSelectedBook(null);
+        setValidated(false);
+      } else {
+        toast.error("Something went wrong");
+      }
+    } catch (error) {
       toast.error("Something went wrong");
     }
   };
@@ -112,8 +111,8 @@ const ShareQuote = () => {
 
   return (
     <>
-      <BackNavigation innerHtml={"Quote"} />
-      <div className="fw-bold fs-5 mt-4 mx-3">Your Quote</div>
+      <BackNavigation innerHtml={"Thought"} />
+      <div className="fw-bold fs-5 mt-4 mx-3">Your thought</div>
       <Form
         className="d-flex flex-column gap-3 p-3"
         noValidate
@@ -121,28 +120,25 @@ const ShareQuote = () => {
         onSubmit={handleSubmit}
       >
         <Form.Group controlId="formBasicBook">
-          <Form.Label className="fw-bold mb-1 fs-6">Book *</Form.Label>
+          <Form.Label className="fw-bold mb-1 fs-6">Book</Form.Label>
           <AsyncSelect
             cacheOptions
             placeholder="Search for a book"
             loadOptions={loadBooks}
             components={{ Option: customOption }}
             isClearable
-            styles={asyncSelectStyle}
             value={selectedBook ?? null}
             onChange={(newValue) => {
-              setQuote((prevState) => ({
-                ...prevState,
+              setThought({
+                ...thought,
                 bookId: newValue ? newValue.id : null,
-              }));
+              });
               setSelectedBook(newValue ?? null);
               console.log(newValue);
             }}
           />
-          {validated && !selectedBook && (
-            <div className="invalid-feedback d-block">Please select a book</div>
-          )}
         </Form.Group>
+
         <AnimatePresence>
           {selectedBook && (
             <motion.div
@@ -157,57 +153,36 @@ const ShareQuote = () => {
               className="text-white d-flex align-items-center gap-3 p-2"
             >
               <img
-                src={selectedBook.thumbnail}
+                src={selectedBook?.thumbnail}
                 width={80}
                 height={110}
                 style={{ objectFit: "cover", borderRadius: "4px" }}
                 alt="Book"
               />
               <div className="d-flex flex-column">
-                <span className="fw-bold fs-4" title={selectedBook.title}>
-                  {selectedBook.truncatedTitle}
+                <span className="fw-bold fs-4" title={selectedBook?.title}>
+                  {selectedBook?.truncatedTitle}
                 </span>
-                <span className="fw-light" title={selectedBook.publishers}>
-                  {selectedBook.publishers == null
+                <span className="fw-light" title={selectedBook?.publishers}>
+                  {selectedBook?.publishers == null
                     ? "Publisher not found"
-                    : selectedBook.publishers.length > 60
+                    : selectedBook?.publishers.length > 60
                     ? "Publisher: " +
-                      selectedBook.publishers.slice(0, 60) +
+                      selectedBook?.publishers.slice(0, 60) +
                       "..."
-                    : "Publisher: " + selectedBook.publishers}
+                    : "Publisher: " + selectedBook?.publishers}
                 </span>
-                <span className="fw-light" title={selectedBook.authors}>
-                  {selectedBook.authors == null
+                <span className="fw-light" title={selectedBook?.authors}>
+                  {selectedBook?.authors == null
                     ? "Author not found"
-                    : selectedBook.authors.length > 60
-                    ? "Author: " + selectedBook.authors.slice(0, 60) + "..."
-                    : "Author: " + selectedBook.authors}
+                    : selectedBook?.authors.length > 60
+                    ? "Author: " + selectedBook?.authors.slice(0, 60) + "..."
+                    : "Author: " + selectedBook?.authors}
                 </span>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-        <Form.Group controlId="formBasicPageCount">
-          <Form.Label className="fw-bold mb-1 fs-6">Page Count *</Form.Label>
-          <Form.Control
-            type="number"
-            value={quote?.page_count}
-            min={1}
-            required
-            placeholder="Reference page number"
-            disabled={!selectedBook}
-            max={selectedBook ? selectedBook.page_count : 1000}
-            onChange={(e) =>
-              setQuote((prevState) => ({
-                ...prevState,
-                page_count: Number(e.target.value),
-              }))
-            }
-          ></Form.Control>
-          <Form.Control.Feedback type="invalid">
-            Please enter a page number.
-          </Form.Control.Feedback>
-        </Form.Group>
         <Form.Group controlId="formBasicTopic">
           <Form.Label className="fw-bold mb-1 fs-6">Topic</Form.Label>
           <Select
@@ -215,10 +190,10 @@ const ShareQuote = () => {
             styles={selectStyle}
             name="topic"
             placeholder="Select a topic"
-            value={topics.find((option) => option.label == quote.topic) || ""}
+            value={topics.find((option) => option.label == thought.topic) || ""}
             onChange={(e) => {
-              setQuote({
-                ...quote,
+              setThought({
+                ...thought,
                 topic: e.label,
               });
             }}
@@ -228,12 +203,12 @@ const ShareQuote = () => {
           <Form.Label className="fw-bold mb-1 fs-6">Title *</Form.Label>
           <Form.Control
             type="text"
-            value={quote.title}
+            value={thought.title}
             required
-            placeholder="Quote title"
+            placeholder="Thought title"
             onChange={(e) => {
-              setQuote({
-                ...quote,
+              setThought({
+                ...thought,
                 title: e.target.value,
               });
             }}
@@ -242,22 +217,22 @@ const ShareQuote = () => {
             Please enter a title.
           </Form.Control.Feedback>
         </Form.Group>
-        <Form.Group controlId="formBasicQuote">
-          <Form.Label className="fw-bold mb-1 fs-6">Quote *</Form.Label>
+        <Form.Group controlId="formBasicthought">
+          <Form.Label className="fw-bold mb-1 fs-6">Thought *</Form.Label>
           <Form.Control
             as="textarea"
-            value={quote.quote}
+            value={thought.thought}
             required
-            placeholder="Quote"
+            placeholder="Thought"
             onChange={(e) => {
-              setQuote({
-                ...quote,
-                quote: e.target.value,
+              setThought({
+                ...thought,
+                thought: e.target.value,
               });
             }}
           ></Form.Control>
           <Form.Control.Feedback type="invalid">
-            Please enter a quote.
+            Please enter a thought.
           </Form.Control.Feedback>
         </Form.Group>
         <Button variant="outline-light" type="submit">
@@ -268,4 +243,4 @@ const ShareQuote = () => {
   );
 };
 
-export default ShareQuote;
+export default ShareThought;

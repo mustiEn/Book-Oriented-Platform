@@ -20,6 +20,8 @@ export const Quote = sequelize.define("Quote", {
 Quote.addHook("afterCreate", async (quote, options) => {
   await Post.create({
     postId: quote.id,
-    postType: "quote",
+    post_type: "quote",
+    topicId: quote.topicId ?? null,
+    userId: quote.userId,
   });
 });

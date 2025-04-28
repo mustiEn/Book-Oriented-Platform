@@ -4,22 +4,26 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { FaBook, FaEllipsis } from "react-icons/fa6";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
-import { FaRegUser, FaMagnifyingGlass, FaBell, FaUser } from "react-icons/fa6";
+import { FaRegBell } from "react-icons/fa";
+import { FaRegUser, FaMagnifyingGlass } from "react-icons/fa6";
 import { AiOutlineHome } from "react-icons/ai";
 import { MdOutlineExplore } from "react-icons/md";
 import { MdOutlineWorkspacePremium } from "react-icons/md";
 import { LiaCubesSolid } from "react-icons/lia";
-import DropdownButton from "react-bootstrap/esm/DropdownButton";
+import { PiMoneyWavy } from "react-icons/pi";
 import Dropdown from "react-bootstrap/Dropdown";
+import { toast } from "react-hot-toast";
 
 const LeftSidebar = ({ loggedInReader }) => {
   const navigate = useNavigate();
-  const reader = loggedInReader;
+  const { user, unReadNotifications } = loggedInReader;
+  const [notificationExists, setNotificationExists] = useState(
+    unReadNotifications[0].unread ? true : false
+  );
   const [show, setShow] = useState(false);
   const [search, setSearch] = useState("");
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(false);
-
   const getBooks = () => {
     try {
       if (search !== "") {
@@ -56,9 +60,40 @@ const LeftSidebar = ({ loggedInReader }) => {
       console.log(error);
     }
   };
-
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
+  const handleCustomerPortalRedirect = async () => {
+    const res = await fetch("/api/create-customer-portal-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const { url } = await res.json();
+    window.location.href = url;
+  };
+  const handleNotificationClick = async () => {
+    try {
+      const res = await fetch("/api/notifications/mark-as-read", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!res.ok) {
+        toast.error("Failed to mark notifications as read");
+      }
+
+      setNotificationExists(false);
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
+    }
+  };
+
+  console.log(notificationExists);
+  console.log(unReadNotifications);
 
   useEffect(() => {
     getBooks();
@@ -68,7 +103,7 @@ const LeftSidebar = ({ loggedInReader }) => {
     <>
       <div
         id="leftSidebar"
-        className="d-flex align-self-start p-2 gap-2 flex-column position-sticky top-0 "
+        className="d-flex align-self-start p-2 overflow-y-auto gap-2 flex-column position-sticky top-0 "
       >
         <ul>
           <li className="left-sidebar-item">
@@ -101,6 +136,46 @@ const LeftSidebar = ({ loggedInReader }) => {
                     }
                   >
                     Home
+                  </span>
+                </div>
+              )}
+            </NavLink>
+          </li>
+          <li className="left-sidebar-item">
+            <NavLink
+              className="left-sidebar-a text-decoration-none text-white d-block p-2"
+              to="/notifications"
+              onClick={handleNotificationClick}
+            >
+              {({ isActive }) => (
+                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                  <div className="position-relative">
+                    <FaRegBell className="left-sidebar-a-inner-icon " />
+                    {notificationExists ? (
+                      <span
+                        className="position-absolute top-0 start-100 translate-middle  rounded-circle text-center bg-danger"
+                        style={{
+                          width: 18 + "px",
+                          height: "auto",
+                          fontSize: 12 + "px",
+                        }}
+                      >
+                        {unReadNotifications[0].unread >= 100
+                          ? +"99+"
+                          : unReadNotifications[0].unread}
+                      </span>
+                    ) : (
+                      ""
+                    )}
+                  </div>
+                  <span
+                    className={
+                      isActive
+                        ? "left-sidebar-a-inner-text fs-5 fw-bold"
+                        : "left-sidebar-a-inner-text fs-5"
+                    }
+                  >
+                    Notifications
                   </span>
                 </div>
               )}
@@ -211,10 +286,25 @@ const LeftSidebar = ({ loggedInReader }) => {
               )}
             </NavLink>
           </li>
+          {user[0].customer_id && (
+            <li className="left-sidebar-item">
+              <div
+                className="btn text-white p-2"
+                onClick={handleCustomerPortalRedirect}
+              >
+                <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
+                  <PiMoneyWavy className="left-sidebar-a-inner-icon" />
+                  <span className={"left-sidebar-a-inner-text fs-5"}>
+                    Subscription
+                  </span>
+                </div>
+              </div>
+            </li>
+          )}
           <li className="left-sidebar-item">
             <NavLink
               className="left-sidebar-a text-decoration-none text-white d-block p-2"
-              to={`/${reader.username}`}
+              to={`/${user[0].username}`}
             >
               {({ isActive }) => (
                 <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">
@@ -233,20 +323,26 @@ const LeftSidebar = ({ loggedInReader }) => {
             </NavLink>
           </li>
         </ul>
-        <DropdownButton id="dropdown-basic-button" title="Dropdown button">
-          <Dropdown.Item as={Link} to="/share-thought">
-            Thought
-          </Dropdown.Item>
-          <Dropdown.Item as={Link} to="/share-review">
-            Review
-          </Dropdown.Item>
-          <Dropdown.Item as={Link} to="/share-quote">
-            Quote
-          </Dropdown.Item>
-        </DropdownButton>
-        <Button variant="outline-light" className="mt-auto">
-          Create Post
-        </Button>
+        <Dropdown className="mt-auto">
+          <Dropdown.Toggle
+            id="dropdown-basic-button"
+            variant="outline-light"
+            className="w-100"
+          >
+            Create post
+          </Dropdown.Toggle>
+          <Dropdown.Menu>
+            <Dropdown.Item as={Link} to="/share-thought">
+              Thought
+            </Dropdown.Item>
+            <Dropdown.Item as={Link} to="/share-review">
+              Review
+            </Dropdown.Item>
+            <Dropdown.Item as={Link} to="/share-quote">
+              Quote
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown>
         <Button
           variant="outline-light"
           onClick={() => navigate("/create-topic")}
@@ -267,16 +363,16 @@ const LeftSidebar = ({ loggedInReader }) => {
               />
               <div className="d-flex flex-column">
                 <span>
-                  {reader.firstname} {reader.lastname}
+                  {user[0].firstname} {user[0].lastname}
                 </span>
-                <span>@{reader.username}</span>
+                <span>@{user[0].username}</span>
               </div>
               <FaEllipsis className="ms-auto" />
             </div>
           </Dropdown.Toggle>
 
           <Dropdown.Menu className="w-100">
-            <Dropdown.Item href="/">Logout</Dropdown.Item>
+            <Dropdown.Item href="/login">Logout</Dropdown.Item>
           </Dropdown.Menu>
         </Dropdown>
       </div>

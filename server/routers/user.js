@@ -32,6 +32,12 @@ router.post(
   userController.createCheckoutSession
 );
 
+router.post(
+  "/create-customer-portal-session",
+  isUserActive,
+  userController.createCustomerPortalSession
+);
+
 router.post("/webhook", userController.listenWebhook);
 
 router.get(
@@ -41,16 +47,24 @@ router.get(
 );
 
 router.get(
+  "/get-reader-notifications",
+  isUserActive,
+  userController.getReaderNotifications
+);
+
+router.post(
+  "/notifications/mark-as-read",
+  isUserActive,
+  userController.markNotificationsAsRead
+);
+
+router.get(
   "/get-reader-book-modal-details/:bookId",
   [isUserActive, param("bookId").notEmpty().isInt()],
   userController.getReaderBookModalDetails
 );
 
-router.get(
-  "/get-reader-username",
-  isUserActive,
-  userController.getLoggedInReader
-);
+router.get("/get-reader-info", isUserActive, userController.getLoggedInReader);
 
 router.post(
   "/share-review",
@@ -68,13 +82,25 @@ router.post(
   "/share-quote",
   [
     isUserActive,
-    body("topic").optional().isString(),
+    body("topic").optional(),
     body("quote").notEmpty().isString(),
-    body("page").notEmpty().isInt(),
+    body("page_count").notEmpty().isInt(),
     body("title").notEmpty().isString(),
     body("bookId").notEmpty().isInt(),
   ],
   userController.shareQuote
+);
+
+router.post(
+  "/share-thought",
+  [
+    isUserActive,
+    body("topic").optional(),
+    body("thought").notEmpty().isString(),
+    body("title").notEmpty().isString(),
+    body("bookId").optional(),
+  ],
+  userController.shareThought
 );
 
 router.get(

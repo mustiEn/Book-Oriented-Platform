@@ -8,19 +8,19 @@ import { RatedBook } from "../RatedBook.js";
 import { Review } from "../Review.js";
 import { Thought } from "../Thought.js";
 import { User } from "../User.js";
-import { UserNotification } from "../UserNotification.js";
 import { Transaction } from "../Transaction.js";
 import { Subscription } from "../Subscription.js";
 import { RestrictedPost } from "../RestrictedPost.js";
 import { RecommendedBook } from "../RecommendedBook.js";
+import { Notification } from "../Notification.js";
 
 export const userAssociations = () => {
-  User.hasMany(UserNotification, {
-    foreignKey: "userId",
+  User.hasMany(Notification, {
+    foreignKey: "receiverId",
     onDelete: "CASCADE",
   });
-  UserNotification.belongsTo(User, {
-    foreignKey: "userId",
+  Notification.belongsTo(User, {
+    foreignKey: "receiverId",
     onDelete: "CASCADE",
   });
 
@@ -98,6 +98,17 @@ export const userAssociations = () => {
     onUpdate: "CASCADE",
   });
 
+  User.hasMany(Post, {
+    foreignKey: "receiverId",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  });
+  Post.belongsTo(User, {
+    foreignKey: "receiverId",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  });
+
   User.hasMany(BookReadingState, {
     foreignKey: "userId",
     onDelete: "CASCADE",
@@ -149,6 +160,17 @@ export const userAssociations = () => {
   });
   Comment.belongsTo(User, {
     foreignKey: "userId",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  });
+
+  User.hasMany(Comment, {
+    foreignKey: "receiverId",
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  });
+  Comment.belongsTo(User, {
+    foreignKey: "receiverId",
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
   });

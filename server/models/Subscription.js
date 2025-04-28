@@ -26,7 +26,7 @@ export const Subscription = sequelize.define("subscription", {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  billing_cycle_anchor: {
+  end_date: {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
@@ -34,19 +34,6 @@ export const Subscription = sequelize.define("subscription", {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  comment: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-  feedback: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-  reason: {
-    type: DataTypes.STRING,
-    allowNull: true,
-  },
-
   amount_total: {
     type: DataTypes.INTEGER,
     allowNull: false,

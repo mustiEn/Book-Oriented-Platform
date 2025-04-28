@@ -4,6 +4,7 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import React from "react";
 import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
+import { Link } from "react-router-dom";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
@@ -110,24 +111,15 @@ const PostThought = ({ data }) => {
         </div> */}
         </div>
         <div className="post-footer d-flex">
-          <div
-            className="comment rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
-            // to={`/${postType}/${post.id}`}
-            style={{ width: 50 + "px", height: 30 + "px" }}
-            title="Like"
+          <Link
+            className="comment-link rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
+            to={`/thought/${post.id}`}
+            style={{ width: 55 + "px", height: 30 + "px" }}
+            title="Reply"
           >
-            <FaHeart style={{ fill: "#b6b6b6" }} />
-            <span style={{ color: "#b6b6b6" }}>2</span>
-          </div>
-          <div
-            className="comment rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
-            // to={`/${postType}/${post.id}`}
-            style={{ width: 50 + "px", height: 30 + "px" }}
-            title="Bookmark"
-          >
-            <FaBookmark style={{ fill: "#b6b6b6" }} />
-            <span style={{ color: "#b6b6b6" }}>2</span>
-          </div>
+            <FaComment style={{ fill: "#b6b6b6" }} />
+            <span style={{ color: "#b6b6b6" }}>{post.comment_count}</span>
+          </Link>
         </div>
       </div>
     </>

@@ -78,8 +78,10 @@ const ShareReview = () => {
         body: JSON.stringify(review),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        toast.success("Review added successfully");
+        toast.success(data.message);
         setReview({
           title: "",
           topic: null,
@@ -127,7 +129,7 @@ const ShareReview = () => {
           <Form.Label className="fw-bold mb-1 fs-6">Book *</Form.Label>
           <AsyncSelect
             cacheOptions
-            placeholder="Search for a book..."
+            placeholder="Search for a book"
             loadOptions={loadBooks}
             required
             components={{ Option: customOption }}
@@ -142,7 +144,6 @@ const ShareReview = () => {
               setSelectedBook(newValue ?? null);
               console.log(newValue);
             }}
-            // className={validated && !selectedBook ? "border border-danger" : ""}
           />
           {validated && !selectedBook && (
             <div className="invalid-feedback d-block">Please select a book</div>
@@ -215,6 +216,7 @@ const ShareReview = () => {
             type="text"
             value={review.title}
             required
+            placeholder="Review title"
             onChange={(e) => {
               setReview({
                 ...review,
@@ -232,6 +234,7 @@ const ShareReview = () => {
             as="textarea"
             value={review.review}
             required
+            placeholder="Review"
             onChange={(e) => {
               setReview({
                 ...review,
