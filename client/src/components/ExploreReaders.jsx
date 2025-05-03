@@ -1,7 +1,18 @@
 import React from "react";
+import TopReaders from "./TopReaders";
+import { useLoaderData } from "react-router-dom";
 
 const ExploreReaders = () => {
-  return <div>ExploreReaders</div>;
+  const { bookWorms, bookWormsPremium, topQuoters, topReviewers } =
+    useLoaderData();
+
+  return (
+    <>
+      <TopReaders
+        readers={[bookWorms, bookWormsPremium, topQuoters, topReviewers]}
+      />
+    </>
+  );
 };
 
 export default ExploreReaders;

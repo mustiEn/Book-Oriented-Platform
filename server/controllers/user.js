@@ -28,7 +28,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 dotenv.config();
 
-const shareReview = async (req, res, next) => {
+export const shareReview = async (req, res, next) => {
   //^ Gets topic, title, review and bookId.
   //^ Checks if topic exists, if so, it creates a review
   try {
@@ -74,7 +74,7 @@ const shareReview = async (req, res, next) => {
   }
 };
 
-const shareQuote = async (req, res, next) => {
+export const shareQuote = async (req, res, next) => {
   //^ Gets topic, title, quote and bookId.
   //^ Checks if topic exists, if so, it creates a quote
   try {
@@ -127,7 +127,7 @@ const shareQuote = async (req, res, next) => {
   }
 };
 
-const shareThought = async (req, res, next) => {
+export const shareThought = async (req, res, next) => {
   //^ Gets topic, title, quote and bookId.
   //^ Checks if topic exists, if so, it creates a quote
   try {
@@ -173,7 +173,7 @@ const shareThought = async (req, res, next) => {
   }
 };
 
-const getHomePagePosts = async (req, res, next) => {
+export const getHomePagePosts = async (req, res, next) => {
   try {
     const results = validationResult(req);
     let posts;
@@ -349,7 +349,7 @@ const getHomePagePosts = async (req, res, next) => {
   }
 };
 
-const getBookReviews = async (req, res, next) => {
+export const getBookReviews = async (req, res, next) => {
   try {
     //^ Gets bookId, and returns all reviews for that book.
     //^ Creates a new Map for ratings and organises
@@ -419,7 +419,7 @@ const getBookReviews = async (req, res, next) => {
   }
 };
 
-const setPrivateNote = async (req, res, next) => {
+export const setPrivateNote = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
@@ -468,7 +468,7 @@ const setPrivateNote = async (req, res, next) => {
   }
 };
 
-const setReadingState = async (req, res, next) => {
+export const setReadingState = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
@@ -523,7 +523,7 @@ const setReadingState = async (req, res, next) => {
   }
 };
 
-const setBookLiked = async (req, res, next) => {
+export const setBookLiked = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
@@ -573,7 +573,7 @@ const setBookLiked = async (req, res, next) => {
   }
 };
 
-const setBookRate = async (req, res, next) => {
+export const setBookRate = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
@@ -622,7 +622,7 @@ const setBookRate = async (req, res, next) => {
   }
 };
 
-const getReaderBookInteractionData = async (req, res, next) => {
+export const getReaderBookInteractionData = async (req, res, next) => {
   //^ Gets bookId and returns all data about whether it's liked, rated and read.
   try {
     const userId = req.session.passport.user;
@@ -663,7 +663,7 @@ const getReaderBookInteractionData = async (req, res, next) => {
   }
 };
 
-const setUserBookRecord = async (req, res, next) => {
+export const setUserBookRecord = async (req, res, next) => {
   //^ Gets bookId and creates records with default vals.
   //^ this is to define views per book
   try {
@@ -720,7 +720,7 @@ const setUserBookRecord = async (req, res, next) => {
   }
 };
 
-const getBookStatistics = async (req, res, next) => {
+export const getBookStatistics = async (req, res, next) => {
   //^ Gets bookId and returns book readers per age, male - female ratio
   try {
     const result = validationResult(req);
@@ -828,7 +828,7 @@ const getBookStatistics = async (req, res, next) => {
   }
 };
 
-const getReaderNotifications = async (req, res, next) => {
+export const getReaderNotifications = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const unReadNotificationsSql = `UPDATE 
@@ -847,7 +847,9 @@ const getReaderNotifications = async (req, res, next) => {
                               WHERE 
                                 receiverId = ${userId}
                               AND 
-                                TYPE != "comment"`;
+                                TYPE != "comment"
+                              AND
+                                is_hidden = 0`;
 
     const commentNotificationsSql = `SELECT 
                                         u.username,
@@ -860,8 +862,10 @@ const getReaderNotifications = async (req, res, next) => {
                                         ) 
                                       WHERE 
                                         receiverId = ${userId} 
-                                        AND TYPE = "comment"
-                                      `;
+                                      AND 
+                                        TYPE = "comment"
+                                      AND
+                                        is_hidden = 0`;
 
     const [notifications, commentNotifications] = await Promise.all([
       returnRawQuery(notificationsSql),
@@ -881,7 +885,7 @@ const getReaderNotifications = async (req, res, next) => {
   }
 };
 
-const markNotificationsAsRead = async (req, res, next) => {
+export const markNotificationsAsRead = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const unReadNotificationsSql = `UPDATE 
@@ -898,7 +902,37 @@ const markNotificationsAsRead = async (req, res, next) => {
   }
 };
 
-const getReaderProfiles = async (req, res, next) => {
+export const hideNotifications = async (req, res, next) => {
+  try {
+    const userId = req.session.passport.user;
+    const result = validationResult(req);
+
+    if (!result.isEmpty())
+      throw new Error(
+        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
+          result.array()[0].path
+        }`
+      );
+
+    const { id } = matchedData(req);
+    const updateNotificationsSql = `UPDATE 
+                                        notifications
+                                    SET 
+                                      is_hidden = 1
+                                    WHERE 
+                                      receiverId = ${userId}
+                                    AND 
+                                      id = ${id}`;
+
+    await returnRawQuery(updateNotificationsSql, QueryTypes.UPDATE);
+
+    res.status(200).json({ message: "The notification has been hidden" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getReaderProfiles = async (req, res, next) => {
   //^ Gets bookId and returns book readers based
   //^ on q which colud be Read, Did not finished,
   //^ Finished,Currently reading.
@@ -985,7 +1019,7 @@ const getReaderProfiles = async (req, res, next) => {
   }
 };
 
-const displayReaderProfile = async (req, res, next) => {
+export const displayReaderProfile = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
@@ -1028,7 +1062,7 @@ const displayReaderProfile = async (req, res, next) => {
   }
 };
 
-const filterReaderBooks = async (req, res, next) => {
+export const filterReaderBooks = async (req, res, next) => {
   //^ Gets all queries.q isnt optional which could be either
   //^ Read, Currently reading, Liked, Want to read or Did not finish
   //^ Based on q, it gets all the books with their reader and overall rating
@@ -1196,7 +1230,7 @@ const filterReaderBooks = async (req, res, next) => {
   }
 };
 
-const getReaderReviews = async (req, res, next) => {
+export const getReaderReviews = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
@@ -1294,7 +1328,7 @@ const getReaderReviews = async (req, res, next) => {
   }
 };
 
-const getReaderQuotes = async (req, res, next) => {
+export const getReaderQuotes = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
@@ -1389,7 +1423,7 @@ const getReaderQuotes = async (req, res, next) => {
   }
 };
 
-const getReaderThoughts = async (req, res, next) => {
+export const getReaderThoughts = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
@@ -1454,7 +1488,7 @@ const getReaderThoughts = async (req, res, next) => {
   }
 };
 
-const updateReaderBookDates = async (req, res, next) => {
+export const updateReaderBookDates = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
@@ -1486,7 +1520,7 @@ const updateReaderBookDates = async (req, res, next) => {
   }
 };
 
-const updateReaderPageNumber = async (req, res, next) => {
+export const updateReaderPageNumber = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
@@ -1518,7 +1552,7 @@ const updateReaderPageNumber = async (req, res, next) => {
   }
 };
 
-const uploadImage = async (req, res, next) => {
+export const uploadImage = async (req, res, next) => {
   //^ Gets image, saves its name to the db and deletes the previous one
   //^ from public folder if exists
   try {
@@ -1578,7 +1612,7 @@ const uploadImage = async (req, res, next) => {
   }
 };
 
-const getReaderBookshelfOverview = async (req, res, next) => {
+export const getReaderBookshelfOverview = async (req, res, next) => {
   //^ initializes placeholder data for monthly reads and updates it
   //^ with actual results from the database.
   try {
@@ -1666,7 +1700,7 @@ const getReaderBookshelfOverview = async (req, res, next) => {
   }
 };
 
-const getLoggedInReader = async (req, res, next) => {
+export const getLoggedInReader = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const userSql = `SELECT 
@@ -1675,10 +1709,12 @@ const getLoggedInReader = async (req, res, next) => {
                         u.firstname, 
                         u.lastname, 
                         u.profile_photo, 
-                        MAX(s.customer_id) customer_id 
+                        MAX(s.customer_id) customer_id,
+                        MAX(s.createdAt) 
                       FROM 
                         users u 
                         LEFT JOIN subscriptions s ON s.userId = u.id 
+                        AND s.status = "active"
                       WHERE 
                         u.id = ${userId} 
                       GROUP BY 
@@ -1689,7 +1725,7 @@ const getLoggedInReader = async (req, res, next) => {
                                     WHERE 
                                       is_read = 0
                                     AND 
-                                      receiverId = 6`;
+                                      receiverId = ${userId}`;
     const [user, unReadNotifications] = await Promise.all([
       returnRawQuery(userSql),
       returnRawQuery(unReadNotificationsSql),
@@ -1705,7 +1741,7 @@ const getLoggedInReader = async (req, res, next) => {
   }
 };
 
-const getReaderPostComments = async (req, res, next) => {
+export const getReaderPostComments = async (req, res, next) => {
   //^ Gets reader's comments depending on postType.
   //^ postId is the pk in posts table so the fk
   //^ for the post could be found
@@ -1923,7 +1959,7 @@ const getReaderPostComments = async (req, res, next) => {
   }
 };
 
-const sendComment = async (req, res, next) => {
+export const sendComment = async (req, res, next) => {
   //^ Gets comment, post being commented on and postType
   //^ to define what post it is.
   //^ Predefines the comments sql to update the comments list
@@ -2036,7 +2072,7 @@ const sendComment = async (req, res, next) => {
   }
 };
 
-const getReaderComments = async (req, res, next) => {
+export const getReaderComments = async (req, res, next) => {
   //^ Gets index -offset- and username from url and
   //^ returns reader's all comments from database with offset and
   //^ username.
@@ -2104,7 +2140,7 @@ const getReaderComments = async (req, res, next) => {
   }
 };
 
-const getThemedTopics = async (req, res, next) => {
+export const getThemedTopics = async (req, res, next) => {
   try {
     const result = validationResult(req);
     const userId = req.session.passport.user;
@@ -2146,7 +2182,7 @@ const getThemedTopics = async (req, res, next) => {
   }
 };
 
-const createTopic = async (req, res, next) => {
+export const createTopic = async (req, res, next) => {
   //^ Gets body from request, finds topic category
   //^ and loops through them to create topic
   //^ association
@@ -2204,7 +2240,7 @@ const createTopic = async (req, res, next) => {
   }
 };
 
-const getTopic = async (req, res, next) => {
+export const getTopic = async (req, res, next) => {
   //^ Gets topic, counts its followersand returns as
   //^ merged
   try {
@@ -2253,7 +2289,7 @@ const getTopic = async (req, res, next) => {
   }
 };
 
-const getTopicBooks = async (req, res, next) => {
+export const getTopicBooks = async (req, res, next) => {
   //^ Gets topic, and finds any related books -review,
   //^ quote, thought- to it
   try {
@@ -2366,7 +2402,7 @@ const getTopicBooks = async (req, res, next) => {
   }
 };
 
-const getTopicPosts = async (req, res, next) => {
+export const getTopicPosts = async (req, res, next) => {
   //^ Gets topic, and finds any related posts -review,
   //^ quote, thought- to it
   try {
@@ -2556,7 +2592,7 @@ const getTopicPosts = async (req, res, next) => {
   }
 };
 
-const getReaderBookModalDetails = async (req, res, next) => {
+export const getReaderBookModalDetails = async (req, res, next) => {
   //^ Gets bookId, and returns reader's book modal details
   //^  which are pivate note and book reading state
   try {
@@ -2603,7 +2639,7 @@ const getReaderBookModalDetails = async (req, res, next) => {
   }
 };
 
-const getTopicReaders = async (req, res, next) => {
+export const getTopicReaders = async (req, res, next) => {
   //^ Gets topic, and finds any related readers
   //^ that made a post to it
   try {
@@ -2652,84 +2688,237 @@ const getTopicReaders = async (req, res, next) => {
   }
 };
 
-const getExploreGenerals = async (req, res, next) => {
+export const getExploreGenerals = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
-    const topicsSql = `SELECT 
-                          t.id,t.topic,t.image,t.post_count,t.follower_count,
-                          IF(MAX(uta.UserId) IS NULL, FALSE, TRUE) AS isFollowing
-                        FROM 
-                          topics t 
-                          LEFT JOIN 
-                          user_topic_association uta
-                          ON uta.TopicId = t.id 
-                          AND uta.UserId = ${userId}
-                        GROUP BY t.id
-                        LIMIT 5;
-                      `;
-    const bookWormsSql = `SELECT 
-                            u.id, 
-                            u.username, 
-                            u.firstname, 
-                            u.lastname, 
-                            u.profile_photo, 
-                            COUNT(brs.id) AS books_read 
-                          FROM 
-                            users u 
-                            LEFT JOIN book_reading_states brs ON brs.userId = u.id 
-                            AND brs.reading_state = "Read" 
-                          GROUP BY 
-                            u.id 
-                          LIMIT 
-                            20;
-                        `;
-    const topLikedBooksSql = `SELECT 
-                                temp.bookId, 
-                                COUNT(temp.bookId) AS liked_count, 
-                                ROUND(
-                                  AVG(rb.rating), 
-                                  1
-                                ) AS rate, 
-                                CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                                  SUBSTRING(bc.title, 1, 15), 
-                                  '...'
-                                ) ELSE bc.title END AS truncatedTitle, 
-                                bc.title AS title, 
-                                bc.thumbnail 
-                                FROM 
-                                rated_books rb 
-                                RIGHT JOIN (
-                                  SELECT 
-                                    lb.bookId, 
-                                    COUNT(lb.bookId) AS liked_count 
-                                  FROM 
-                                    liked_books lb 
-                                  WHERE 
-                                    is_liked = 1 
-                                  GROUP BY 
-                                    lb.bookId 
-                                  LIMIT 
-                                    15
-                                ) temp ON temp.bookId = rb.bookId 
-                                INNER JOIN book_collections bc ON bc.id = temp.bookId 
-                                GROUP BY 
-                                temp.bookId 
-                                ORDER BY 
-                                temp.liked_count DESC;
-                            `;
-    const [topics, bookWorms, topLikedBooks] = await Promise.all([
-      returnRawQuery(topicsSql),
-      returnRawQuery(bookWormsSql),
-      returnRawQuery(topLikedBooksSql),
-    ]);
+    const topicsSql = `
+      SELECT 
+        t.id, 
+        t.topic, 
+        t.image, 
+        t.post_count, 
+        t.follower_count, 
+        IF(
+          MAX(uta.UserId) IS NULL, 
+          FALSE, 
+          TRUE
+        ) AS isFollowing 
+      FROM 
+        topics t 
+        LEFT JOIN user_topic_association uta ON uta.TopicId = t.id 
+        AND uta.UserId = ${userId} 
+      GROUP BY 
+        t.id 
+      LIMIT 
+        5
+    `;
+    const bookWormsSql = `
+      SELECT 
+        u.id, 
+        u.username, 
+        u.firstname, 
+        u.lastname, 
+        u.profile_photo, 
+        COUNT(DISTINCT brs.id) AS books_read,
+        MAX(s.customer_id) customer_id 
+      FROM 
+        users u 
+        JOIN book_reading_states brs ON brs.userId = u.id 
+        AND brs.reading_state = "Read"
+        JOIN subscriptions s ON s.customer_id = u.id 
+      GROUP BY 
+        u.id 
+      LIMIT 
+        20
+    `;
+    const topLikedBooksSql = `
+      SELECT 
+        temp.bookId, 
+        COUNT(temp.bookId) AS liked_count, 
+        ROUND(
+          AVG(rb.rating), 
+          1
+        ) AS rate, 
+        CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+          SUBSTRING(bc.title, 1, 15), 
+          '...'
+        ) ELSE bc.title END AS truncatedTitle, 
+        bc.title AS title, 
+        bc.thumbnail 
+      FROM 
+        rated_books rb 
+        RIGHT JOIN (
+          SELECT 
+            lb.bookId, 
+            COUNT(lb.bookId) AS liked_count 
+          FROM 
+            liked_books lb 
+          WHERE 
+            is_liked = 1 
+          GROUP BY 
+            lb.bookId 
+          LIMIT 
+            15
+        ) temp ON temp.bookId = rb.bookId 
+        INNER JOIN book_collections bc ON bc.id = temp.bookId 
+      GROUP BY 
+        temp.bookId 
+      ORDER BY 
+        temp.liked_count DESC 
+    `;
+    const whatShallIreadSql = `
+      SELECT 
+        MAX(reb.id) id, 
+        MAX(reb.bookId) bookId,
+        COUNT(brs.reading_state) people_read, 
+        ROUND(
+          AVG(rb.rating), 
+          1
+        ) rate, 
+        CASE WHEN LENGTH(
+          MAX(bc.title)
+        ) > 15 THEN CONCAT(
+          SUBSTRING(
+            MAX(bc.title), 
+            1, 
+            15
+          ), 
+          '...'
+        ) ELSE MAX(bc.title) END truncatedTitle, 
+        MAX(bc.title) title, 
+        MAX(bc.thumbnail) thumbnail 
+      FROM 
+        recommended_books reb 
+        JOIN book_collections bc ON reb.bookId = bc.id 
+        LEFT JOIN rated_books rb ON rb.bookId = bc.id 
+        AND rb.rating IS NOT NULL
+        LEFT JOIN book_reading_states brs ON brs.bookId = bc.id 
+        AND brs.reading_state = "Read" 
+      WHERE 
+        reb.userId = 6 
+      GROUP BY 
+        reb.bookId 
+      ORDER BY 
+        MAX(reb.createdAt) DESC 
+      LIMIT 
+        20
+    `;
+    const [topics, bookWorms, topLikedBooks, whatShallIread] =
+      await Promise.all([
+        returnRawQuery(topicsSql),
+        returnRawQuery(bookWormsSql),
+        returnRawQuery(topLikedBooksSql),
+        returnRawQuery(whatShallIreadSql),
+      ]);
 
-    res.status(200).json({ topics, bookWorms, topLikedBooks });
+    res.status(200).json({ topics, bookWorms, topLikedBooks, whatShallIread });
   } catch (error) {
     next(error);
   }
 };
 
-const getExplorePopularTopics = async (req, res, next) => {
+export const getExploreReaders = async (req, res, next) => {
+  try {
+    const bookWormsSql = `
+      SELECT 
+        u.id, 
+        u.username, 
+        u.firstname, 
+        u.lastname, 
+        u.profile_photo, 
+        COUNT(DISTINCT brs.id) AS books_read,
+        MAX(s.customer_id) customer_id
+      FROM 
+        users u 
+        JOIN book_reading_states brs ON brs.userId = u.id 
+        AND brs.reading_state = "Read" 
+        LEFT JOIN subscriptions s ON s.userId = u.id
+      GROUP BY 
+        u.id 
+      LIMIT 
+        20
+    `;
+    const bookWormsPremiumSql = `
+      SELECT 
+        u.id, 
+        u.username, 
+        u.firstname, 
+        u.lastname, 
+        u.profile_photo, 
+        COUNT(brs.id) AS books_read 
+      FROM 
+        users u 
+        INNER JOIN (
+          SELECT 
+            s.userId userId, 
+            MAX(s.customer_id) customer_id, 
+            MAX(s.createdAt) 
+          FROM 
+            users u 
+            JOIN subscriptions s ON s.userId = u.id 
+            AND s.status = "active" 
+          GROUP BY 
+            u.id
+        ) t ON t.userId = u.id 
+        JOIN book_reading_states brs ON brs.userId = t.userId 
+        AND brs.reading_state = "Read" 
+      GROUP BY 
+        t.userId 
+      LIMIT 
+        20
+    `;
+    const topQuotersSql = `
+      SELECT 
+        u.id, 
+        u.username, 
+        u.firstname, 
+        u.lastname, 
+        u.profile_photo, 
+        COUNT(DISTINCT q.id) AS quote_count,
+        MAX(s.customer_id) customer_id 
+      FROM 
+        users u 
+        JOIN quotes q ON q.userId = u.id
+        LEFT JOIN subscriptions s ON s.userId = u.id 
+      GROUP BY 
+        u.id 
+      LIMIT 
+        20
+    `;
+    const topReviewersSql = `
+      SELECT 
+        u.id, 
+        u.username, 
+        u.firstname, 
+        u.lastname, 
+        u.profile_photo, 
+        COUNT(DISTINCT r.id) AS review_count,
+        MAX(s.customer_id) customer_id 
+      FROM 
+        users u 
+        JOIN reviews r ON r.userId = u.id
+        LEFT JOIN subscriptions s ON s.userId = u.id 
+      GROUP BY 
+        u.id 
+      LIMIT 
+        20`;
+    const [bookWorms, bookWormsPremium, topQuoters, topReviewers] =
+      await Promise.all([
+        returnRawQuery(bookWormsSql),
+        returnRawQuery(bookWormsPremiumSql),
+        returnRawQuery(topQuotersSql),
+        returnRawQuery(topReviewersSql),
+      ]);
+
+    res
+      .status(200)
+      .json({ bookWorms, bookWormsPremium, topQuoters, topReviewers });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getExplorePopularTopics = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const popularTopicsSql = `SELECT 
@@ -2755,7 +2944,7 @@ const getExplorePopularTopics = async (req, res, next) => {
   }
 };
 
-const getAllTopics = async (req, res, next) => {
+export const getAllTopics = async (req, res, next) => {
   try {
     const topicsSql = `SELECT 
                           id "value",
@@ -2770,186 +2959,197 @@ const getAllTopics = async (req, res, next) => {
   }
 };
 
-const getExploreBooks = async (req, res, next) => {
+export const getExploreBooks = async (req, res, next) => {
   try {
-    const whatShallIreadSql = `SELECT
-                              MAX(reb.id) id,
-                              MAX(reb.bookId) bookId,
-                              ROUND(
-                                AVG(rb.rating), 
-                                1
-                              ) rate, 
-                              CASE WHEN LENGTH(MAX(bc.title)) > 15 THEN CONCAT(
-                                SUBSTRING(MAX(bc.title), 1, 15), 
-                                '...'
-                              ) ELSE MAX(bc.title) END truncatedTitle, 
-                              MAX(bc.title) title, 
-                              MAX(bc.thumbnail) thumbnail
-                            FROM
-                              recommended_books reb
-                            JOIN 
-                              book_collections bc	
-                            ON 
-                              reb.bookId = bc.id	
-                            LEFT JOIN
-                              rated_books rb
-                            ON 
-                              rb.bookId = bc.id
-                            AND 
-                              rb.rating IS NOT NULL		
-                            WHERE 
-                              reb.userId = 6	
-                            GROUP BY
-                              reb.bookId
-                            ORDER BY
-                              MAX(reb.createdAt) DESC
-                            LIMIT 20`;
-
-    const mostReadLastMonthSql = `SELECT 
-                                    brs.bookId id, 
-                                    MAX(brs.createdAt),
-                                    COUNT(DISTINCT brs.id) people_read, 
-                                    COUNT(DISTINCT lb.id) likes, 
-                                    ROUND(
-                                      AVG(rb.rating), 
-                                      1
-                                    ) rate, 
-                                    CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                                      SUBSTRING(bc.title, 1, 15), 
-                                      '...'
-                                    ) ELSE bc.title END truncatedTitle, 
-                                    bc.title, 
-                                    bc.thumbnail 
-                                  FROM 
-                                    book_reading_states brs 
-                                    LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
-                                    AND lb.is_liked = 1 
-                                    LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
-                                    AND rb.rating IS NOT NULL 
-                                    JOIN book_collections bc ON bc.id = brs.bookId 
-                                  WHERE 
-                                    brs.reading_state = "Read"
-                                    AND brs.createdAt >= DATE_FORMAT(
-                                  CURDATE() - INTERVAL 1 MONTH, 
-                                  '%Y-%m-01'
-                                ) 
-                                AND brs.createdAt < DATE_FORMAT(
-                                  CURDATE(), 
-                                  '%Y-%m-01'
-                                ) 
-                                  GROUP BY 
-                                    brs.bookId  `;
-    const mostReadLastYearSql = `SELECT 
-                                  brs.bookId id, 
-                                  MAX(brs.createdAt),
-                                  COUNT(DISTINCT brs.id) people_read, 
-                                  COUNT(DISTINCT lb.id) likes, 
-                                  ROUND(
-                                    AVG(rb.rating), 
-                                    1
-                                  ) rate, 
-                                  CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                                    SUBSTRING(bc.title, 1, 15), 
-                                    '...'
-                                  ) ELSE bc.title END truncatedTitle, 
-                                  bc.title, 
-                                  bc.thumbnail 
-                                FROM 
-                                  book_reading_states brs 
-                                  LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
-                                  AND lb.is_liked = 1 
-                                  LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
-                                  AND rb.rating IS NOT NULL 
-                                  JOIN book_collections bc ON bc.id = brs.bookId 
-                                WHERE 
-                                  brs.reading_state = "Read"
-                                  AND brs.createdAt >= DATE_FORMAT(
-                                CURDATE() - INTERVAL 1 YEAR, 
-                                '%Y-%m-01'
-                              ) 
-                              AND brs.createdAt < DATE_FORMAT(
-                                CURDATE(), 
-                                '%Y-%m-01'
-                              ) 
-                                GROUP BY 
-                                  brs.bookId
-                      `;
-    const mostLikedSql = `SELECT 
-                            lb.bookId, 
-                            ROUND(
-                              AVG(rating), 
-                              1
-                            ) rate, 
-                            COUNT(DISTINCT brs.id) people_read, 
-                            COUNT(DISTINCT lb.id) likes, 
-                            CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                              SUBSTRING(bc.title, 1, 15), 
-                              '...'
-                            ) ELSE bc.title END truncatedTitle, 
-                            bc.title, 
-                            bc.thumbnail 
-                          FROM 
-                            liked_books lb 
-                            LEFT JOIN rated_books rb ON rb.bookId = lb.bookId 
-                            LEFT JOIN book_reading_states brs ON brs.bookId = lb.bookId 
-                            AND brs.reading_state = "Read" 
-                            JOIN book_collections bc ON bc.id = rb.bookId 
-                          WHERE 
-                            is_liked = 1 
-                          GROUP BY 
-                            lb.bookId;
-                            `;
-    const mostReadSql = `SELECT 
-                          brs.bookId id, 
-                          COUNT(DISTINCT brs.id) people_read, 
-                          COUNT(DISTINCT lb.id) likes, 
-                          ROUND(
-                            AVG(rb.rating), 
-                            1
-                          ) rate, 
-                          CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                            SUBSTRING(bc.title, 1, 15), 
-                            '...'
-                          ) ELSE bc.title END truncatedTitle, 
-                          bc.title, 
-                          bc.thumbnail 
-                        FROM 
-                          book_reading_states brs 
-                          LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
-                          AND lb.is_liked = 1 
-                          LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
-                          AND rb.rating IS NOT NULL 
-                          JOIN book_collections bc ON bc.id = brs.bookId 
-                        WHERE 
-                          brs.reading_state = "Read" 
-                        GROUP BY 
-                          brs.bookId
-                            `;
-    const highestRatedSql = `SELECT 
-                              rb.bookId, 
-                              ROUND(
-                                AVG(rating), 
-                                1
-                              ) rate, 
-                              COUNT(DISTINCT brs.id) people_read, 
-                              COUNT(DISTINCT lb.id) likes, 
-                              CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
-                                SUBSTRING(bc.title, 1, 15), 
-                                '...'
-                              ) ELSE bc.title END truncatedTitle, 
-                              bc.title, 
-                              bc.thumbnail 
-                            FROM 
-                              rated_books rb 
-                              LEFT JOIN liked_books lb ON lb.bookId = rb.bookId 
-                              AND lb.is_liked = 1 
-                              LEFT JOIN book_reading_states brs ON brs.bookId = rb.bookId 
-                              AND brs.reading_state = "Read" 
-                              JOIN book_collections bc ON bc.id = rb.bookId 
-                            WHERE 
-                              rating IS NOT NULL 
-                            GROUP BY 
-                              rb.bookId;`;
+    const whatShallIreadSql = `
+      SELECT 
+        MAX(reb.id) id, 
+        MAX(reb.bookId) bookId,
+        COUNT(brs.reading_state) people_read, 
+        ROUND(
+          AVG(rb.rating), 
+          1
+        ) rate, 
+        CASE WHEN LENGTH(
+          MAX(bc.title)
+        ) > 15 THEN CONCAT(
+          SUBSTRING(
+            MAX(bc.title), 
+            1, 
+            15
+          ), 
+          '...'
+        ) ELSE MAX(bc.title) END truncatedTitle, 
+        MAX(bc.title) title, 
+        MAX(bc.thumbnail) thumbnail 
+      FROM 
+        recommended_books reb 
+        JOIN book_collections bc ON reb.bookId = bc.id 
+        LEFT JOIN rated_books rb ON rb.bookId = bc.id 
+        AND rb.rating IS NOT NULL
+        LEFT JOIN book_reading_states brs ON brs.bookId = bc.id 
+        AND brs.reading_state = "Read" 
+      WHERE 
+        reb.userId = 6 
+      GROUP BY 
+        reb.bookId 
+      ORDER BY 
+        MAX(reb.createdAt) DESC 
+      LIMIT 
+        20
+    `;
+    const mostReadLastMonthSql = `
+      SELECT 
+        brs.bookId id, 
+        MAX(brs.createdAt), 
+        COUNT(DISTINCT brs.id) people_read, 
+        COUNT(DISTINCT lb.id) likes, 
+        ROUND(
+          AVG(rb.rating), 
+          1
+        ) rate, 
+        CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+          SUBSTRING(bc.title, 1, 15), 
+          '...'
+        ) ELSE bc.title END truncatedTitle, 
+        bc.title, 
+        bc.thumbnail 
+      FROM 
+        book_reading_states brs 
+        LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
+        AND lb.is_liked = 1 
+        LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
+        AND rb.rating IS NOT NULL 
+        JOIN book_collections bc ON bc.id = brs.bookId 
+      WHERE 
+        brs.reading_state = "Read" 
+        AND brs.createdAt >= DATE_FORMAT(
+          CURDATE() - INTERVAL 1 MONTH, 
+          '%Y-%m-01'
+        ) 
+        AND brs.createdAt < DATE_FORMAT(
+          CURDATE(), 
+          '%Y-%m-01'
+        ) 
+      GROUP BY 
+        brs.bookId
+    `;
+    const mostReadLastYearSql = `
+      SELECT 
+        brs.bookId id, 
+        MAX(brs.createdAt), 
+        COUNT(DISTINCT brs.id) people_read, 
+        COUNT(DISTINCT lb.id) likes, 
+        ROUND(
+          AVG(rb.rating), 
+          1
+        ) rate, 
+        CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+          SUBSTRING(bc.title, 1, 15), 
+          '...'
+        ) ELSE bc.title END truncatedTitle, 
+        bc.title, 
+        bc.thumbnail 
+      FROM 
+        book_reading_states brs 
+        LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
+        AND lb.is_liked = 1 
+        LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
+        AND rb.rating IS NOT NULL 
+        JOIN book_collections bc ON bc.id = brs.bookId 
+      WHERE 
+        brs.reading_state = "Read" 
+        AND brs.createdAt >= DATE_FORMAT(
+          CURDATE() - INTERVAL 1 YEAR, 
+          '%Y-%m-01'
+        ) 
+        AND brs.createdAt < DATE_FORMAT(
+          CURDATE(), 
+          '%Y-%m-01'
+        ) 
+      GROUP BY 
+        brs.bookId
+    `;
+    const mostLikedSql = `
+      SELECT 
+        lb.bookId, 
+        ROUND(
+          AVG(rating), 
+          1
+        ) rate, 
+        COUNT(DISTINCT brs.id) people_read, 
+        COUNT(DISTINCT lb.id) likes, 
+        CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+          SUBSTRING(bc.title, 1, 15), 
+          '...'
+        ) ELSE bc.title END truncatedTitle, 
+        bc.title, 
+        bc.thumbnail 
+      FROM 
+        liked_books lb 
+        LEFT JOIN rated_books rb ON rb.bookId = lb.bookId 
+        LEFT JOIN book_reading_states brs ON brs.bookId = lb.bookId 
+        AND brs.reading_state = "Read" 
+        JOIN book_collections bc ON bc.id = rb.bookId 
+      WHERE 
+        is_liked = 1 
+      GROUP BY 
+        lb.bookId
+    `;
+    const mostReadSql = `
+      SELECT 
+        brs.bookId id, 
+        COUNT(DISTINCT brs.id) people_read, 
+        COUNT(DISTINCT lb.id) likes, 
+        ROUND(
+          AVG(rb.rating), 
+          1
+        ) rate, 
+        CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+          SUBSTRING(bc.title, 1, 15), 
+          '...'
+        ) ELSE bc.title END truncatedTitle, 
+        bc.title, 
+        bc.thumbnail 
+      FROM 
+        book_reading_states brs 
+        LEFT JOIN liked_books lb ON lb.bookId = brs.bookId 
+        AND lb.is_liked = 1 
+        LEFT JOIN rated_books rb ON rb.bookId = brs.bookId 
+        AND rb.rating IS NOT NULL 
+        JOIN book_collections bc ON bc.id = brs.bookId 
+      WHERE 
+        brs.reading_state = "Read" 
+      GROUP BY 
+        brs.bookId
+    `;
+    const highestRatedSql = `
+      SELECT 
+        rb.bookId, 
+        ROUND(
+          AVG(rating), 
+          1
+        ) rate, 
+        COUNT(DISTINCT brs.id) people_read, 
+        COUNT(DISTINCT lb.id) likes, 
+        CASE WHEN LENGTH(bc.title) > 15 THEN CONCAT(
+          SUBSTRING(bc.title, 1, 15), 
+          '...'
+        ) ELSE bc.title END truncatedTitle, 
+        bc.title, 
+        bc.thumbnail 
+      FROM 
+        rated_books rb 
+        LEFT JOIN liked_books lb ON lb.bookId = rb.bookId 
+        AND lb.is_liked = 1 
+        LEFT JOIN book_reading_states brs ON brs.bookId = rb.bookId 
+        AND brs.reading_state = "Read" 
+        JOIN book_collections bc ON bc.id = rb.bookId 
+      WHERE 
+        rating IS NOT NULL 
+      GROUP BY 
+        rb.bookId
+    `;
     const [
       whatShallIread,
       mostRead,
@@ -2979,7 +3179,7 @@ const getExploreBooks = async (req, res, next) => {
   }
 };
 
-const getTrendingTopics = async (req, res, next) => {
+export const getTrendingTopics = async (req, res, next) => {
   try {
     const updated = await returnRawQuery(trendingTopicsSql);
     res.status(200).json(updated);
@@ -2988,7 +3188,7 @@ const getTrendingTopics = async (req, res, next) => {
   }
 };
 
-const getTopicCategories = async (req, res, next) => {
+export const getTopicCategories = async (req, res, next) => {
   try {
     let topicCategories = await TopicCategory.findAll();
     topicCategories = topicCategories.map((result) => result.toJSON());
@@ -2998,7 +3198,7 @@ const getTopicCategories = async (req, res, next) => {
   }
 };
 
-const setFollowingState = async (req, res, next) => {
+export const setFollowingState = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const result = validationResult(req);
@@ -3031,7 +3231,7 @@ const setFollowingState = async (req, res, next) => {
   }
 };
 
-const getBookCategories = async (req, res, next) => {
+export const getBookCategories = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
@@ -3075,7 +3275,7 @@ const getBookCategories = async (req, res, next) => {
   }
 };
 
-const getCategoryBooks = async (req, res, next) => {
+export const getCategoryBooks = async (req, res, next) => {
   //^ Gets categoryId and returns books related to it
   try {
     const result = validationResult(req);
@@ -3336,7 +3536,7 @@ const getCategoryBooks = async (req, res, next) => {
   }
 };
 
-const getSidebarTopics = async (req, res, next) => {
+export const getSidebarTopics = async (req, res, next) => {
   try {
     const topicsSql = `SELECT 
                           t.id,
@@ -3357,7 +3557,7 @@ const getSidebarTopics = async (req, res, next) => {
   }
 };
 
-const createCheckoutSession = async (req, res, next) => {
+export const createCheckoutSession = async (req, res, next) => {
   try {
     const result = validationResult(req);
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -3391,6 +3591,9 @@ const createCheckoutSession = async (req, res, next) => {
           user_id: userId,
         },
       },
+      metadata: {
+        user_id: userId,
+      },
       mode: "subscription",
       success_url: `${process.env.DOMAIN}/return?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.DOMAIN}/return?canceled=true&session_id={CHECKOUT_SESSION_ID}`,
@@ -3404,7 +3607,7 @@ const createCheckoutSession = async (req, res, next) => {
   }
 };
 
-const listenWebhook = async (req, res, next) => {
+export const listenWebhook = async (req, res, next) => {
   const signature = req.headers["stripe-signature"];
   let event, paymentIntent, sub, notification;
   if (endpointSecret) {
@@ -3493,13 +3696,16 @@ const listenWebhook = async (req, res, next) => {
       notification = Notification.create({
         content: {
           status: "deleted",
-          end_date: paymentIntent.current_period_end,
+          end_date: paymentIntent.canceled_at,
         },
         type: "premium",
         receiverId: paymentIntent.metadata.user_id,
       });
       sub = Subscription.update(
-        { status: paymentIntent.status },
+        {
+          status: paymentIntent.status,
+          canceled_at: paymentIntent.canceled_at,
+        },
         { where: { subscription_id: paymentIntent.id } }
       );
       await Promise.all([sub, notification]);
@@ -3520,7 +3726,7 @@ const listenWebhook = async (req, res, next) => {
   return res.json({ received: true });
 };
 
-const createCustomerPortalSession = async (req, res, next) => {
+export const createCustomerPortalSession = async (req, res, next) => {
   try {
     const userId = req.session.passport.user;
     const userSubId = await Subscription.findOne({
@@ -3538,62 +3744,11 @@ const createCustomerPortalSession = async (req, res, next) => {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: userSubId.toJSON().customer_id,
-      return_url: `${process.env.DOMAIN}/premium`,
+      return_url: `${process.env.DOMAIN}/home`,
     });
 
     res.status(200).json({ url: session.url });
   } catch (error) {
     next(error);
   }
-};
-
-export {
-  listenWebhook,
-  createCustomerPortalSession,
-  getHomePagePosts,
-  getReaderNotifications,
-  markNotificationsAsRead,
-  getAllTopics,
-  shareQuote,
-  shareThought,
-  createCheckoutSession,
-  shareReview,
-  getBookReviews,
-  setPrivateNote,
-  setReadingState,
-  setBookLiked,
-  setBookRate,
-  getReaderBookInteractionData,
-  setUserBookRecord,
-  getBookStatistics,
-  getReaderProfiles,
-  displayReaderProfile,
-  filterReaderBooks,
-  getReaderReviews,
-  updateReaderBookDates,
-  updateReaderPageNumber,
-  uploadImage,
-  getReaderBookshelfOverview,
-  getLoggedInReader,
-  getReaderPostComments,
-  sendComment,
-  getReaderComments,
-  getThemedTopics,
-  createTopic,
-  getReaderThoughts,
-  getReaderQuotes,
-  getTopic,
-  getTopicBooks,
-  getReaderBookModalDetails,
-  getTopicReaders,
-  getExploreGenerals,
-  getExplorePopularTopics,
-  getExploreBooks,
-  getTopicCategories,
-  setFollowingState,
-  getTrendingTopics,
-  getTopicPosts,
-  getBookCategories,
-  getCategoryBooks,
-  getSidebarTopics,
 };

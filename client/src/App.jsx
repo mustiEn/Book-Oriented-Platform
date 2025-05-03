@@ -203,7 +203,11 @@ function App() {
               element: <ExploreTopics />,
               loader: Loader.loadExploreTopics,
             },
-            { path: "readers", element: <ExploreReaders /> },
+            {
+              path: "readers",
+              element: <ExploreReaders />,
+              loader: Loader.loadExploreReaders,
+            },
           ],
         },
         {

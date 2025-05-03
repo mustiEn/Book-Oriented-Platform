@@ -12,11 +12,12 @@ import "swiper/css/pagination";
 import "../css/explore_general.css";
 import toast from "react-hot-toast";
 import Spinner from "../spinner/Spinner";
+import { IoMdStar } from "react-icons/io";
 
 const ExploreGeneral = () => {
   const navigation = useNavigation();
   const [topicCategories, generalData] = useLoaderData();
-  const { topics, bookWorms, topLikedBooks } = generalData;
+  const { topics, bookWorms, topLikedBooks, whatShallIread } = generalData;
   const [followingStates, setFollowingStates] = useState(
     topics.reduce((acc, curr) => {
       acc[curr.id] = curr.isFollowing;
@@ -139,15 +140,95 @@ const ExploreGeneral = () => {
           </ul>
         </div>
         <div>
-          <div className="h6">Books</div>
-          <div className="text-center px-3">
-            In order for us to recommend you books, you need to add at least 10
-            books you read to your profile.
-          </div>
-          <div className="text-center px-3">
-            When creating recommendations, we pay attention to whether you liked
-            a book and your rates,
-          </div>
+          <div className="h6">What Shall I Read</div>
+          {whatShallIread.length > 0 ? (
+            <Swiper
+              modules={[Pagination, Autoplay]}
+              spaceBetween={45}
+              slidesPerView="auto"
+              pagination={{
+                clickable: true,
+                dynamicBullets: true,
+              }}
+              autoplay={{
+                delay: 2000,
+                disableOnInteraction: false,
+                reverseDirection: false,
+                pauseOnMouseEnter: true,
+                stopOnLastSlide: false,
+              }}
+            >
+              {whatShallIread.map((book) => (
+                <SwiperSlide key={book.bookId}>
+                  <a
+                    href={`/book/${encodeURIComponent(book.title)}/${
+                      book.bookId
+                    }`}
+                    className="d-flex flex-column"
+                  >
+                    <img
+                      src={
+                        book.thumbnail == null
+                          ? "https://placehold.co/120x180"
+                          : book.thumbnail
+                      }
+                      className="rounded-3"
+                      width={120}
+                      height={180}
+                      alt=""
+                    />
+                    <div className="my-2">
+                      <div
+                        className="fw-bold"
+                        style={{ fontSize: 14 + "px" }}
+                        title={book.title}
+                      >
+                        {book.truncatedTitle}
+                      </div>
+                      <div
+                        className="d-flex text-pale"
+                        style={{ fontSize: 13 + "px" }}
+                      >
+                        {book.rate != null ? (
+                          <>
+                            <div className="d-flex align-items-center gap-1">
+                              <svg
+                                version="1.1"
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="13"
+                                height="13"
+                                viewBox="0 0 32 32"
+                                fill="rgb(182, 182, 182)"
+                                key={uuid()}
+                              >
+                                <path d="M32 12.408l-11.056-1.607-4.944-10.018-4.944 10.018-11.056 1.607 8 7.798-1.889 11.011 9.889-5.199 9.889 5.199-1.889-11.011 8-7.798z"></path>
+                              </svg>
+                              {book.rate}
+                            </div>
+                            <span className="dot-separator">&#183;</span>
+                          </>
+                        ) : (
+                          ""
+                        )}
+                        <div>{book.people_read} read</div>
+                      </div>
+                    </div>
+                  </a>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          ) : (
+            <>
+              <div className="text-center px-3">
+                In order for us to recommend you books, you need to add at least
+                10 books you read to your profile.
+              </div>
+              <div className="text-center px-3">
+                When creating recommendations, we pay attention to your rates
+                and whether you liked a book.
+              </div>
+            </>
+          )}
         </div>
         <div className="my-4">
           <div className="h6">Book Worms</div>
@@ -193,18 +274,28 @@ const ExploreGeneral = () => {
                   />
                   <div className="d-flex flex-column align-items-center my-2">
                     <div
-                      className="d-flex flex-column align-items-center fw-bold"
+                      className="d-flex fw-bold gap-1"
+                      title={bookWorm.firstname + " " + bookWorm.lastname}
                       style={{ fontSize: 14 + "px" }}
                     >
-                      <span>{bookWorm.firstname}</span>
-                      <span>{bookWorm.lastname}</span>
+                      {`${bookWorm.firstname} ${bookWorm.lastname}`.length > 13
+                        ? `${bookWorm.firstname} ${bookWorm.lastname}`.slice(
+                            0,
+                            13
+                          ) + "..."
+                        : `${bookWorm.firstname} ${bookWorm.lastname}`}
+                      {bookWorm.customer_id && (
+                        <IoMdStar
+                          style={{ fill: "#45aceb", fontSize: 18 + "px" }}
+                        />
+                      )}
                     </div>
                     <div className="text-pale" style={{ fontSize: 13 + "px" }}>
                       @{bookWorm.username}
                     </div>
                   </div>
                   <div className="text-pale" style={{ fontSize: 13 + "px" }}>
-                    {bookWorm.books_read} books
+                    {bookWorm.books_read} books read
                   </div>
                 </a>
               </SwiperSlide>
@@ -212,7 +303,7 @@ const ExploreGeneral = () => {
           </Swiper>
         </div>
         <div>
-          <div className="h6">The most liked books</div>
+          <div className="h6">The Most Liked Books</div>
           <Swiper
             modules={[Pagination, Autoplay]}
             spaceBetween={45}

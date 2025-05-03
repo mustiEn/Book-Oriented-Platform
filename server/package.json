@@ -33,6 +33,7 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "query-string": "^9.1.1",
+    "sentiment": "^5.0.2",
     "sequelize": "^6.37.3",
     "sharp": "^0.33.5",
     "streamifier": "^0.1.1",

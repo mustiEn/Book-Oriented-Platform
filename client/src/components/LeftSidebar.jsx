@@ -17,6 +17,7 @@ import { toast } from "react-hot-toast";
 const LeftSidebar = ({ loggedInReader }) => {
   const navigate = useNavigate();
   const { user, unReadNotifications } = loggedInReader;
+  const [hasSub, setHasSub] = useState(user[0].customer_id ? true : false);
   const [notificationExists, setNotificationExists] = useState(
     unReadNotifications[0].unread ? true : false
   );
@@ -71,7 +72,7 @@ const LeftSidebar = ({ loggedInReader }) => {
     });
 
     const { url } = await res.json();
-    window.location.href = url;
+    window.open(url, "_blank");
   };
   const handleNotificationClick = async () => {
     try {
@@ -91,13 +92,30 @@ const LeftSidebar = ({ loggedInReader }) => {
       console.error("Error marking notifications as read:", error);
     }
   };
+  const fetchInitalData = async () => {
+    try {
+      const res = await fetch("/api/get-reader-info");
 
-  console.log(notificationExists);
-  console.log(unReadNotifications);
+      if (!res.ok) {
+        toast.error("Failed to fetch initial data");
+      }
+
+      const { user } = await res.json();
+      setHasSub(user[0].customer_id ? true : false);
+    } catch (error) {
+      console.error("Error fetching initial data:", error);
+    }
+  };
 
   useEffect(() => {
     getBooks();
   }, [search]);
+
+  useEffect(() => {
+    fetchInitalData();
+  }, []);
+
+  console.log(user[0], hasSub);
 
   return (
     <>
@@ -286,7 +304,7 @@ const LeftSidebar = ({ loggedInReader }) => {
               )}
             </NavLink>
           </li>
-          {user[0].customer_id && (
+          {hasSub && (
             <li className="left-sidebar-item">
               <div
                 className="btn text-white p-2"

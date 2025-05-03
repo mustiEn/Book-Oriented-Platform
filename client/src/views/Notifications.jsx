@@ -1,21 +1,25 @@
 import React, { useState } from "react";
 import Button from "react-bootstrap/esm/Button";
-import { Link, NavLink, useLoaderData } from "react-router-dom";
+import Dropdown from "react-bootstrap/Dropdown";
+import { Link, useLoaderData } from "react-router-dom";
 import Collapse from "react-bootstrap/Collapse";
 import BackNavigation from "../components/BackNavigation";
-import { FaComment } from "react-icons/fa6";
-import { MdOutlineWorkspacePremium } from "react-icons/md";
 import { IoShield, IoStarSharp } from "react-icons/io5";
 import { FaUser } from "react-icons/fa6";
+import { FaEllipsisH } from "react-icons/fa";
 import dayjs from "dayjs";
+import { GoBook } from "react-icons/go";
+import Spinner from "../spinner/Spinner";
+import "../css/notifications.css";
+import { toast } from "react-hot-toast";
 
 const Notifications = () => {
   const notifications = useLoaderData();
   const [open, setOpen] = useState(false);
-  const [listHover, setListHover] = useState(null);
-  const handleListHoverOnMouseOver = (id) => setListHover(id);
-  const handleListHoverOnMouseOut = () => setListHover(null);
+  const [hiddenNotifications, setHiddenNotifications] = useState([]);
+  const [pending, setPending] = useState(false);
   const handleCustomerPortalRedirect = async () => {
+    setPending(true);
     const res = await fetch("/api/create-customer-portal-session", {
       method: "POST",
       headers: {
@@ -23,8 +27,14 @@ const Notifications = () => {
       },
     });
 
+    if (!res.ok) {
+      toast.error("Failed to redirect to customer portal");
+      return;
+    }
+
     const { url } = await res.json();
     window.location.href = url;
+    setPending(false);
   };
   const returnPremiumElement = ({ end_date, status }) => {
     const sentence =
@@ -106,6 +116,18 @@ const Notifications = () => {
       </>
     );
   };
+  const returnBookRecommendationElement = () => {
+    return (
+      <>
+        <Link to="/explore/books">
+          <div className="d-flex gap-2 px-4 py-2">
+            <GoBook style={{ fontSize: "26" + "px", fill: "#19bdac" }} />
+            <div>Here are some recommended books, check them out!</div>
+          </div>
+        </Link>
+      </>
+    );
+  };
   const returnStatementByType = (notification) => {
     let item;
 
@@ -115,31 +137,69 @@ const Notifications = () => {
       item = returnPremiumElement(notification.content);
     } else if (notification.type == "comment") {
       item = returnCommentElement(notification);
+    } else {
+      item = returnBookRecommendationElement();
     }
     return item;
+  };
+
+  const handleHideNotification = async (id) => {
+    try {
+      const res = await fetch(`/api/notifications/hide`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to hide notification");
+      }
+
+      setHiddenNotifications((prevState) => [...prevState, id]);
+      toast.success("Notification hidden");
+    } catch (error) {
+      toast.error("Failed to hide notification");
+    }
   };
 
   return (
     <>
       <BackNavigation innerHtml={"Notifications"} />
-      <ul>
+      <ul id="notifications">
         {notifications.map((notification) => {
           return (
             <li
               key={notification.id}
               className={
-                listHover == notification.id
-                  ? "border border-secondary border-opacity-50 border-start border-end bg-dark"
-                  : "border border-secondary border-opacity-50 border-start border-end"
+                hiddenNotifications.includes(notification.id)
+                  ? "d-none"
+                  : "position-relative border border-secondary border-opacity-50 border-start border-end"
               }
-              onMouseOver={() => handleListHoverOnMouseOver(notification.id)}
-              onMouseOut={handleListHoverOnMouseOut}
             >
               {returnStatementByType(notification)}
+              <Dropdown className="notification-dropdown position-absolute">
+                <Dropdown.Toggle
+                  as="button"
+                  className="border-0 bg-transparent text-white"
+                >
+                  <FaEllipsisH className="ellipsis p-1 rounded-circle" />
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu>
+                  <Dropdown.Item
+                    onClick={() => handleHideNotification(notification.id)}
+                  >
+                    Hide this notification
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
             </li>
           );
         })}
       </ul>
+      <Spinner pendingVal={pending} />
     </>
   );
 };

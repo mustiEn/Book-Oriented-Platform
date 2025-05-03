@@ -9,6 +9,7 @@ const ExploreBooks = () => {
     highestRated,
     mostReadLastMonth,
     mostReadLastYear,
+    whatShallIread,
   } = useLoaderData();
   return (
     <>
@@ -28,6 +29,7 @@ const ExploreBooks = () => {
             highestRated,
             mostReadLastMonth,
             mostReadLastYear,
+            whatShallIread,
           ]}
         />
       </div>

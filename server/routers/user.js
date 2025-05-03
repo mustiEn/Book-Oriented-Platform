@@ -58,6 +58,12 @@ router.post(
   userController.markNotificationsAsRead
 );
 
+router.post(
+  "/notifications/hide",
+  [isUserActive, body("id").notEmpty().isInt()],
+  userController.hideNotifications
+);
+
 router.get(
   "/get-reader-book-modal-details/:bookId",
   [isUserActive, param("bookId").notEmpty().isInt()],
@@ -248,6 +254,12 @@ router.get(
   "/get-explore-general",
   isUserActive,
   userController.getExploreGenerals
+);
+
+router.get(
+  "/get-explore-readers",
+  isUserActive,
+  userController.getExploreReaders
 );
 
 router.get("/get-topics", isUserActive, userController.getAllTopics);

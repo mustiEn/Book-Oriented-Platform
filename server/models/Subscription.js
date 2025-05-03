@@ -14,10 +14,6 @@ export const Subscription = sequelize.define("subscription", {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  cancel_at: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-  },
   canceled_at: {
     type: DataTypes.INTEGER,
     allowNull: true,

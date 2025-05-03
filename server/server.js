@@ -13,7 +13,6 @@ import "./strategies/strategy.js";
 import cookieParser from "cookie-parser";
 import { setupAssociations } from "./models/associations.js";
 import "./crons/index.js";
-import { pipeline } from "@huggingface/transformers";
 
 dotenv.config();
 export const app = express();

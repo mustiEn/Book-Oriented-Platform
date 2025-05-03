@@ -6,7 +6,7 @@ export const Notification = sequelize.define(
   {
     content: {
       type: DataTypes.JSON,
-      allowNull: false,
+      allowNull: true,
     },
     type: {
       type: DataTypes.ENUM("book_recommendation", "post", "comment", "premium"),

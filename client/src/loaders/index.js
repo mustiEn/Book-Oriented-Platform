@@ -80,6 +80,17 @@ export const loadExploreTopics = async () => {
   return data;
 };
 
+export const loadExploreReaders = async () => {
+  const res = await fetch("/api/get-explore-readers");
+
+  if (!res.ok) {
+    throw new Error(res.error);
+  }
+
+  const data = await res.json();
+  return data;
+};
+
 export const loadExploreBooks = async () => {
   const response = await fetch("/api/get-explore-books");
   const data = await response.json();
