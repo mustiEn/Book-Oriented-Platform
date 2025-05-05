@@ -393,7 +393,6 @@ export let trendingTopics = await returnRawQuery(trendingTopicsSql);
 //       await Notification.create({
 //         userId,
 //         type: "book_recommendation",
-//         content: {},
 //         receiverId: userId,
 //       });
 //     }

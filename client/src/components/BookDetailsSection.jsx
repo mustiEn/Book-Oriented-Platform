@@ -5,7 +5,7 @@ import {
   useNavigate,
   useNavigation,
   useLoaderData,
-} from "react-router-dom";
+} from "react-router";
 import { useState, useEffect, useRef } from "react";
 import slugify from "react-slugify";
 import {
@@ -20,6 +20,7 @@ import Button from "react-bootstrap/Button";
 import "../css/book_details_section.css";
 import ReaderBookModalDetails from "./ReaderBookModalDetails";
 import Spinner from "../spinner/Spinner";
+import BackNavigation from "./BackNavigation";
 
 const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
   const navigate = useNavigate();
@@ -75,6 +76,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
     } else {
       toast.error("Something went wrong");
     }
+    setPending(false);
   };
   const sendBookRate = async (rate) => {
     const res = await fetch(`/api/set-book-rate/${bookDetails.id}`, {
@@ -95,41 +97,32 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
     } else {
       toast.error("Something went wrong");
     }
+    setPending(false);
   };
 
   useEffect(() => {
-    if (navigation.state === "loading") {
-      setPending(true);
-    } else {
-      setPending(false);
-    }
-  }, [navigation.state]);
-
-  useEffect(() => {
     if (ref.current.effect2) {
+      setPending(true);
       const timeout = setTimeout(() => {
         sendBookLiked(!bookState.isBookLiked);
-      }, 500);
+      }, 200);
       return () => clearTimeout(timeout);
     }
   }, [bookState.isBookLikedToggler]);
 
   useEffect(() => {
     if (ref.current.effect3) {
+      setPending(true);
       const timeout = setTimeout(() => {
         sendBookRate(bookState.rateGiven);
-      }, 500);
+      }, 200);
       return () => clearTimeout(timeout);
     }
   }, [bookState.rateGiven]);
 
   return (
     <>
-      <FaArrowLeft
-        id="arrow-left"
-        className="rounded-circle p-2"
-        onClick={() => navigate(-1)}
-      />
+      <BackNavigation innerHtml="Book Details" />
       <ReaderBookModalDetails
         modalProps={[
           bookPageCount,
@@ -153,7 +146,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
         </div>
         <div className="book-rating my-3">
           <div className="fs-5">Rate this book</div>
-          <div className="d-flex align-items-center gap-4">
+          <div className="d-flex align-items-center mt-2 gap-4">
             <ul className="d-flex gap-2">
               {starList.map((star) => {
                 return (
@@ -208,13 +201,6 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
                 ref.current["effect3"] = true;
               }}
             />
-            <Link
-              id="share-review-btn"
-              to={`/share-review/${bookDetails.id}`}
-              className="btn btn-light ms-auto"
-            >
-              Share Review
-            </Link>
           </div>
         </div>
         <div className="w-100 d-flex justify-content-between gap-4">
@@ -264,7 +250,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
             ""
           )}
         </div>
-        <ul className="d-flex gap-2">
+        <ul className="d-flex mt-3 gap-2">
           <li id="li-about">
             <NavLink
               to={`/book/${slugify(
@@ -315,7 +301,6 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
             </NavLink>
           </li>
         </ul>
-        {/* <Outlet context={bookDetails} /> */}
       </div>
       <Spinner pendingVal={pending} />
     </>

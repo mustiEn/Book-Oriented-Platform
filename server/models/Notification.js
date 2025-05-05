@@ -9,7 +9,13 @@ export const Notification = sequelize.define(
       allowNull: true,
     },
     type: {
-      type: DataTypes.ENUM("book_recommendation", "post", "comment", "premium"),
+      type: DataTypes.ENUM(
+        "book_recommendation",
+        "post",
+        "comment",
+        "premium",
+        "topic_post"
+      ),
     },
     is_read: {
       type: DataTypes.BOOLEAN,

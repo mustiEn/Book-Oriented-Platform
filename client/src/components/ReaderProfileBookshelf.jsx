@@ -5,7 +5,7 @@ import {
   Outlet,
   useSearchParams,
   useOutletContext,
-} from "react-router-dom";
+} from "react-router";
 import {
   FaBookOpen,
   FaSort,

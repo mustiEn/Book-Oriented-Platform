@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData } from "react-router";
 import PostReview from "../components/PostReview";
 import PostThought from "../components/PostThought";
 import PostQuote from "../components/PostQuote";

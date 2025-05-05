@@ -1,7 +1,7 @@
 import React from "react";
 import slugify from "react-slugify";
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";
@@ -37,7 +37,7 @@ const Search = () => {
       setPending(true);
       const time = setTimeout(() => {
         getBooks();
-      }, 1500);
+      }, 100);
       return () => clearInterval(time);
     } else {
       setPending(false);
@@ -67,13 +67,13 @@ const Search = () => {
         {books.length !== 0
           ? books.map((book) => (
               <li
-                key={book.book_id}
+                key={book.id}
                 className="mt-3 p-2"
                 // style={{ height: 170 + "px" }}
               >
                 <Link
                   to={`/book/${slugify(book.title.replace(/[...,:;]/g, ""))}/${
-                    book.book_id
+                    book.id
                   }`}
                   className="text-decoration-none text-white d-flex align-items-center gap-3 p-2 search-book-item"
                   style={{ height: 170 + "px" }}

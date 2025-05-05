@@ -6,18 +6,19 @@ import {
   useLocation,
   useOutletContext,
   useParams,
-} from "react-router-dom";
+} from "react-router";
 import moment from "moment";
 import { toast } from "react-hot-toast";
 import { FaCalendar, FaClockRotateLeft } from "react-icons/fa6";
 import Button from "react-bootstrap/Button";
 import "../css/reader_profile.css";
 import BackNavigation from "../components/BackNavigation";
+import { IoMdStar } from "react-icons/io";
 
 const ReaderProfile = () => {
   const [readerProfileData, setReaderProfileData] = useState({});
   const [editBtns, setEditBtns] = useState(false);
-  const reader = useOutletContext()[0];
+  const reader = useOutletContext().user[0];
   const data = useLoaderData()[0];
   const regex = /^[a-zA-Z0-9-_]+(\.(jpg|jpeg|png||webp))$/i;
   const bgRef = useRef(null);
@@ -235,6 +236,9 @@ const ReaderProfile = () => {
           <div className="d-flex gap-3">
             <div style={{ color: "#b6b6b6" }}>
               @{readerProfileData.username}
+              {readerProfileData.customer_id && (
+                <IoMdStar style={{ fill: "#45aceb", fontSize: 18 + "px" }} />
+              )}
             </div>
             <div
               style={{ fontSize: 14 + "px", backgroundColor: "#262626" }}
@@ -280,8 +284,8 @@ const ReaderProfile = () => {
               color: isActive ? "white" : "#b6b6b6",
               backgroundColor: isActive ? "#ffffff14" : "",
             })}
-            to={`/${reader.username}`}
-            end
+            to={`/profile/${reader.username}`}
+            // end
           >
             Reviews
           </NavLink>

@@ -5,7 +5,6 @@ import { Post } from "./Post.js";
 import { Comment } from "./Comment.js";
 import { TopicCategory } from "./TopicCategory.js";
 import { Thought } from "./Thought.js";
-import { ThoughtImage } from "./ThoughtImage.js";
 import { bookAssociations } from "./associations/bookAssociations.js";
 import { userAssociations } from "./associations/userAssociations.js";
 import { User } from "./User.js";
@@ -41,17 +40,6 @@ export function setupAssociations() {
   });
   Thought.belongsTo(Topic, {
     foreignKey: "topicId",
-    onDelete: "CASCADE",
-    onUpdate: "CASCADE",
-  });
-
-  Thought.hasMany(ThoughtImage, {
-    foreignKey: "thoughtId",
-    onDelete: "CASCADE",
-    onUpdate: "CASCADE",
-  });
-  ThoughtImage.belongsTo(Thought, {
-    foreignKey: "thoughtId",
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
   });

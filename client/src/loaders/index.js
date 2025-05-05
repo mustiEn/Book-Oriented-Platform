@@ -150,18 +150,15 @@ export const loadTopic = async ({ params }) => {
 export const loadTopicPosts = async ({ request, params }) => {
   const { topicName } = params;
   const q = new URL(request.url);
-  const postType = q.pathname.slice(21) || "all";
   const search = q.search;
-  console.log(q);
+  // console.log(q);
+  // console.log(q.pathname);
 
-  const response = await fetch(
-    `/api/get-topic-posts/${topicName}/${postType}${search}`
-  );
+  const response = await fetch(`/api/get-topic-posts/${topicName}${search}`);
   const data = await response.json();
   if (!response.ok) {
     throw new Error(response);
   }
-  console.log(data);
   return data;
 };
 
@@ -261,7 +258,7 @@ export const loadReaderProfile = async ({ params }) => {
   const { profile: username } = params;
   console.log(username);
 
-  const res = await fetch(`/api/${username}/display-reader-profile`);
+  const res = await fetch(`/api/profile/${username}/display-reader-profile`);
 
   if (!res.ok) {
     throw new Error(res.error);

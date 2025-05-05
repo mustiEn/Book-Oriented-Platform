@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FaComment } from "react-icons/fa6";
-import { Link, useLoaderData, useNavigate, useParams } from "react-router-dom";
+import { Link, useLoaderData, useNavigate, useParams } from "react-router";
 import moment from "moment";
 import "../css/reader_profile_comments.css";
 import InfiniteScroll from "react-infinite-scroll-component";
@@ -78,7 +78,7 @@ const ReaderProfileComments = () => {
                       >
                         Replying to{" "}
                         <Link
-                          to={`/${comment.username}`}
+                          to={`/profile/${comment.username}`}
                           className="replying-to text-primary"
                         >
                           @{comment.username}
@@ -91,7 +91,7 @@ const ReaderProfileComments = () => {
                     <div className="comment-footer d-flex">
                       <Link
                         className="comment-link rounded-3 d-flex gap-2 justify-content-center align-items-center text-primary"
-                        to={`comment/${comment.id}`}
+                        to={`/posts/comment/${comment.id}`}
                         style={{ width: 55 + "px", height: 30 + "px" }}
                         title="Reply"
                       >

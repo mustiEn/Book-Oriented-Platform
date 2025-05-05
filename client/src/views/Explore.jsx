@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet, NavLink, useLoaderData } from "react-router-dom";
+import { Outlet, NavLink, useLoaderData } from "react-router";
 import "../css/explore.css";
 
 const Explore = () => {

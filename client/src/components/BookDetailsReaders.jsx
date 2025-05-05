@@ -6,7 +6,7 @@ import {
   useOutletContext,
   useLocation,
   Link,
-} from "react-router-dom";
+} from "react-router";
 import slugify from "react-slugify";
 
 const BookDetailsReaders = () => {
@@ -58,7 +58,7 @@ const BookDetailsReaders = () => {
                   />
                   <div className="d-flex flex-column">
                     <Link
-                      to={`/${reader.username}`}
+                      to={`/profile/${reader.username}`}
                       className="user-official-name fw-bold"
                     >
                       {reader.firstname} {reader.lastname}

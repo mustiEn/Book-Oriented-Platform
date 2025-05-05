@@ -1,5 +1,5 @@
 import React from "react";
-import { useLoaderData } from "react-router-dom";
+import { useLoaderData } from "react-router";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import Form from "react-bootstrap/Form";

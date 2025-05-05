@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../css/left_sidebar.css";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router";
 import { FaBook, FaEllipsis } from "react-icons/fa6";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
@@ -115,15 +115,13 @@ const LeftSidebar = ({ loggedInReader }) => {
     fetchInitalData();
   }, []);
 
-  console.log(user[0], hasSub);
-
   return (
     <>
       <div
         id="leftSidebar"
         className="d-flex align-self-start p-2 overflow-y-auto gap-2 flex-column position-sticky top-0 "
       >
-        <ul>
+        <ul className="d-flex flex-column gap-2">
           <li className="left-sidebar-item">
             <Link
               className="left-sidebar-a text-decoration-none text-white d-block p-2"
@@ -171,16 +169,17 @@ const LeftSidebar = ({ loggedInReader }) => {
                     <FaRegBell className="left-sidebar-a-inner-icon " />
                     {notificationExists ? (
                       <span
-                        className="position-absolute top-0 start-100 translate-middle  rounded-circle text-center bg-danger"
+                        className="align-items-center bg-danger d-flex justify-content-center position-absolute rounded-circle start-100 top-0 translate-middle"
                         style={{
-                          width: 18 + "px",
-                          height: "auto",
+                          width: 22 + "px",
+                          height: 22 + "px",
                           fontSize: 12 + "px",
                         }}
                       >
                         {unReadNotifications[0].unread >= 100
-                          ? +"99+"
+                          ? +"99"
                           : unReadNotifications[0].unread}
+                        +
                       </span>
                     ) : (
                       ""
@@ -322,7 +321,7 @@ const LeftSidebar = ({ loggedInReader }) => {
           <li className="left-sidebar-item">
             <NavLink
               className="left-sidebar-a text-decoration-none text-white d-block p-2"
-              to={`/${user[0].username}`}
+              to={`/profile/${user[0].username}`}
             >
               {({ isActive }) => (
                 <div className="left-sidebar-a-inner d-flex gap-2 align-items-center">

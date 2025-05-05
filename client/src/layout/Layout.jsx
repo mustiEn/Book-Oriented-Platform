@@ -1,12 +1,23 @@
-import React from "react";
-import { Outlet, useLoaderData } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Outlet, useLoaderData, useNavigation } from "react-router";
 import { Toaster } from "react-hot-toast";
 import LeftSidebar from "../components/LeftSidebar";
 import RightSidebar from "../components/RightSidebar";
+import Spinner from "../spinner/Spinner";
 
 const Layout = () => {
   const [loggedInReader, sidebarTopics] = useLoaderData();
-  console.log("layout loader", useLoaderData());
+  const [pending, setPending] = useState(false);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    if (navigation.state === "loading") {
+      setPending(true);
+    } else {
+      setPending(false);
+    }
+  }, [navigation.state]);
+  // console.log("layout loader", useLoaderData());
 
   return (
     <>
@@ -23,6 +34,7 @@ const Layout = () => {
       <div>
         <Toaster position="top-right" reverseOrder={false} />
       </div>
+      <Spinner pendingVal={pending} />
     </>
   );
 };

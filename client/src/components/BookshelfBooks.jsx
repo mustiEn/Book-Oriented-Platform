@@ -5,7 +5,7 @@ import {
   useOutletContext,
   useLocation,
   Link,
-} from "react-router-dom";
+} from "react-router";
 import slugify from "react-slugify";
 import { toast } from "react-hot-toast";
 import { FaStar } from "react-icons/fa6";

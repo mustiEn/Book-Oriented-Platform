@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData } from "react-router";
 import TopicCategoryLinks from "./TopicCategoryLinks";
 import { toast } from "react-hot-toast";
 import Spinner from "../spinner/Spinner";

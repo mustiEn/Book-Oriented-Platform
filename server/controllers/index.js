@@ -2,7 +2,6 @@ import { matchedData, validationResult } from "express-validator";
 import { User } from "../models/User.js";
 import { logger, returnRawQuery } from "../utils/constants.js";
 import bcrypt from "bcrypt";
-import Groq from "groq-sdk";
 
 const signup = async (req, res, next) => {
   //^ gets user data from the request body,
@@ -126,9 +125,6 @@ const bookCollection = async (req, res, next) => {
   //^ bookId is used to get a specific book,
   //^ while query is used to get 20 books based on the query
   try {
-    const groq = new Groq({
-      apiKey: process.env.GROQ_KEY,
-    });
     const result = validationResult(req);
     let data;
 

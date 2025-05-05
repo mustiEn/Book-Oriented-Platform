@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import Button from "react-bootstrap/esm/Button";
 import Dropdown from "react-bootstrap/Dropdown";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData } from "react-router";
 import Collapse from "react-bootstrap/Collapse";
 import BackNavigation from "../components/BackNavigation";
 import { IoShield, IoStarSharp } from "react-icons/io5";
-import { FaUser } from "react-icons/fa6";
+import { FaUser, FaBell } from "react-icons/fa6";
 import { FaEllipsisH } from "react-icons/fa";
 import dayjs from "dayjs";
-import { GoBook } from "react-icons/go";
+import { HiMiniBookOpen } from "react-icons/hi2";
 import Spinner from "../spinner/Spinner";
 import "../css/notifications.css";
 import { toast } from "react-hot-toast";
@@ -73,7 +73,7 @@ const Notifications = () => {
   const returnCommentElement = ({ username, profile_photo, content }) => {
     return (
       <>
-        <Link to={`/comment/${content.id}`}>
+        <Link to={`/posts/comment${content.id}`}>
           <div className="d-flex gap-2 px-4 py-2">
             <FaUser
               className="float-start"
@@ -99,17 +99,18 @@ const Notifications = () => {
     return (
       <>
         <div
+          className="px-4 py-2"
           onClick={() => setOpen(!open)}
           aria-controls="example-collapse-text"
           aria-expanded={open}
         >
-          <div className="d-flex gap-2 px-4 py-2">
+          <div className="d-flex gap-2">
             <IoShield style={{ fontSize: "26" + "px", fill: "#19bdac" }} />
             <div>We removed your post due to violation of our rules</div>
           </div>
           <Collapse in={open}>
             <div id="example-collapse-text" className="fst-italic">
-              {content.text}
+              "{content.text}"
             </div>
           </Collapse>
         </div>
@@ -121,8 +122,23 @@ const Notifications = () => {
       <>
         <Link to="/explore/books">
           <div className="d-flex gap-2 px-4 py-2">
-            <GoBook style={{ fontSize: "26" + "px", fill: "#19bdac" }} />
+            <HiMiniBookOpen
+              style={{ fontSize: "26" + "px", fill: "#8a44ff" }}
+            />
             <div>Here are some recommended books, check them out!</div>
+          </div>
+        </Link>
+      </>
+    );
+  };
+  const returnTopicPostElement = ({ content }) => {
+    const { postId, topic, postType } = content;
+    return (
+      <>
+        <Link to={`/${postType}/${postId}`}>
+          <div className="d-flex gap-2 px-4 py-2">
+            <FaBell style={{ fontSize: "26" + "px", fill: "#135ace" }} />
+            <div>A new post in {topic}, check it out</div>
           </div>
         </Link>
       </>
@@ -137,6 +153,8 @@ const Notifications = () => {
       item = returnPremiumElement(notification.content);
     } else if (notification.type == "comment") {
       item = returnCommentElement(notification);
+    } else if (notification.type == "topic_post") {
+      item = returnTopicPostElement(notification);
     } else {
       item = returnBookRecommendationElement();
     }
@@ -167,38 +185,42 @@ const Notifications = () => {
   return (
     <>
       <BackNavigation innerHtml={"Notifications"} />
-      <ul id="notifications">
-        {notifications.map((notification) => {
-          return (
-            <li
-              key={notification.id}
-              className={
-                hiddenNotifications.includes(notification.id)
-                  ? "d-none"
-                  : "position-relative border border-secondary border-opacity-50 border-start border-end"
-              }
-            >
-              {returnStatementByType(notification)}
-              <Dropdown className="notification-dropdown position-absolute">
-                <Dropdown.Toggle
-                  as="button"
-                  className="border-0 bg-transparent text-white"
-                >
-                  <FaEllipsisH className="ellipsis p-1 rounded-circle" />
-                </Dropdown.Toggle>
-
-                <Dropdown.Menu>
-                  <Dropdown.Item
-                    onClick={() => handleHideNotification(notification.id)}
+      {notifications.length > 0 ? (
+        <ul id="notifications">
+          {notifications.map((notification) => {
+            return (
+              <li
+                key={notification.id}
+                className={
+                  hiddenNotifications.includes(notification.id)
+                    ? "d-none"
+                    : "position-relative border border-secondary border-opacity-50 border-start border-end"
+                }
+              >
+                {returnStatementByType(notification)}
+                <Dropdown className="notification-dropdown position-absolute">
+                  <Dropdown.Toggle
+                    as="button"
+                    className="border-0 bg-transparent text-white"
                   >
-                    Hide this notification
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
-            </li>
-          );
-        })}
-      </ul>
+                    <FaEllipsisH className="ellipsis p-1 rounded-circle" />
+                  </Dropdown.Toggle>
+
+                  <Dropdown.Menu>
+                    <Dropdown.Item
+                      onClick={() => handleHideNotification(notification.id)}
+                    >
+                      Hide this notification
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="fs-5 m-3">You don't have any notifications</div>
+      )}
       <Spinner pendingVal={pending} />
     </>
   );

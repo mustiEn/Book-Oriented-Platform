@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Form from "react-bootstrap/esm/Form";
 import Badge from "react-bootstrap/esm/Badge";
 import Card from "react-bootstrap/Card";
-import { Link, redirect, useNavigate } from "react-router-dom";
+import { Link, redirect, useNavigate } from "react-router";
 import Button from "react-bootstrap/esm/Button";
 
 const Premium = () => {

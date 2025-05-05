@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLoaderData } from "react-router-dom";
+import { Link, useLoaderData } from "react-router";
 import moment from "moment";
 import { FaComment } from "react-icons/fa6";
 
@@ -80,53 +80,11 @@ const ReaderProfileThoughts = () => {
                       {thought.title}
                     </div>
                     <div>{thought.thought}</div>
-                    {/* <div className="d-flex gap-2 mt-3">
-                      <img
-                        src={
-                          thought.thumbnail != null
-                            ? thought.thumbnail
-                            : "https://placehold.co/40x60"
-                        }
-                        width="40"
-                        height="60"
-                        alt=""
-                      />
-                      <div className="book-details">
-                        <div
-                          className="book-title fw-bold"
-                          style={{ fontSize: 14 + "px" }}
-                        >
-                          {thought.truncated_title}
-                        </div>
-                        <div
-                          className="book-details-inner"
-                          style={{
-                            color: "rgb(186, 180, 171)",
-                            fontSize: 13 + "px",
-                          }}
-                        >
-                          <div className="d-flex gap-1">
-                            <div className="published-date">
-                              {thought.published_date}
-                            </div>
-                            <span className="dot-separator">&#183;</span>
-                            <div className="publisher">
-                              {thought.publishers}
-                            </div>
-                            <span className="dot-separator">&#183;</span>
-                            <div className="authors">{thought.authors_}</div>
-                          </div>
-                          <div className="people-read">
-                            {thought.people_read} people read this
-                          </div>
-                        </div>
-                      </div>
-                    </div> */}
                   </div>
                   <div className="thought-footer d-flex">
                     <Link
                       className="comment-link rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
-                      to={`/thought/${thought.id}`}
+                      to={`/posts/thought/${thought.id}`}
                       style={{ width: 55 + "px", height: 30 + "px" }}
                       title="Reply"
                     >

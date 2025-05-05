@@ -1042,11 +1042,15 @@ export const displayReaderProfile = async (req, res, next) => {
                         u.background_photo, 
                         u.createdAt, 
                         u.updatedAt, 
-                        COUNT(p.id) postCount 
+                        COUNT(p.id) postCount,
+                        MAX(s.customer_id) customer_id,
+                        MAX(s.createdAt) 
                       FROM 
                         users u 
-                        JOIN posts p ON p.userId = u.id 
-                        AND post_type != "comment" 
+                        LEFT JOIN posts p ON p.userId = u.id 
+                        AND post_type != "comment"
+                        LEFT JOIN subscriptions s ON s.userId = u.id 
+                        AND s.status = "active" 
                       WHERE 
                         u.username = "${username}"`;
 
@@ -2414,9 +2418,9 @@ export const getTopicPosts = async (req, res, next) => {
       return res.status(400).json({ error: result.array() });
     }
 
-    let { sortBy, topicName, postType } = matchedData(req);
-
-    sortBy = sortBy != "oldest" ? "ASC" : "DESC";
+    let { sortBy, topicName, q } = matchedData(req);
+    logger.log(matchedData(req));
+    sortBy = sortBy == "oldest" ? "ASC" : "DESC";
     const topic = await Topic.findOne({
       attributes: ["id"],
       where: {
@@ -2484,7 +2488,6 @@ export const getTopicPosts = async (req, res, next) => {
                         MAX(t.id) id,
                         MAX(t.title) thought_title,
                         MAX(t.thought) thought,
-                        JSON_ARRAYAGG(ti.image) images,
                         MAX(p.comment_count) comment_count,
                         MAX(bc.title) title,
                         CASE 
@@ -2501,8 +2504,6 @@ export const getTopicPosts = async (req, res, next) => {
                         t.createdAt
                     FROM 
                         thoughts t
-                    JOIN 
-                        thought_images ti ON t.id = ti.thoughtId
                     Left JOIN 
                         book_collections bc ON t.bookId = bc.id
                     JOIN 
@@ -2564,7 +2565,7 @@ export const getTopicPosts = async (req, res, next) => {
                   ORDER BY 
                     q.createdAt ${sortBy};`;
 
-    if (postType == "all") {
+    if (!q) {
       const [reviews, thoughts, quotes] = await Promise.all([
         returnRawQuery(reviewsSql),
         returnRawQuery(thoughtsSql),
@@ -2577,11 +2578,12 @@ export const getTopicPosts = async (req, res, next) => {
           ? new Date(b.createdAt) - new Date(a.createdAt)
           : new Date(a.createdAt) - new Date(b.createdAt);
       });
-    } else if (postType == "review") {
+      logger.log(posts);
+    } else if (q == "review") {
       posts = await returnRawQuery(reviewsSql);
-    } else if (postType == "thought") {
+    } else if (q == "thought") {
       posts = await returnRawQuery(thoughtsSql);
-    } else if (postType == "quote") {
+    } else if (q == "quote") {
       posts = await returnRawQuery(quotesSql);
     }
 
@@ -3538,17 +3540,18 @@ export const getCategoryBooks = async (req, res, next) => {
 
 export const getSidebarTopics = async (req, res, next) => {
   try {
-    const topicsSql = `SELECT 
-                          t.id,
-                          t.topic,
-                          t.image,
-                          t.post_count,t.follower_count
-                        FROM 
-                          topics t 
-                        GROUP BY
-                          t.id
-                        LIMIT 5;
-                      `;
+    const topicsSql = `
+      SELECT 
+        t.id,
+        t.topic,
+        t.image,
+        t.post_count,t.follower_count
+      FROM 
+        topics t 
+      GROUP BY
+        t.id
+      LIMIT 5
+    `;
     const topics = await returnRawQuery(topicsSql);
 
     res.status(200).json(topics);

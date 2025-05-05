@@ -1,5 +1,5 @@
 import React from "react";
-import { useRouteError } from "react-router-dom";
+import { useRouteError } from "react-router";
 
 const Error = () => {
   const error = useRouteError();
@@ -7,8 +7,13 @@ const Error = () => {
 
   return (
     <>
-      <div>Error</div>
-      <div>Oops, {error.message}</div>
+      <div id="error-page" className="text-center mt-5 mx-auto">
+        <h1>Oops!</h1>
+        <p>Sorry, an unexpected error has occurred.</p>
+        <p>
+          <i>{error.statusText || error.message}</i>
+        </p>
+      </div>
     </>
   );
 };

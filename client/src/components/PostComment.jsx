@@ -4,7 +4,7 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import React from "react";
 import { FaBookmark, FaComment, FaHeart } from "react-icons/fa6";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
@@ -55,7 +55,7 @@ const PostComment = ({ data }) => {
         <div className="post-footer d-flex">
           <Link
             className="comment-link rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
-            to={`/comment/${post.id}`}
+            to={`/posts/comment${post.id}`}
             style={{ width: 55 + "px", height: 30 + "px" }}
             title="Reply"
           >

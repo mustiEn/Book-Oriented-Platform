@@ -1,20 +1,22 @@
 import React from "react";
-import { NavLink, Outlet, useLoaderData, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useLoaderData, useNavigate } from "react-router";
 import Button from "react-bootstrap/Button";
-import { FaArrowLeft } from "react-icons/fa6";
 import BackNavigation from "../components/BackNavigation";
 
 const Topic = () => {
   const topic = useLoaderData();
-  const navigate = useNavigate();
-  console.log(useLoaderData());
 
   return (
     <>
-      <BackNavigation innerHtml={""} />
-      <div className="d-flex align-items-center mt-4">
+      <BackNavigation innerHtml={topic.topic} />
+      <div className="d-flex align-items-center my-4 px-3">
         {topic.image.includes(".") ? (
-          <img src={`/Topics/${topic.image}`} width={60} alt="" />
+          <img
+            src={`/Topics/${topic.image}`}
+            className="rounded-2"
+            width={60}
+            alt=""
+          />
         ) : (
           <div
             className="d-flex justify-content-center align-items-center"
@@ -24,14 +26,16 @@ const Topic = () => {
           </div>
         )}
         <div className="d-flex flex-column gap-2 ms-3">
-          <div>{topic.topic}</div>
-          <div>{topic.topicFollowerCount} followers</div>
+          <div className="fw-bold">{topic.topic}</div>
+          <div style={{ fontSize: 12 + "px" }}>
+            {topic.topicFollowerCount} followers
+          </div>
         </div>
-        <Button className="ms-auto" size="sm">
+        <Button className="ms-auto" variant={"outline-light"} size="sm">
           Follow
         </Button>
       </div>
-      <ul className="d-flex gap-2">
+      <ul className="d-flex px-3 gap-2">
         <li>
           <NavLink
             className="reader-profile-link p-2 text-decoration-none d-block rounded-top-3"

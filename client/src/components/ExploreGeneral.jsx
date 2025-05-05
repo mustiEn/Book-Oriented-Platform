@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import TopicCategoryLinks from "./TopicCategoryLinks";
-import { Link, useLoaderData, useNavigation } from "react-router-dom";
+import { Link, useLoaderData, useNavigation } from "react-router";
 import Button from "react-bootstrap/esm/Button";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { v4 as uuid } from "uuid";
@@ -232,153 +232,165 @@ const ExploreGeneral = () => {
         </div>
         <div className="my-4">
           <div className="h6">Book Worms</div>
-          <Swiper
-            modules={[Pagination, Autoplay]}
-            spaceBetween={40}
-            slidesPerView="auto"
-            pagination={{
-              clickable: true,
-              dynamicBullets: true,
-            }}
-            autoplay={{
-              delay: 2000,
-              disableOnInteraction: false,
-              reverseDirection: false,
-              pauseOnMouseEnter: true,
-              stopOnLastSlide: false,
-            }}
-          >
-            {bookWorms.map((bookWorm) => (
-              <SwiperSlide
-                key={bookWorm.id}
-                // className="user-li px-2 py-1 rounded-2"
-                style={{
-                  backgroundColor: "#c6cacc14",
-                  // width: "80%",
-                }}
-              >
-                <a
-                  href={`/${encodeURIComponent(bookWorm.username)}`}
-                  className="d-flex flex-column align-items-center"
+          {bookWorms.length > 0 ? (
+            <Swiper
+              modules={[Pagination, Autoplay]}
+              spaceBetween={40}
+              slidesPerView="auto"
+              pagination={{
+                clickable: true,
+                dynamicBullets: true,
+              }}
+              autoplay={{
+                delay: 2000,
+                disableOnInteraction: false,
+                reverseDirection: false,
+                pauseOnMouseEnter: true,
+                stopOnLastSlide: false,
+              }}
+            >
+              {bookWorms.map((bookWorm) => (
+                <SwiperSlide
+                  key={bookWorm.id}
+                  // className="user-li px-2 py-1 rounded-2"
+                  style={{
+                    backgroundColor: "#c6cacc14",
+                    // width: "80%",
+                  }}
                 >
-                  <img
-                    src={
-                      bookWorm.profile_photo == null
-                        ? "https://placehold.co/100x100"
-                        : `/Pps_and_Bgs/${bookWorm.profile_photo}`
-                    }
-                    className="rounded-circle mt-3"
-                    width={100}
-                    height={100}
-                    alt=""
-                  />
-                  <div className="d-flex flex-column align-items-center my-2">
-                    <div
-                      className="d-flex fw-bold gap-1"
-                      title={bookWorm.firstname + " " + bookWorm.lastname}
-                      style={{ fontSize: 14 + "px" }}
-                    >
-                      {`${bookWorm.firstname} ${bookWorm.lastname}`.length > 13
-                        ? `${bookWorm.firstname} ${bookWorm.lastname}`.slice(
-                            0,
-                            13
-                          ) + "..."
-                        : `${bookWorm.firstname} ${bookWorm.lastname}`}
-                      {bookWorm.customer_id && (
-                        <IoMdStar
-                          style={{ fill: "#45aceb", fontSize: 18 + "px" }}
-                        />
-                      )}
+                  <a
+                    href={`/${encodeURIComponent(bookWorm.username)}`}
+                    className="d-flex flex-column align-items-center"
+                  >
+                    <img
+                      src={
+                        bookWorm.profile_photo == null
+                          ? "https://placehold.co/100x100"
+                          : `/Pps_and_Bgs/${bookWorm.profile_photo}`
+                      }
+                      className="rounded-circle mt-3"
+                      width={100}
+                      height={100}
+                      alt=""
+                    />
+                    <div className="d-flex flex-column align-items-center my-2">
+                      <div
+                        className="d-flex fw-bold gap-1"
+                        title={bookWorm.firstname + " " + bookWorm.lastname}
+                        style={{ fontSize: 14 + "px" }}
+                      >
+                        {`${bookWorm.firstname} ${bookWorm.lastname}`.length >
+                        13
+                          ? `${bookWorm.firstname} ${bookWorm.lastname}`.slice(
+                              0,
+                              13
+                            ) + "..."
+                          : `${bookWorm.firstname} ${bookWorm.lastname}`}
+                        {bookWorm.customer_id && (
+                          <IoMdStar
+                            style={{ fill: "#45aceb", fontSize: 18 + "px" }}
+                          />
+                        )}
+                      </div>
+                      <div
+                        className="text-pale"
+                        style={{ fontSize: 13 + "px" }}
+                      >
+                        @{bookWorm.username}
+                      </div>
                     </div>
                     <div className="text-pale" style={{ fontSize: 13 + "px" }}>
-                      @{bookWorm.username}
+                      {bookWorm.books_read} books read
                     </div>
-                  </div>
-                  <div className="text-pale" style={{ fontSize: 13 + "px" }}>
-                    {bookWorm.books_read} books read
-                  </div>
-                </a>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+                  </a>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          ) : (
+            <div>No data found</div>
+          )}
         </div>
         <div>
           <div className="h6">The Most Liked Books</div>
-          <Swiper
-            modules={[Pagination, Autoplay]}
-            spaceBetween={45}
-            slidesPerView="auto"
-            pagination={{
-              clickable: true,
-              dynamicBullets: true,
-            }}
-            autoplay={{
-              delay: 2000,
-              disableOnInteraction: false,
-              reverseDirection: false,
-              pauseOnMouseEnter: true,
-              stopOnLastSlide: false,
-            }}
-          >
-            {topLikedBooks.map((book) => (
-              <SwiperSlide key={book.bookId}>
-                <a
-                  href={`/book/${encodeURIComponent(book.title)}/${
-                    book.bookId
-                  }`}
-                  className="d-flex flex-column"
-                >
-                  <img
-                    src={
-                      book.thumbnail == null
-                        ? "https://placehold.co/120x180"
-                        : book.thumbnail
-                    }
-                    className="rounded-3"
-                    width={120}
-                    height={180}
-                    alt=""
-                  />
-                  <div className="my-2">
-                    <div
-                      className="fw-bold"
-                      style={{ fontSize: 14 + "px" }}
-                      title={book.title}
-                    >
-                      {book.truncatedTitle}
+          {topLikedBooks.length > 0 ? (
+            <Swiper
+              modules={[Pagination, Autoplay]}
+              spaceBetween={45}
+              slidesPerView="auto"
+              pagination={{
+                clickable: true,
+                dynamicBullets: true,
+              }}
+              autoplay={{
+                delay: 2000,
+                disableOnInteraction: false,
+                reverseDirection: false,
+                pauseOnMouseEnter: true,
+                stopOnLastSlide: false,
+              }}
+            >
+              {topLikedBooks.map((book) => (
+                <SwiperSlide key={book.bookId}>
+                  <a
+                    href={`/book/${encodeURIComponent(book.title)}/${
+                      book.bookId
+                    }`}
+                    className="d-flex flex-column"
+                  >
+                    <img
+                      src={
+                        book.thumbnail == null
+                          ? "https://placehold.co/120x180"
+                          : book.thumbnail
+                      }
+                      className="rounded-3"
+                      width={120}
+                      height={180}
+                      alt=""
+                    />
+                    <div className="my-2">
+                      <div
+                        className="fw-bold"
+                        style={{ fontSize: 14 + "px" }}
+                        title={book.title}
+                      >
+                        {book.truncatedTitle}
+                      </div>
+                      <div
+                        className="d-flex text-pale"
+                        style={{ fontSize: 13 + "px" }}
+                      >
+                        {book.rate != null ? (
+                          <>
+                            <div className="d-flex align-items-center gap-1">
+                              <svg
+                                version="1.1"
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="13"
+                                height="13"
+                                viewBox="0 0 32 32"
+                                fill="rgb(182, 182, 182)"
+                                key={uuid()}
+                              >
+                                <path d="M32 12.408l-11.056-1.607-4.944-10.018-4.944 10.018-11.056 1.607 8 7.798-1.889 11.011 9.889-5.199 9.889 5.199-1.889-11.011 8-7.798z"></path>
+                              </svg>
+                              {book.rate}
+                            </div>
+                            <span className="dot-separator">&#183;</span>
+                          </>
+                        ) : (
+                          ""
+                        )}
+                        <div>{book.liked_count} likes</div>
+                      </div>
                     </div>
-                    <div
-                      className="d-flex text-pale"
-                      style={{ fontSize: 13 + "px" }}
-                    >
-                      {book.rate != null ? (
-                        <>
-                          <div className="d-flex align-items-center gap-1">
-                            <svg
-                              version="1.1"
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="13"
-                              height="13"
-                              viewBox="0 0 32 32"
-                              fill="rgb(182, 182, 182)"
-                              key={uuid()}
-                            >
-                              <path d="M32 12.408l-11.056-1.607-4.944-10.018-4.944 10.018-11.056 1.607 8 7.798-1.889 11.011 9.889-5.199 9.889 5.199-1.889-11.011 8-7.798z"></path>
-                            </svg>
-                            {book.rate}
-                          </div>
-                          <span className="dot-separator">&#183;</span>
-                        </>
-                      ) : (
-                        ""
-                      )}
-                      <div>{book.liked_count} likes</div>
-                    </div>
-                  </div>
-                </a>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+                  </a>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          ) : (
+            <div>No data found</div>
+          )}
         </div>
       </div>
       <Spinner pendingVal={pending} />

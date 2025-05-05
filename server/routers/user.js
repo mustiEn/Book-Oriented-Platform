@@ -190,7 +190,7 @@ router.get(
 );
 
 router.get(
-  "/:username/display-reader-profile",
+  "/profile/:username/display-reader-profile",
   [isUserActive, param("username").notEmpty().isString()],
   userController.displayReaderProfile
 );
@@ -230,12 +230,13 @@ router.get(
   userController.getTopic
 );
 router.get(
-  "/get-topic-posts/:topicName/:postType",
-  isUserActive,
+  "/get-topic-posts/:topicName",
+
   [
+    isUserActive,
     param("topicName").notEmpty().isString(),
-    param("postType").notEmpty().isString(),
-    query("sortBy").optional().notEmpty().escape(),
+    query("sortBy").optional().notEmpty().isString().escape(),
+    query("q").optional().notEmpty().isString().escape(),
   ],
   userController.getTopicPosts
 );

@@ -5,7 +5,7 @@ import utc from "dayjs/plugin/utc";
 import React, { useEffect } from "react";
 import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
@@ -184,7 +184,7 @@ const PostReview = ({ data }) => {
         <div className="review-footer d-flex">
           <Link
             className="comment-link rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
-            to={`/review/${post.id}`}
+            to={`/posts/review/${post.id}`}
             style={{ width: 55 + "px", height: 30 + "px" }}
             title="Reply"
           >

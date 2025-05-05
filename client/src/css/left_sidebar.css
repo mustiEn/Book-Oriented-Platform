@@ -10,10 +10,6 @@
   width: max-content;
 }
 
-.left-sidebar-item {
-  margin-bottom: 10px;
-}
-
 .left-sidebar-item:hover {
   background-color: #1a1d23;
   border-radius: 10px;

@@ -197,7 +197,7 @@ const ReaderBookModalDetails = ({ modalProps }) => {
     if (ref.current.readingStateEffect && modalState.show) {
       const timeout = setTimeout(() => {
         sendReadingState();
-      }, 500);
+      }, 200);
       return () => {
         clearTimeout(timeout);
       };
@@ -211,7 +211,7 @@ const ReaderBookModalDetails = ({ modalProps }) => {
     if (ref.current.privateNoteEffect && modalState.show) {
       const timeout = setTimeout(() => {
         sendPrivateNote();
-      }, 500);
+      }, 200);
       return () => clearTimeout(timeout);
     }
   }, [modalState.privateNote]);

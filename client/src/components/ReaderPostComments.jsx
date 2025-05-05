@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
-import { useLoaderData, Link, useParams } from "react-router-dom";
+import { useLoaderData, Link, useParams } from "react-router";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
@@ -130,7 +130,7 @@ const ReaderPostComments = () => {
                   <div className="comment-footer d-flex">
                     <Link
                       className="comment-link rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
-                      to={`/comment/${comment.id}`}
+                      to={`/posts/comment${comment.id}`}
                       style={{ width: 55 + "px", height: 30 + "px" }}
                       title="Reply"
                     >

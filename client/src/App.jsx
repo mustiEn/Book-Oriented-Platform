@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router";
 
 import Signup from "./views/Signup";
 import Layout from "./layout/Layout";
@@ -14,9 +14,9 @@ import BookDetailsReaders, {
 import BookDetailsStatistics from "./components/BookDetailsStatistics";
 
 import ShareReview from "./views/ShareReview";
-import NotFound from "./views/NotFound";
 import Error from "./views/Error";
 import Login from "./views/Login";
+import NotFound from "./views/NotFound";
 
 import ReaderProfile from "./views/ReaderProfile";
 import ReaderProfileBookshelf from "./components/ReaderProfileBookshelf";
@@ -41,10 +41,6 @@ import ThemedTopic from "./components/ThemedTopic.jsx";
 import Topic from "./views/Topic.jsx";
 import TopicBooks from "./components/TopicBooks.jsx";
 import TopicPosts from "./components/TopicPosts.jsx";
-import TopicPostsReview from "./components/TopicPostsReview.jsx";
-import TopicPostsThought from "./components/TopicPostsThought.jsx";
-import TopicPostsQuote from "./components/TopicPostsQuote.jsx";
-import TopicPostsAll from "./components/TopicPostsAll.jsx";
 import TopicReaders from "./components/TopicReaders.jsx";
 
 import BookCategories from "./views/BookCategories.jsx";
@@ -93,213 +89,195 @@ function App() {
           <Layout />
         </>
       ),
+      errorElement: <Error />,
       loader: Loader.loadInitials,
       children: [
         {
-          path: "/home",
-          element: <Home />,
-          loader: Loader.loadHomePagePosts,
-        },
-        {
-          path: "/search",
-          element: <Search />,
-          loader: Loader.loadSearch,
-        },
-        {
-          path: "/premium",
-          element: <Premium />,
-        },
-        {
-          path: "/notifications",
-          element: <Notifications />,
-          loader: Loader.loadReaderNotifications,
-        },
-        {
-          path: "/share-review",
-          element: <ShareReview />,
-          loader: Loader.loadBookDetailsForPost,
-        },
-        {
-          path: "/share-quote",
-          element: <ShareQuote />,
-          loader: Loader.loadBookDetailsForPost,
-        },
-        {
-          path: "/share-thought",
-          element: <ShareThought />,
-          loader: Loader.loadBookDetailsForPost,
-        },
-        {
-          path: "/create-topic",
-          element: <CreateTopic />,
-          loader: Loader.loadCreateTopic,
-        },
-        {
-          path: "/topic-category/:category",
-          element: <ThemedTopics />,
-          loader: Loader.loadThemedTopics,
-        },
-        {
-          path: "/topic/:topicName",
-          element: <Topic />,
-          // ?bak
-          loader: Loader.loadTopic,
-          children: [
-            {
-              index: true,
-              element: <TopicBooks />,
-              loader: Loader.loadTopicBooks,
-            },
-            {
-              path: "posts",
-              element: <TopicPosts />,
-              children: [
-                {
-                  index: true,
-                  element: <TopicPostsAll />,
-                  loader: Loader.loadTopicPosts,
-                },
-                {
-                  path: "review",
-                  element: <TopicPostsReview />,
-                  loader: Loader.loadTopicPosts,
-                },
-                {
-                  path: "quote",
-                  element: <TopicPostsQuote />,
-                  loader: Loader.loadTopicPosts,
-                },
-                {
-                  path: "thought",
-                  element: <TopicPostsThought />,
-                  loader: Loader.loadTopicPosts,
-                },
-              ],
-            },
-            {
-              path: "readers",
-              element: <TopicReaders />,
-              loader: Loader.loadTopicReaders,
-            },
-          ],
-        },
-        {
-          path: "/explore",
-          element: <Explore />,
-          loader: Loader.loadExplore,
-          children: [
-            {
-              index: true,
-              element: <ExploreGeneral />,
-              loader: Loader.loadExploreGeneral,
-            },
-            {
-              path: "books",
-              element: <ExploreBooks />,
-              loader: Loader.loadExploreBooks,
-            },
-            {
-              path: "topics",
-              element: <ExploreTopics />,
-              loader: Loader.loadExploreTopics,
-            },
-            {
-              path: "readers",
-              element: <ExploreReaders />,
-              loader: Loader.loadExploreReaders,
-            },
-          ],
-        },
-        {
-          path: "/:profile",
-          element: <ReaderProfile />,
-          loader: Loader.loadReaderProfile,
-          children: [
-            {
-              index: true,
-              element: <ReaderProfileReviews />,
-              loader: Loader.loadReaderReviews,
-            },
-            {
-              path: "bookshelf",
-              element: <ReaderProfileBookshelf />,
-              children: [
-                {
-                  index: true,
-                  element: <BookshelfOverview />,
-                  loader: Loader.loadReaderBookshelfOverview,
-                },
-                {
-                  path: "books",
-                  element: <BookshelfBooks />,
-                  loader: Loader.loadReaderBooks,
-                },
-              ],
-            },
-            {
-              path: "comments",
-              element: <ReaderProfileComments />,
-              loader: Loader.loadReaderComments,
-            },
-            {
-              path: "quotes",
-              element: <ReaderProfileQuotes />,
-              loader: Loader.loadReaderQuotes,
-            },
-            {
-              path: "thoughts",
-              element: <ReaderProfileThoughts />,
-              loader: Loader.loadReaderThoughts,
-            },
-          ],
-        },
-        {
-          path: "/:postType/:postId",
-          element: <ReaderPostComments />,
-          loader: Loader.loadReaderPostComments,
-        },
-        {
-          path: "/book-categories",
-          element: <BookCategories />,
-          // loader: Loader.loadBookCategories,
-          children: [
-            {
-              index: true,
-              element: <BookCategoriesList />,
-              loader: Loader.loadBookCategoriesList,
-            },
-            {
-              path: ":categoryId",
-              element: <BookCategory />,
-              loader: Loader.loadBookCategory,
-            },
-          ],
-        },
-        {
-          path: "/book/:bookTitle/:bookId",
-          element: <BookDetails />,
-          loader: Loader.loadBookDetails,
           errorElement: <Error />,
           children: [
             {
-              index: true,
-              element: <BookDetailsAbout />,
-              loader: Loader.loadBookStatistics,
+              path: "/home",
+              element: <Home />,
+              loader: Loader.loadHomePagePosts,
             },
             {
-              path: "reviews",
-              element: <BookDetailsReviews />,
-              loader: Loader.loadReviews,
+              path: "/search",
+              element: <Search />,
+              loader: Loader.loadSearch,
             },
             {
-              path: "statistics",
-              element: <BookDetailsStatistics />,
-              loader: Loader.loadBookStatistics,
+              path: "/premium",
+              element: <Premium />,
             },
             {
-              path: "readers",
-              element: <BookDetailsReaders />,
-              loader: loadReaderProfiles,
+              path: "/notifications",
+              element: <Notifications />,
+              loader: Loader.loadReaderNotifications,
+            },
+            {
+              path: "/share-review",
+              element: <ShareReview />,
+              loader: Loader.loadBookDetailsForPost,
+            },
+            {
+              path: "/share-quote",
+              element: <ShareQuote />,
+              loader: Loader.loadBookDetailsForPost,
+            },
+            {
+              path: "/share-thought",
+              element: <ShareThought />,
+              loader: Loader.loadBookDetailsForPost,
+            },
+            {
+              path: "/create-topic",
+              element: <CreateTopic />,
+              loader: Loader.loadCreateTopic,
+            },
+            {
+              path: "/topic-category/:category",
+              element: <ThemedTopics />,
+              loader: Loader.loadThemedTopics,
+            },
+            {
+              path: "/topic/:topicName",
+              element: <Topic />,
+              loader: Loader.loadTopic,
+              children: [
+                {
+                  index: true,
+                  element: <TopicBooks />,
+                  loader: Loader.loadTopicBooks,
+                },
+                {
+                  path: "posts",
+                  element: <TopicPosts />,
+                  loader: Loader.loadTopicPosts,
+                },
+                {
+                  path: "readers",
+                  element: <TopicReaders />,
+                  loader: Loader.loadTopicReaders,
+                },
+              ],
+            },
+            {
+              path: "/explore",
+              element: <Explore />,
+              loader: Loader.loadExplore,
+              children: [
+                {
+                  index: true,
+                  element: <ExploreGeneral />,
+                  loader: Loader.loadExploreGeneral,
+                },
+                {
+                  path: "books",
+                  element: <ExploreBooks />,
+                  loader: Loader.loadExploreBooks,
+                },
+                {
+                  path: "topics",
+                  element: <ExploreTopics />,
+                  loader: Loader.loadExploreTopics,
+                },
+                {
+                  path: "readers",
+                  element: <ExploreReaders />,
+                  loader: Loader.loadExploreReaders,
+                },
+              ],
+            },
+            {
+              path: "/profile/:profile",
+              element: <ReaderProfile />,
+              loader: Loader.loadReaderProfile,
+              children: [
+                {
+                  index: true,
+                  element: <ReaderProfileReviews />,
+                  loader: Loader.loadReaderReviews,
+                },
+                {
+                  path: "bookshelf",
+                  element: <ReaderProfileBookshelf />,
+                  children: [
+                    {
+                      index: true,
+                      element: <BookshelfOverview />,
+                      loader: Loader.loadReaderBookshelfOverview,
+                    },
+                    {
+                      path: "books",
+                      element: <BookshelfBooks />,
+                      loader: Loader.loadReaderBooks,
+                    },
+                  ],
+                },
+                {
+                  path: "comments",
+                  element: <ReaderProfileComments />,
+                  loader: Loader.loadReaderComments,
+                },
+                {
+                  path: "quotes",
+                  element: <ReaderProfileQuotes />,
+                  loader: Loader.loadReaderQuotes,
+                },
+                {
+                  path: "thoughts",
+                  element: <ReaderProfileThoughts />,
+                  loader: Loader.loadReaderThoughts,
+                },
+              ],
+            },
+            {
+              path: "/posts/:postType/:postId",
+              element: <ReaderPostComments />,
+              loader: Loader.loadReaderPostComments,
+            },
+            {
+              path: "/book-categories",
+              element: <BookCategories />,
+              children: [
+                {
+                  index: true,
+                  element: <BookCategoriesList />,
+                  loader: Loader.loadBookCategoriesList,
+                },
+                {
+                  path: ":categoryId",
+                  element: <BookCategory />,
+                  loader: Loader.loadBookCategory,
+                },
+              ],
+            },
+            {
+              path: "/book/:bookTitle/:bookId",
+              element: <BookDetails />,
+              loader: Loader.loadBookDetails,
+              children: [
+                {
+                  index: true,
+                  element: <BookDetailsAbout />,
+                  loader: Loader.loadBookStatistics,
+                },
+                {
+                  path: "reviews",
+                  element: <BookDetailsReviews />,
+                  loader: Loader.loadReviews,
+                },
+                {
+                  path: "statistics",
+                  element: <BookDetailsStatistics />,
+                  loader: Loader.loadBookStatistics,
+                },
+                {
+                  path: "readers",
+                  element: <BookDetailsReaders />,
+                  loader: loadReaderProfiles,
+                },
+              ],
             },
           ],
         },

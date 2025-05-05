@@ -5,7 +5,7 @@ import timezone from "dayjs/plugin/timezone";
 import React from "react";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
@@ -128,7 +128,7 @@ const PostQuote = ({ data }) => {
         <div className="quote-footer d-flex">
           <Link
             className="comment-link rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
-            to={`/quote/${post.id}`}
+            to={`/posts/quote/${post.id}`}
             style={{ width: 55 + "px", height: 30 + "px" }}
             title="Reply"
           >
