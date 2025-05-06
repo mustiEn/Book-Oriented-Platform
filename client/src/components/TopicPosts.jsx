@@ -11,7 +11,7 @@ import {
   useNavigation,
   useParams,
   useSearchParams,
-} from "react-router";
+} from "react-router-dom";
 import toast from "react-hot-toast";
 import Spinner from "../spinner/Spinner";
 import PostReview from "./PostReview";

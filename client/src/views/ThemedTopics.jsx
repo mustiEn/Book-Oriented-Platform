@@ -6,7 +6,7 @@ import {
   useLocation,
   useNavigate,
   useParams,
-} from "react-router";
+} from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import "../css/themed_topics.css";
 import toast from "react-hot-toast";

@@ -1,6 +1,6 @@
 import React from "react";
 import Button from "react-bootstrap/esm/Button";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import "../css/right_sidebar.css";
 
 const RightSidebar = ({ topics }) => {

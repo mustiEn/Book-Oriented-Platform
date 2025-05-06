@@ -1,6 +1,6 @@
 import React from "react";
 import toast from "react-hot-toast";
-import { Link, useLoaderData, useOutletContext, useParams } from "react-router";
+import { Link, useLoaderData, useOutletContext, useParams } from "react-router-dom";
 import moment from "moment";
 import { FaComment } from "react-icons/fa6";
 import Button from "react-bootstrap/Button";

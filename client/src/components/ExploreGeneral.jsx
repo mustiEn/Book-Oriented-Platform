@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import TopicCategoryLinks from "./TopicCategoryLinks";
-import { Link, useLoaderData, useNavigation } from "react-router";
+import { Link, useLoaderData, useNavigation } from "react-router-dom";
 import Button from "react-bootstrap/esm/Button";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { v4 as uuid } from "uuid";
@@ -75,13 +75,13 @@ const ExploreGeneral = () => {
     }
   }, [isTopicFollowed]);
 
-  useEffect(() => {
-    if (navigation.state === "loading") {
-      setPending(true);
-    } else {
-      setPending(false);
-    }
-  }, [navigation.state]);
+  // useEffect(() => {
+  //   if (navigation.state === "loading") {
+  //     setPending(true);
+  //   } else {
+  //     setPending(false);
+  //   }
+  // }, [navigation.state]);
 
   return (
     <>

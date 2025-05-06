@@ -6,7 +6,7 @@ import {
   useOutletContext,
   useParams,
   Link,
-} from "react-router";
+} from "react-router-dom";
 import PostQuote from "./PostQuote";
 
 const ReaderProfileQuotes = () => {

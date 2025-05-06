@@ -1,6 +1,6 @@
 import React from "react";
 import TopReaders from "./TopReaders";
-import { useLoaderData } from "react-router";
+import { useLoaderData } from "react-router-dom";
 
 const ExploreReaders = () => {
   const { bookWorms, bookWormsPremium, topQuoters, topReviewers } =

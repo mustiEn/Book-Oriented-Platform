@@ -1,5 +1,5 @@
 import React from "react";
-import { NavLink, Outlet, useLoaderData, useNavigate } from "react-router";
+import { NavLink, Outlet, useLoaderData, useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import BackNavigation from "../components/BackNavigation";
 

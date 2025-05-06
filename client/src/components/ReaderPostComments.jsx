@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
-import { useLoaderData, Link, useParams } from "react-router";
+import { useLoaderData, Link, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";

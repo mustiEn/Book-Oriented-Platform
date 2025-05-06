@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useLoaderData } from "react-router";
+import React, { Suspense, useEffect, useState } from "react";
+import { useLoaderData, useLocation } from "react-router-dom";
 import PostReview from "../components/PostReview";
 import PostThought from "../components/PostThought";
 import PostQuote from "../components/PostQuote";
@@ -7,6 +7,7 @@ import Spinner from "../spinner/Spinner";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 const Home = () => {
+  const location = useLocation();
   const posts = useLoaderData();
   const [items, setItems] = useState(posts);
   const [hasMore, setHasMore] = useState(true);

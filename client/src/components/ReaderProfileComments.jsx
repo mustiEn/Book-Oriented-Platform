@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FaComment } from "react-icons/fa6";
-import { Link, useLoaderData, useNavigate, useParams } from "react-router";
+import { Link, useLoaderData, useNavigate, useParams } from "react-router-dom";
 import moment from "moment";
 import "../css/reader_profile_comments.css";
 import InfiniteScroll from "react-infinite-scroll-component";

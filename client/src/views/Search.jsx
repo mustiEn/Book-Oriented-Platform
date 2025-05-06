@@ -1,7 +1,7 @@
 import React from "react";
 import slugify from "react-slugify";
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";

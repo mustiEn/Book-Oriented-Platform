@@ -1,7 +1,7 @@
 /* client/src/views/Completion.jsx */
 import React, { useEffect } from "react";
 import "../css/completion.css"; // Assuming you have a CSS file for styling
-import { Link, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router-dom";
 
 const Completion = () => {
   const [searchParams, setSearchParams] = useSearchParams();

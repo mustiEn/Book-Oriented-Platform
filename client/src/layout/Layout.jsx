@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Outlet, useLoaderData, useNavigation } from "react-router";
+import { Outlet, useLoaderData, useNavigation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import LeftSidebar from "../components/LeftSidebar";
 import RightSidebar from "../components/RightSidebar";
@@ -34,7 +34,7 @@ const Layout = () => {
       <div>
         <Toaster position="top-right" reverseOrder={false} />
       </div>
-      <Spinner pendingVal={pending} />
+      {/* <Spinner pendingVal={pending} /> */}
     </>
   );
 };

@@ -5,7 +5,7 @@ import {
   useNavigate,
   useNavigation,
   useLoaderData,
-} from "react-router";
+} from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import slugify from "react-slugify";
 import {

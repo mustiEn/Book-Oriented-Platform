@@ -13,7 +13,7 @@ import {
   useLoaderData,
   useLocation,
   useOutletContext,
-} from "react-router";
+} from "react-router-dom";
 import ProgressBar from "react-bootstrap/ProgressBar";
 import slugify from "react-slugify";
 import "../css/book_details_statistics.css";

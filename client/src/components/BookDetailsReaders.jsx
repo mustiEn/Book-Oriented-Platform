@@ -6,7 +6,7 @@ import {
   useOutletContext,
   useLocation,
   Link,
-} from "react-router";
+} from "react-router-dom";
 import slugify from "react-slugify";
 
 const BookDetailsReaders = () => {

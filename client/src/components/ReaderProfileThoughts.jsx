@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router-dom";
 import moment from "moment";
 import { FaComment } from "react-icons/fa6";
 

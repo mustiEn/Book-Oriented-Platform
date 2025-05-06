@@ -3,7 +3,7 @@ import htmlParser from "html-react-parser";
 import langConverter from "iso-639-1";
 import countryConverter from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
-import { Link, useOutletContext } from "react-router";
+import { Link, useOutletContext } from "react-router-dom";
 
 countryConverter.registerLocale(enLocale);
 

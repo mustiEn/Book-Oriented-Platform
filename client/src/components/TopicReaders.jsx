@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router-dom";
 
 const TopicReaders = () => {
   const topicReaders = useLoaderData();

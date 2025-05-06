@@ -1,5 +1,5 @@
 import React from "react";
-import { useLoaderData, Outlet } from "react-router";
+import { useLoaderData, Outlet } from "react-router-dom";
 import BookDetailsSection from "../components/BookDetailsSection";
 
 const BookDetails = () => {

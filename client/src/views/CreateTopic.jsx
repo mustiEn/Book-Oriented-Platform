@@ -3,7 +3,7 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import { FaArrowLeft } from "react-icons/fa6";
 import { toast } from "react-hot-toast";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate } from "react-router-dom";
 import "../css/topic_category.css";
 import BackNavigation from "../components/BackNavigation";
 

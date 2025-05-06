@@ -6,7 +6,7 @@ import {
   useLocation,
   useOutletContext,
   useParams,
-} from "react-router";
+} from "react-router-dom";
 import moment from "moment";
 import { toast } from "react-hot-toast";
 import { FaCalendar, FaClockRotateLeft } from "react-icons/fa6";

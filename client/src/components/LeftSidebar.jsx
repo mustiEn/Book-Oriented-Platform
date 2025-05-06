@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../css/left_sidebar.css";
-import { Link, NavLink, useNavigate } from "react-router";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { FaBook, FaEllipsis } from "react-icons/fa6";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";

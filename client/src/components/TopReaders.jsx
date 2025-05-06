@@ -1,5 +1,5 @@
 import React from "react";
-import { useLoaderData } from "react-router";
+import { useLoaderData } from "react-router-dom";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { v4 as uuid } from "uuid";
 import { Navigation, Autoplay, Pagination } from "swiper/modules";
