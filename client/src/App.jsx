@@ -1,93 +1,128 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { lazy, Suspense } from "react";
 
-// import Signup from "./views/Signup";
 import Layout from "./layout/Layout";
-// import Home from "./views/Home";
-// const Home = lazy(() => import("./views/Home"));
-// import Search from "./views/Search";
 
-// import BookDetails from "./views/BookDetails";
-// import BookDetailsAbout from "./components/BookDetailsAbout";
-// import BookDetailsReviews from "./components/BookDetailsReviews";
-// import BookDetailsReaders, {
-//   loadReaderProfiles,
-// } from "./components/BookDetailsReaders";
-// import BookDetailsStatistics from "./components/BookDetailsStatistics";
-
-// import ShareReview from "./views/ShareReview";
-import Error from "./views/Error";
-// import Login from "./views/Login";
-import NotFound from "./views/NotFound";
-
-// import ReaderProfile from "./views/ReaderProfile";
-// import ReaderProfileBookshelf from "./components/ReaderProfileBookshelf";
-// import ReaderProfileReviews from "./components/ReaderProfileReviews";
-// import ReaderPostComments from "./components/ReaderPostComments";
-// import ReaderProfileComments from "./components/ReaderProfileComments";
-// import ReaderProfileQuotes from "./components/ReaderProfileQuotes";
-// import ReaderProfileThoughts from "./components/ReaderProfileThoughts.jsx";
-
-// import BookshelfOverview from "./components/BookshelfOverview";
-// import BookshelfBooks from "./components/BookshelfBooks";
-
-import Explore from "./views/Explore";
-// import ExploreGeneral from "./components/ExploreGeneral";
-// import ExploreBooks from "./components/ExploreBooks";
-// import ExploreTopics from "./components/ExploreTopics";
-// import ExploreReaders from "./components/ExploreReaders";
-
-// import ThemedTopics from "./views/ThemedTopics.jsx";
-// import CreateTopic from "./views/CreateTopic.jsx";
-// import ThemedTopic from "./components/ThemedTopic.jsx";
-// import Topic from "./views/Topic.jsx";
-// import TopicBooks from "./components/TopicBooks.jsx";
-// import TopicPosts from "./components/TopicPosts.jsx";
-// import TopicReaders from "./components/TopicReaders.jsx";
-
-// import BookCategories from "./views/BookCategories.jsx";
-// import BookCategory from "./components/BookCategory.jsx";
-
-// import BookCategoriesList from "./components/BookCategoriesList.jsx";
 // import AdminLayout from "./layout/AdminLayout.jsx";
 // import Admin from "./views/Admin.jsx";
 
 import ScrollToTop from "./components/ScrollToTop.jsx";
-// import { loadInitials } from "./loaders/index.js";
 import * as Loader from "./loaders/index.js";
-// import Completion from "./views/Completion.jsx";
-// import Premium from "./views/Premium.jsx";
-// import ShareQuote from "./views/ShareQuote.jsx";
-// import ShareThought from "./views/ShareThought.jsx";
-// import Notifications from "./views/Notifications.jsx";
-// import { Suspense } from "react";
 
-const Home = lazy(() => import("./views/Home"));
+const Completion = lazy(() => import("./views/Completion.jsx"));
+import Premium from "./views/Premium.jsx";
+import ShareQuote from "./views/ShareQuote.jsx";
+import ShareThought from "./views/ShareThought.jsx";
+import ShareReview from "./views/ShareReview.jsx";
+const Notifications = lazy(() => import("./views/Notifications.jsx"));
+
+import ReaderProfile from "./views/ReaderProfile.jsx";
+const ReaderProfileReviews = lazy(() =>
+  import("./components/ReaderProfileReviews.jsx")
+);
+const ReaderProfileComments = lazy(() =>
+  import("./components/ReaderProfileComments.jsx")
+);
+const ReaderProfileQuotes = lazy(() =>
+  import("./components/ReaderProfileQuotes.jsx")
+);
+const ReaderProfileThoughts = lazy(() =>
+  import("./components/ReaderProfileThoughts.jsx")
+);
+const ReaderProfileBookshelf = lazy(() =>
+  import("./components/ReaderProfileBookshelf.jsx")
+);
+const ReaderPostComments = lazy(() =>
+  import("./components/ReaderPostComments.jsx")
+);
+const BookshelfOverview = lazy(() => import("./components/BookshelfOverview"));
+const BookshelfBooks = lazy(() => import("./components/BookshelfBooks"));
+
+import BookDetails from "./views/BookDetails.jsx";
+const BookDetailsAbout = lazy(() => import("./components/BookDetailsAbout"));
+const BookDetailsReviews = lazy(() =>
+  import("./components/BookDetailsReviews")
+);
+const BookDetailsReaders = lazy(() =>
+  import("./components/BookDetailsReaders")
+);
+const BookDetailsStatistics = lazy(() =>
+  import("./components/BookDetailsStatistics")
+);
+
+import ThemedTopics from "./views/ThemedTopics.jsx";
+import CreateTopic from "./views/CreateTopic.jsx";
+import Topic from "./views/Topic.jsx";
+const TopicBooks = lazy(() => import("./components/TopicBooks.jsx"));
+const TopicPosts = lazy(() => import("./components/TopicPosts.jsx"));
+const TopicReaders = lazy(() => import("./components/TopicReaders.jsx"));
+
+const Signup = lazy(() => import("./views/Signup"));
+const Login = lazy(() => import("./views/Login"));
+import Home from "./views/Home";
+import Error from "./views/Error";
+import NotFound from "./views/NotFound";
+
+import Explore from "./views/Explore";
 const ExploreBooks = lazy(() => import("./components/ExploreBooks"));
 const ExploreTopics = lazy(() => import("./components/ExploreTopics"));
 const ExploreReaders = lazy(() => import("./components/ExploreReaders"));
 const ExploreGeneral = lazy(() => import("./components/ExploreGeneral"));
-const BookCategories = lazy(() => import("./views/BookCategories"));
-const BookCategoriesList = lazy(() =>
-  import("./components/BookCategoriesList")
-);
-const Search = lazy(() => import("./views/Search"));
+
+import BookCategories from "./views/BookCategories.jsx";
+const BookCategory = lazy(() => import("./components/BookCategory"));
+import BookCategoriesList from "./components/BookCategoriesList";
+
+import Search from "./views/Search.jsx";
 import { ClipLoader } from "react-spinners";
 
 function App() {
   const router = createBrowserRouter([
-    // {
-    //   path: "/return",
-    //   element: <Completion />,
-    // },
-    // {
-    //   path: "/signup",
-    //   element: <Signup />,
-    // },
-    // {
-    //   path: "/login",
-    //   element: <Login />,
-    // },
+    {
+      path: "/return",
+      element: (
+        <Suspense
+          fallback={
+            <ClipLoader
+              color="#cf7e05"
+              className="position-fixed top-50 end-50 start-50"
+            ></ClipLoader>
+          }
+        >
+          <Completion />
+        </Suspense>
+      ),
+    },
+    {
+      path: "/signup",
+      element: (
+        <Suspense
+          fallback={
+            <ClipLoader
+              color="#cf7e05"
+              className="position-fixed top-50 end-50 start-50"
+            ></ClipLoader>
+          }
+        >
+          <Signup />
+        </Suspense>
+      ),
+    },
+    {
+      path: "/login",
+      element: (
+        <Suspense
+          fallback={
+            <ClipLoader
+              color="#cf7e05"
+              className="position-fixed top-50 end-50 start-50"
+            ></ClipLoader>
+          }
+        >
+          <Login />
+        </Suspense>
+      ),
+    },
     // {
     //   path: "/admin",
     //   element: <AdminLayout />,
@@ -113,42 +148,20 @@ function App() {
           children: [
             {
               path: "/home",
-              element: (
-                <Suspense
-                  fallback={
-                    <ClipLoader
-                      color="#cf7e05"
-                      className="position-fixed top-50 end-50 start-50"
-                    ></ClipLoader>
-                  }
-                >
-                  <Home />
-                </Suspense>
-              ),
+              element: <Home />,
               loader: Loader.loadHomePagePosts,
-              // lazy: async () => {
-              //   const [Component, loader] = await Promise.all([
-              //     import("./views/Home.jsx"),
-              //     import("./loaders/index.js"),
-              //   ]);
-              //   return {
-              //     Component: Component.default,
-              //     loader: loader.loadHomePagePosts,
-              //   };
-              // },
             },
             {
               path: "/search",
-              // lazy: async () => {
-              //   const [Component, loader] = await Promise.all([
-              //     import("./views/Search.jsx"),
-              //     import("./loaders/index.js"),
-              //   ]);
-              //   return {
-              //     Component: Component.default,
-              //     loader: loader.loadSearch,
-              //   };
-              // },
+              element: <Search />,
+              loader: Loader.loadSearch,
+            },
+            {
+              path: "/premium",
+              element: <Premium />,
+            },
+            {
+              path: "/notifications",
               element: (
                 <Suspense
                   fallback={
@@ -158,94 +171,43 @@ function App() {
                     ></ClipLoader>
                   }
                 >
-                  <Search />
+                  <Notifications />
                 </Suspense>
               ),
-              loader: Loader.loadSearch,
+              loader: Loader.loadReaderNotifications,
             },
-            // {
-            //   path: "/premium",
-            //   element: <Premium />,
-            // },
-            // {
-            //   path: "/notifications",
-            //   element: <Notifications />,
-            //   loader: Loader.loadReaderNotifications,
-            // },
-            // {
-            //   path: "/share-review",
-            //   element: <ShareReview />,
-            //   loader: Loader.loadBookDetailsForPost,
-            // },
-            // {
-            //   path: "/share-quote",
-            //   element: <ShareQuote />,
-            //   loader: Loader.loadBookDetailsForPost,
-            // },
-            // {
-            //   path: "/share-thought",
-            //   element: <ShareThought />,
-            //   loader: Loader.loadBookDetailsForPost,
-            // },
-            // {
-            //   path: "/create-topic",
-            //   element: <CreateTopic />,
-            //   loader: Loader.loadCreateTopic,
-            // },
-            // {
-            //   path: "/topic-category/:category",
-            //   element: <ThemedTopics />,
-            //   loader: Loader.loadThemedTopics,
-            // },
-            // {
-            //   path: "/topic/:topicName",
-            //   element: <Topic />,
-            //   loader: Loader.loadTopic,
-            //   children: [
-            //     {
-            //       index: true,
-            //       element: <TopicBooks />,
-            //       loader: Loader.loadTopicBooks,
-            //     },
-            //     {
-            //       path: "posts",
-            //       element: <TopicPosts />,
-            //       loader: Loader.loadTopicPosts,
-            //     },
-            //     {
-            //       path: "readers",
-            //       element: <TopicReaders />,
-            //       loader: Loader.loadTopicReaders,
-            //     },
-            //   ],
-            // },
             {
-              path: "/explore",
-              // lazy: async () => {
-              //   const [Component, loader] = await Promise.all([
-              //     import("./views/Explore.jsx"),
-              //     import("./loaders/index.js"),
-              //   ]);
-              //   return {
-              //     Component: Component.default,
-              //     loader: loader.loadExplore,
-              //   };
-              // },
-              element: <Explore />,
-              loader: Loader.loadExplore,
+              path: "/share-review",
+              element: <ShareReview />,
+              loader: Loader.loadBookDetailsForPost,
+            },
+            {
+              path: "/share-quote",
+              element: <ShareQuote />,
+              loader: Loader.loadBookDetailsForPost,
+            },
+            {
+              path: "/share-thought",
+              element: <ShareThought />,
+              loader: Loader.loadBookDetailsForPost,
+            },
+            {
+              path: "/create-topic",
+              element: <CreateTopic />,
+              loader: Loader.loadCreateTopic,
+            },
+            {
+              path: "/topic-category/:category",
+              element: <ThemedTopics />,
+              loader: Loader.loadThemedTopics,
+            },
+            {
+              path: "/topic/:topicName",
+              element: <Topic />,
+              loader: Loader.loadTopic,
               children: [
                 {
                   index: true,
-                  // lazy: async () => {
-                  //   const [Component, loader] = await Promise.all([
-                  //     import("./components/ExploreGeneral.jsx"),
-                  //     import("./loaders/index.js"),
-                  //   ]);
-                  //   return {
-                  //     Component: Component.default,
-                  //     loader: loader.loadExploreGeneral,
-                  //   };
-                  // },
                   element: (
                     <Suspense
                       fallback={
@@ -255,13 +217,13 @@ function App() {
                         ></ClipLoader>
                       }
                     >
-                      <ExploreGeneral />
+                      <TopicBooks />
                     </Suspense>
                   ),
-                  loader: Loader.loadExploreGeneral,
+                  loader: Loader.loadTopicBooks,
                 },
                 {
-                  path: "books",
+                  path: "posts",
                   element: (
                     <Suspense
                       fallback={
@@ -271,26 +233,10 @@ function App() {
                         ></ClipLoader>
                       }
                     >
-                      <ExploreBooks />
+                      <TopicPosts />
                     </Suspense>
                   ),
-                  loader: Loader.loadExploreBooks,
-                },
-                {
-                  path: "topics",
-                  element: (
-                    <Suspense
-                      fallback={
-                        <ClipLoader
-                          color="#cf7e05"
-                          className="position-fixed top-50 end-50 start-50"
-                        ></ClipLoader>
-                      }
-                    >
-                      <ExploreTopics />
-                    </Suspense>
-                  ),
-                  loader: Loader.loadExploreTopics,
+                  loader: Loader.loadTopicPosts,
                 },
                 {
                   path: "readers",
@@ -303,78 +249,66 @@ function App() {
                         ></ClipLoader>
                       }
                     >
-                      <ExploreReaders />
+                      <TopicReaders />
                     </Suspense>
                   ),
+                  loader: Loader.loadTopicReaders,
+                },
+              ],
+            },
+            {
+              path: "/explore",
+              element: <Explore />,
+              children: [
+                {
+                  index: true,
+                  element: <ExploreGeneral />,
+                  loader: Loader.loadExploreGeneral,
+                },
+                {
+                  path: "books",
+                  element: <ExploreBooks />,
+                  loader: Loader.loadExploreBooks,
+                },
+                {
+                  path: "topics",
+                  element: <ExploreTopics />,
+                  loader: Loader.loadExploreTopics,
+                },
+                {
+                  path: "readers",
+                  element: <ExploreReaders />,
                   loader: Loader.loadExploreReaders,
                 },
               ],
             },
-            // {
-            //   path: "/profile/:profile",
-            //   element: <ReaderProfile />,
-            //   loader: Loader.loadReaderProfile,
-            //   children: [
-            //     {
-            //       index: true,
-            //       element: <ReaderProfileReviews />,
-            //       loader: Loader.loadReaderReviews,
-            //     },
-            //     {
-            //       path: "bookshelf",
-            //       element: <ReaderProfileBookshelf />,
-            //       children: [
-            //         {
-            //           index: true,
-            //           element: <BookshelfOverview />,
-            //           loader: Loader.loadReaderBookshelfOverview,
-            //         },
-            //         {
-            //           path: "books",
-            //           element: <BookshelfBooks />,
-            //           loader: Loader.loadReaderBooks,
-            //         },
-            //       ],
-            //     },
-            //     {
-            //       path: "comments",
-            //       element: <ReaderProfileComments />,
-            //       loader: Loader.loadReaderComments,
-            //     },
-            //     {
-            //       path: "quotes",
-            //       element: <ReaderProfileQuotes />,
-            //       loader: Loader.loadReaderQuotes,
-            //     },
-            //     {
-            //       path: "thoughts",
-            //       element: <ReaderProfileThoughts />,
-            //       loader: Loader.loadReaderThoughts,
-            //     },
-            //   ],
-            // },
-            // {
-            //   path: "/posts/:postType/:postId",
-            //   element: <ReaderPostComments />,
-            //   loader: Loader.loadReaderPostComments,
-            // },
             {
-              path: "/book-categories",
-              element: (
-                <Suspense
-                  fallback={
-                    <ClipLoader
-                      color="#cf7e05"
-                      className="position-fixed top-50 end-50 start-50"
-                    ></ClipLoader>
-                  }
-                >
-                  <BookCategories />
-                </Suspense>
-              ),
+              path: "/profile/:profile",
+              element: <ReaderProfile />,
+              loader: Loader.loadReaderProfile,
               children: [
                 {
                   index: true,
+                  element: <ReaderProfileReviews />,
+                  loader: Loader.loadReaderReviews,
+                },
+                {
+                  path: "comments",
+                  element: <ReaderProfileComments />,
+                  loader: Loader.loadReaderComments,
+                },
+                {
+                  path: "quotes",
+                  element: <ReaderProfileQuotes />,
+                  loader: Loader.loadReaderQuotes,
+                },
+                {
+                  path: "thoughts",
+                  element: <ReaderProfileThoughts />,
+                  loader: Loader.loadReaderThoughts,
+                },
+                {
+                  path: "bookshelf",
                   element: (
                     <Suspense
                       fallback={
@@ -384,45 +318,94 @@ function App() {
                         ></ClipLoader>
                       }
                     >
-                      <BookCategoriesList />
+                      <ReaderProfileBookshelf />
                     </Suspense>
                   ),
-                  loader: Loader.loadBookCategoriesList,
+                  children: [
+                    {
+                      index: true,
+                      element: <BookshelfOverview />,
+                      loader: Loader.loadReaderBookshelfOverview,
+                    },
+                    {
+                      path: "books",
+                      element: <BookshelfBooks />,
+                      loader: Loader.loadReaderBooks,
+                    },
+                  ],
                 },
-                // {
-                //   path: ":categoryId",
-                //   element: <BookCategory />,
-                //   loader: Loader.loadBookCategory,
-                // },
               ],
             },
-            // {
-            //   path: "/book/:bookTitle/:bookId",
-            //   element: <BookDetails />,
-            //   loader: Loader.loadBookDetails,
-            //   children: [
-            //     {
-            //       index: true,
-            //       element: <BookDetailsAbout />,
-            //       loader: Loader.loadBookStatistics,
-            //     },
-            //     {
-            //       path: "reviews",
-            //       element: <BookDetailsReviews />,
-            //       loader: Loader.loadReviews,
-            //     },
-            //     {
-            //       path: "statistics",
-            //       element: <BookDetailsStatistics />,
-            //       loader: Loader.loadBookStatistics,
-            //     },
-            //     {
-            //       path: "readers",
-            //       element: <BookDetailsReaders />,
-            //       loader: loadReaderProfiles,
-            //     },
-            //   ],
-            // },
+            {
+              path: "/posts/:postType/:postId",
+              element: (
+                <Suspense
+                  fallback={
+                    <ClipLoader
+                      color="#cf7e05"
+                      className="position-fixed top-50 end-50 start-50"
+                    ></ClipLoader>
+                  }
+                >
+                  <ReaderPostComments />
+                </Suspense>
+              ),
+              loader: Loader.loadReaderPostComments,
+            },
+            {
+              path: "/book-categories",
+              element: <BookCategories />,
+              children: [
+                {
+                  index: true,
+                  element: <BookCategoriesList />,
+                  loader: Loader.loadBookCategoriesList,
+                },
+                {
+                  path: ":categoryId",
+                  element: (
+                    <Suspense
+                      fallback={
+                        <ClipLoader
+                          color="#cf7e05"
+                          className="position-fixed top-50 end-50 start-50"
+                        ></ClipLoader>
+                      }
+                    >
+                      <BookCategory />
+                    </Suspense>
+                  ),
+                  loader: Loader.loadBookCategory,
+                },
+              ],
+            },
+            {
+              path: "/book/:bookTitle/:bookId",
+              element: <BookDetails />,
+              loader: Loader.loadBookDetails,
+              children: [
+                {
+                  index: true,
+                  element: <BookDetailsAbout />,
+                  loader: Loader.loadBookStatistics,
+                },
+                {
+                  path: "reviews",
+                  element: <BookDetailsReviews />,
+                  loader: Loader.loadReviews,
+                },
+                {
+                  path: "statistics",
+                  element: <BookDetailsStatistics />,
+                  loader: Loader.loadBookStatistics,
+                },
+                {
+                  path: "readers",
+                  element: <BookDetailsReaders />,
+                  loader: Loader.loadReaderProfiles,
+                },
+              ],
+            },
           ],
         },
       ],

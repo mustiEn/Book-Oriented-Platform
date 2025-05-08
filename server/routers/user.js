@@ -184,7 +184,7 @@ router.get(
   [
     isUserActive,
     param("bookId").notEmpty().isInt(),
-    query("q").notEmpty().isString(),
+    query("q").optional().notEmpty().isString(),
   ],
   userController.getReaderProfiles
 );

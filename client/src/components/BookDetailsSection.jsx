@@ -292,7 +292,7 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
             <NavLink
               to={`/book/${slugify(
                 bookDetails.title.replace(/[...,:;]/g, "")
-              )}/${bookDetails.id}/readers?q=Read`}
+              )}/${bookDetails.id}/readers`}
               className={({ isActive }) =>
                 isActive ? "link-light" : "text-decoration-none link-light"
               }

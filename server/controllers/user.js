@@ -948,10 +948,11 @@ export const getReaderProfiles = async (req, res, next) => {
       );
 
     const { bookId, q: qParam } = matchedData(req);
-    const q = qParam.replaceAll("-", " ");
+    const q = !qParam ? "Read" : qParam.replaceAll("-", " ");
     let readerProfilesSql;
 
-    if (q !== "Liked") {
+    if ((q && q !== "Liked") || !q) {
+      logger.log("1");
       readerProfilesSql = `SELECT 
                               userId, 
                               a.username, 
@@ -983,7 +984,9 @@ export const getReaderProfiles = async (req, res, next) => {
                                   userId
                               ) b ON b.userId = a.id
                             `;
-    } else {
+    } else if (q && q === "Liked") {
+      logger.log("1");
+
       readerProfilesSql = `SELECT 
                               a.userId, 
                               c.username, 
@@ -1933,10 +1936,10 @@ export const getReaderPostComments = async (req, res, next) => {
     } else {
       post = `SELECT 
                 p.id,
-                c.comment, 
+                c.comment,
+                p.comment_count, 
                 c.createdAt, 
                 c.commentToId, 
-                c.rootParentId, 
                 c.userId, 
                 u.username, 
                 u.firstname, 
@@ -2092,50 +2095,44 @@ export const getReaderComments = async (req, res, next) => {
     }
 
     const { index, username } = matchedData(req);
-    const commentsSql = `SELECT 
-                            rootParentId, 
-                                commentToId, 
-                                u.username,
-                                postType,
-                                posterId, 
-                                commentId,  
-                                comment, 
-                                commenterUsername, 
-                                commenterFirstname, 
-                                commenterLastname, 
-                                p.comment_count commentCount,
-                                commenterPhoto, 
-                                commentCreated
-                          FROM 
-                            users u 
-                            INNER JOIN (
-                              SELECT  
-                                p.post_type postType,
-                                p.userId AS posterId, 
-                                c.id AS commentId, 
-                                c.rootParentId, 
-                                c.commentToId, 
-                                c.comment, 
-                                u.username AS commenterUsername, 
-                                u.firstname AS commenterFirstname, 
-                                u.lastname AS commenterLastname, 
-                                u.profile_photo AS commenterPhoto, 
-                                c.createdAt AS commentCreated
-                              FROM 
-                                comments c 
-                                INNER JOIN posts p ON p.id = c.commentToId -- get comments' root parents
-                                INNER JOIN users u ON u.username = "${username}" -- get commenter's profile
-                              WHERE 
-                                c.userId = u.id
-                            ) te -- get only this person's comments
-                            ON u.id = te.posterId 
-                            INNER JOIN posts p ON p.postId = te.commentId 
-                            AND p.post_type = "comment" 
-                            LIMIT 
-                            5 OFFSET ${index} `;
+
+    const commentsSql = `
+      SELECT 
+        t.*, 
+        p.post_type 
+      FROM 
+        posts p 
+        INNER JOIN (
+          SELECT 
+            p.id, 
+            c.comment, 
+            p.comment_count, 
+            c.commentToId, 
+            c.userId, 
+            us.firstname sender_firstname,
+            us.lastname sender_lastname,
+            us.username sender_username,
+            us.profile_photo,
+            c.receiverId,
+            u.username receiver_username, 
+            c.createdAt 
+          FROM 
+            comments c 
+            INNER JOIN users u ON u.id = c.receiverId 
+            INNER JOIN users us ON u.id = c.userId 
+            INNER JOIN posts p ON p.postId = c.id 
+            AND p.post_type = "comment" 
+          WHERE 
+            us.username = "${username}"
+        ) t ON t.commentToId = p.id
+      LIMIT
+        5 
+      OFFSET 
+        ${index}
+    `;
 
     const comments = await returnRawQuery(commentsSql);
-    // logger.log(comments);
+
     res.status(200).json({
       comments,
     });

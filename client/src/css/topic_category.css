@@ -1,3 +1,9 @@
+.topic-category-item {
+  background-color: "black";
+  color: "white";
+  font-size: 13px;
+}
+
 .topic-category-item:hover {
   background-color: white !important;
   color: black !important;

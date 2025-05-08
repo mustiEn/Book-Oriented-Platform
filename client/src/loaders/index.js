@@ -219,16 +219,15 @@ export const loadReaderProfiles = async ({ request, params }) => {
   const q = new URL(request.url).searchParams.get("q");
   const { bookId } = params;
   console.log(q);
-  const response = await fetch(
-    `/api/get-reader-profiles/${bookId}/reader?q=${q}`
+  const res = await fetch(
+    `/api/get-reader-profiles/${bookId}/reader${q ? `?q=` + q : ""}`
   );
 
-  for (const res of response) {
-    if (!res.ok) {
-      throw new Error(res.error);
-    }
+  if (!res.ok) {
+    throw new Error(res.error);
   }
-  const data = await Promise.all([response[0].json(), response[1].json()]);
+
+  const data = await res.json();
 
   return data;
 };

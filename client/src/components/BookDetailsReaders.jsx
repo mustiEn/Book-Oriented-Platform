@@ -7,11 +7,10 @@ import {
   useLocation,
   Link,
 } from "react-router-dom";
-import slugify from "react-slugify";
 
 const BookDetailsReaders = () => {
-  const readerProfiles = useLoaderData();
-  const data = useOutletContext();
+  console.log("Component rendering");
+  const { readerProfiles } = useLoaderData();
   const location = useLocation();
   const options = [
     "Read",
@@ -35,7 +34,9 @@ const BookDetailsReaders = () => {
                     ? "btn btn-danger"
                     : "btn btn-primary"
                 }
-                to={`${location.pathname}?q=${option}`}
+                to={`${location.pathname}${
+                  option != "Read" ? `?q=${option}` : ""
+                }`}
               >
                 {option.replaceAll("-", " ")}
               </NavLink>
@@ -44,13 +45,16 @@ const BookDetailsReaders = () => {
         })}
       </ul>
       <div className="readers">
-        {readerProfiles.readerProfiles.length == 0 ? (
+        {readerProfiles.length == 0 ? (
           <div>No Readers Found</div>
         ) : (
           <ul>
-            {readerProfiles.readerProfiles.map((reader) => {
+            {readerProfiles.map((reader) => {
               return (
-                <li key={reader.id} className="d-flex align-items-center gap-3">
+                <li
+                  key={reader.userId}
+                  className="d-flex align-items-center gap-3"
+                >
                   <img
                     src="https://placehold.co/70x70"
                     alt=""
@@ -82,18 +86,3 @@ const BookDetailsReaders = () => {
 };
 
 export default BookDetailsReaders;
-
-export const loadReaderProfiles = async ({ request, params }) => {
-  const q = new URL(request.url).searchParams.get("q");
-  const { bookId } = params;
-  console.log(q);
-  const response = await fetch(
-    `/api/get-reader-profiles/${bookId}/reader?q=${q}`
-  );
-
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(response);
-  }
-  return data;
-};

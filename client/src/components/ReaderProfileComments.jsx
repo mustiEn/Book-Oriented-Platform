@@ -52,8 +52,7 @@ const ReaderProfileComments = () => {
                     <div className="comment-header ms-2">
                       <div className="d-flex align-items-center gap-2">
                         <div className="user-official-name fw-bold">
-                          {comment.commenterFirstname}{" "}
-                          {comment.commenterLastname}
+                          {comment.sender_firstname} {comment.sender_lastname}
                         </div>
                         <div
                           style={{
@@ -61,13 +60,13 @@ const ReaderProfileComments = () => {
                             color: "rgb(186, 180, 171)",
                           }}
                         >
-                          @{comment.commenterUsername}
+                          @{comment.sender_username}
                         </div>
                         <div
                           className="d-flex"
                           style={{ fontSize: "0.9" + "rem" }}
                         >
-                          - {moment(comment.commentCreated).fromNow(false)}
+                          - {moment(comment.createdAt).fromNow(false)}
                         </div>
                       </div>
                       <div
@@ -76,12 +75,12 @@ const ReaderProfileComments = () => {
                           color: "rgb(186, 180, 171)",
                         }}
                       >
-                        Replying to{" "}
+                        Replying to
                         <Link
-                          to={`/profile/${comment.username}`}
+                          to={`/profile/${comment.receiver_username}`}
                           className="replying-to text-primary"
                         >
-                          @{comment.username}
+                          @{comment.receiver_username}
                         </Link>
                       </div>
                     </div>
@@ -97,7 +96,7 @@ const ReaderProfileComments = () => {
                       >
                         <FaComment style={{ fill: "#b6b6b6" }} />
                         <span style={{ color: "#b6b6b6" }}>
-                          {comment.commentCount}
+                          {comment.comment_count}
                         </span>
                       </Link>
                       <Button
@@ -107,7 +106,7 @@ const ReaderProfileComments = () => {
                         }}
                         onClick={() => {
                           navigate(
-                            `/${comment.postType}/${comment.commentToId}`
+                            `/posts/${comment.post_type}/${comment.commentToId}`
                           );
                         }}
                       >

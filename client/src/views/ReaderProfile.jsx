@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import {
   NavLink,
   Outlet,
@@ -14,11 +14,12 @@ import Button from "react-bootstrap/Button";
 import "../css/reader_profile.css";
 import BackNavigation from "../components/BackNavigation";
 import { IoMdStar } from "react-icons/io";
+import { ClipLoader } from "react-spinners";
 
 const ReaderProfile = () => {
   const [readerProfileData, setReaderProfileData] = useState({});
   const [editBtns, setEditBtns] = useState(false);
-  const reader = useOutletContext().user[0];
+  const { user } = useOutletContext();
   const data = useLoaderData()[0];
   const regex = /^[a-zA-Z0-9-_]+(\.(jpg|jpeg|png||webp))$/i;
   const bgRef = useRef(null);
@@ -284,8 +285,8 @@ const ReaderProfile = () => {
               color: isActive ? "white" : "#b6b6b6",
               backgroundColor: isActive ? "#ffffff14" : "",
             })}
-            to={`/profile/${reader.username}`}
-            // end
+            to={`/profile/${user[0].username}`}
+            end
           >
             Reviews
           </NavLink>
@@ -297,7 +298,7 @@ const ReaderProfile = () => {
               color: isActive ? "white" : "#b6b6b6",
               backgroundColor: isActive ? "#ffffff14" : "",
             })}
-            to={`/${profile}/bookshelf`}
+            to={`/profile/${profile}/bookshelf`}
           >
             Bookshelf
           </NavLink>
@@ -309,7 +310,7 @@ const ReaderProfile = () => {
               color: isActive ? "white" : "#b6b6b6",
               backgroundColor: isActive ? "#ffffff14" : "",
             })}
-            to={`/${profile}/quotes`}
+            to={`/profile/${profile}/quotes`}
           >
             Quotes
           </NavLink>
@@ -321,7 +322,7 @@ const ReaderProfile = () => {
               color: isActive ? "white" : "#b6b6b6",
               backgroundColor: isActive ? "#ffffff14" : "",
             })}
-            to={`/${profile}/thoughts`}
+            to={`/profile/${profile}/thoughts`}
           >
             Thoughts
           </NavLink>
@@ -333,21 +334,30 @@ const ReaderProfile = () => {
               color: isActive ? "white" : "#b6b6b6",
               backgroundColor: isActive ? "#ffffff14" : "",
             })}
-            to={`/${profile}/comments`}
+            to={`/profile/${profile}/comments`}
           >
             Comments
           </NavLink>
         </li>
       </ul>
       <hr className="mb-3 mt-0" />
-      <div className="px-3">
-        <Outlet
-          context={[
-            moment(readerProfileData.createdAt).format("YYYY"),
-            reader.username,
-          ]}
-        />
-      </div>
+      <Suspense
+        fallback={
+          <ClipLoader
+            color="#cf7e05"
+            className="position-fixed top-50 end-50 start-50"
+          ></ClipLoader>
+        }
+      >
+        <div className="px-3">
+          <Outlet
+            context={[
+              moment(readerProfileData.createdAt).format("YYYY"),
+              user[0].username,
+            ]}
+          />
+        </div>
+      </Suspense>
     </>
   );
 };

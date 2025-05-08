@@ -130,7 +130,7 @@ const ReaderPostComments = () => {
                   <div className="comment-footer d-flex">
                     <Link
                       className="comment-link rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
-                      to={`/posts/comment${comment.id}`}
+                      to={`/posts/comment/${comment.id}`}
                       style={{ width: 55 + "px", height: 30 + "px" }}
                       title="Reply"
                     >
