@@ -9,7 +9,7 @@ router.post(
   "/signup",
   [
     body("username").notEmpty().isString(),
-    body("password").notEmpty().isString(),
+    body("password").notEmpty().isAlphanumeric(),
     body("email").notEmpty().isEmail(),
     body("firstname").notEmpty().isString(),
     body("lastname").notEmpty().isString(),

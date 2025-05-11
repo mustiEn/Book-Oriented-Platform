@@ -15,8 +15,6 @@ import Spinner from "../spinner/Spinner";
 const TopReaders = ({ readers }) => {
   const [bookWorms, bookWormsPremium, topQuoters, topReviewers] = readers;
 
-  console.log(readers);
-
   return (
     <>
       <div className="px-2">

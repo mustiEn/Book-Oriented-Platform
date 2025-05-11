@@ -1,13 +1,12 @@
-/* client/src/views/Completion.jsx */
 import React, { useEffect } from "react";
-import "../css/completion.css"; // Assuming you have a CSS file for styling
+import "../css/completion.css";
 import { Link, useSearchParams } from "react-router-dom";
 
 const Completion = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const success = searchParams.get("success");
-  console.log(sessionId);
+
   useEffect(() => {
     (async () => {
       try {
@@ -16,7 +15,6 @@ const Completion = () => {
         if (!res.ok) {
           throw new Error(data.message);
         }
-        console.log(data);
       } catch (error) {
         console.error(error);
       }

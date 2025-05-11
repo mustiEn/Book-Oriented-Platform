@@ -1,17 +1,15 @@
 import React, { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useLoaderData, useNavigation } from "react-router-dom";
-import { FaCaretDown, FaLock } from "react-icons/fa6";
+import { FaCaretDown } from "react-icons/fa6";
 import Button from "react-bootstrap/esm/Button";
-import { toast } from "react-hot-toast";
-// import ReaderBookModalDetails from "./ReaderBookModalDetails";
 const ReaderBookModalDetails = lazy(() => import("./ReaderBookModalDetails"));
 import Spinner from "../spinner/Spinner";
 import { ClipLoader } from "react-spinners";
+import { returnSuspenseLoader } from "../App";
 
 const TopicBooks = () => {
   const { books, bookPageCounts } = useLoaderData();
   const navigation = useNavigation();
-
   const [modalState, setModalState] = useState({
     isClicked: false,
     show: false,
@@ -23,7 +21,6 @@ const TopicBooks = () => {
     finishingDate: null,
     pageNumber: null,
   });
-
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -36,7 +33,7 @@ const TopicBooks = () => {
 
   return (
     <>
-      <Suspense fallback={<ClipLoader color="#cf7e05" />}>
+      <Suspense fallback={returnSuspenseLoader()}>
         <ReaderBookModalDetails
           modalProps={[
             bookPageCounts,

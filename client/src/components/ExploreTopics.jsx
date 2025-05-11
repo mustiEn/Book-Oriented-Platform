@@ -20,8 +20,6 @@ const ExploreTopics = () => {
     isFollowing: false,
   });
   const [pending, setPending] = useState(false);
-  console.log(followingStates);
-
   const sendFollowingState = async () => {
     try {
       const res = await fetch(`/api/set-following-state`, {
@@ -40,7 +38,6 @@ const ExploreTopics = () => {
         throw new Error(data.error);
       }
 
-      console.log(data);
       setFollowingStates((prev) => ({
         ...prev,
         [isTopicFollowed.topicId]: prev[isTopicFollowed.topicId] ? 0 : 1,
@@ -50,7 +47,6 @@ const ExploreTopics = () => {
         `You ${isTopicFollowed.isFollowing ? "followed" : "unfollowed"}`
       );
     } catch (error) {
-      console.log(error);
       setPending(false);
       toast.error(error.message);
     }
@@ -85,7 +81,6 @@ const ExploreTopics = () => {
       if (!res.ok) {
         throw new Error(data.error);
       }
-      console.log(data);
       setTrendingTopics(data);
     }, 10000);
 
@@ -139,7 +134,6 @@ const ExploreTopics = () => {
                           isFollowing: followingStates[topic.id] ? 0 : 1,
                         });
                         setPending(true);
-                        console.log(followingStates[topic.id]);
                       }}
                     >
                       {followingStates[topic.id] ? "Unfollow" : "Follow"}
@@ -194,7 +188,6 @@ const ExploreTopics = () => {
                         isFollowing: followingStates[topic.id] ? 0 : 1,
                       });
                       setPending(true);
-                      console.log(followingStates[topic.id]);
                     }}
                   >
                     {followingStates[topic.id] ? "Unfollow" : "Follow"}

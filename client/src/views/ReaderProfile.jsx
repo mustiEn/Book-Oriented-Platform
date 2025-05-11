@@ -17,7 +17,7 @@ import Button from "react-bootstrap/Button";
 import "../css/reader_profile.css";
 import BackNavigation from "../components/BackNavigation";
 import { IoMdStar } from "react-icons/io";
-import { ClipLoader } from "react-spinners";
+import { returnSuspenseLoader } from "../App";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
@@ -52,7 +52,6 @@ const ReaderProfile = () => {
         method: "POST",
         body: formData,
       });
-      console.log(fileInput);
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error);
@@ -62,10 +61,8 @@ const ReaderProfile = () => {
         ...prev,
         profile_photo: data.image,
       }));
-      console.log(data);
       toast.success("Profile photo updated successfully");
     } catch (error) {
-      console.log(error);
       toast.error(error.message);
     }
   };
@@ -86,19 +83,15 @@ const ReaderProfile = () => {
       }
 
       const data = await response.json();
-      console.log(data);
       setReaderProfileData((prev) => ({
         ...prev,
         background_photo: data.image,
       }));
       toast.success("Background photo updated successfully");
     } catch (error) {
-      console.log(error);
       toast.error(error.message);
     }
   };
-
-  console.log(formatDate(readerProfileData.createdAt, "YYYY"));
 
   useEffect(() => {
     setReaderProfileData(data);
@@ -139,7 +132,6 @@ const ReaderProfile = () => {
               ref={bgRef}
               onChange={(e) => {
                 updateBg(e.target.files[0]);
-                console.log("bg", e.target.files[0]);
               }}
             />
             <button
@@ -195,7 +187,6 @@ const ReaderProfile = () => {
                 ref={ppRef}
                 onChange={(e) => {
                   updatePp(e.target.files[0]);
-                  console.log("pp", e.target.files[0]);
                 }}
               />
               <button
@@ -344,14 +335,7 @@ const ReaderProfile = () => {
         </li>
       </ul>
       <hr className="mb-3 mt-0" />
-      <Suspense
-        fallback={
-          <ClipLoader
-            color="#cf7e05"
-            className="position-fixed top-50 end-50 start-50"
-          ></ClipLoader>
-        }
-      >
+      <Suspense fallback={returnSuspenseLoader()}>
         <div className="px-3">
           <Outlet
             readerJoinedYear={formatDate(readerProfileData.createdAt, "YYYY")}

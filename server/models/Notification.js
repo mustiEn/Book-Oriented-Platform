@@ -28,5 +28,5 @@ export const Notification = sequelize.define(
       defaultValue: false,
     },
   },
-  { timestamps: true, indexes: [{ fields: ["type"] }] }
+  { timestamps: true }
 );

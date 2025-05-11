@@ -105,8 +105,6 @@ const ShareQuote = () => {
       label: item.truncatedTitle,
       value: item.id,
     }));
-    console.log(data);
-
     return data;
   };
 
@@ -136,7 +134,6 @@ const ShareQuote = () => {
                 bookId: newValue ? newValue.id : null,
               }));
               setSelectedBook(newValue ?? null);
-              console.log(newValue);
             }}
           />
           {validated && !selectedBook && (

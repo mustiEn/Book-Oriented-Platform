@@ -24,7 +24,7 @@ import { Topic } from "../../models/Topic";
 import { Review } from "../../models/Review";
 import { PrivateNote } from "../../models/PrivateNote";
 import { User } from "../../models/User";
-import { logger, returnRawQuery } from "../../utils/constants";
+import { logger, returnFromRaw } from "../../utils/constants";
 import { BookReadingState } from "../../models/BookReadingState";
 import fs from "fs";
 import { Post } from "../../models/Post";
@@ -34,7 +34,6 @@ import { Comment } from "../../models/Comment";
 import { Category } from "../../models/Category";
 import { TopicCategory } from "../../models/TopicCategory";
 import { RatedBook } from "../../models/RatedBook";
-import { ThoughtImage } from "../../models/ThoughtImage";
 import { BookCollection } from "../../models/BookCollection";
 import { RestrictedPost } from "../../models/RestrictedPost";
 import { RecommendedBook } from "../../models/RecommendedBook";
@@ -61,7 +60,6 @@ vi.mock("../../models/LikedBook");
 vi.mock("../../models/TopicCategory");
 vi.mock("../../models/Transaction");
 vi.mock("../../models/Category");
-vi.mock("../../models/ThoughtImage");
 vi.mock("../../models/BookCollection");
 vi.mock("../../models/RestrictedPost");
 vi.mock("../../models/RecommendedBook");
@@ -477,7 +475,7 @@ describe("test getReaderPostComments", () => {
     expect(User.findByPk).toHaveBeenCalled();
     expect(Post.findOne).toHaveBeenCalled();
     expect(Review.findOne).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalledWith(expect.any(Error));
   });
@@ -506,7 +504,7 @@ describe("test getReaderPostComments", () => {
     expect(User.findByPk).toHaveBeenCalled();
     expect(Post.findOne).toHaveBeenCalled();
     expect(Review.findOne).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalledWith(expect.any(Error));
   });
@@ -535,7 +533,7 @@ describe("test getReaderPostComments", () => {
     expect(User.findByPk).toHaveBeenCalled();
     expect(Post.findOne).toHaveBeenCalled();
     expect(Quote.findOne).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalledWith(expect.any(Error));
   });
@@ -564,7 +562,7 @@ describe("test getReaderPostComments", () => {
     expect(User.findByPk).toHaveBeenCalled();
     expect(Post.findOne).toHaveBeenCalled();
     expect(Thought.findOne).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalledWith(expect.any(Error));
   });
@@ -593,7 +591,7 @@ describe("test getReaderPostComments", () => {
     expect(User.findByPk).toHaveBeenCalled();
     expect(Post.findOne).toHaveBeenCalled();
     expect(Comment.findOne).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalledWith(expect.any(Error));
   });
@@ -645,7 +643,7 @@ describe("test sendCommend", () => {
     expect(sequelize.transaction).toHaveBeenCalled();
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalled();
     expect(Comment.create).toHaveBeenCalled();
     expect(transaction.commit).toHaveBeenCalled();
     expect(transaction.rollback).not.toHaveBeenCalled();
@@ -666,7 +664,7 @@ describe("test sendCommend", () => {
     expect(sequelize.transaction).toHaveBeenCalled();
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalled();
     expect(Comment.findOne).toHaveBeenCalled();
     expect(transaction.commit).toHaveBeenCalled();
     expect(transaction.rollback).not.toHaveBeenCalled();
@@ -736,7 +734,7 @@ describe("test createTopic", () => {
     expect(matchedData).toHaveBeenCalled();
     expect(TopicCategory.findAll).toHaveBeenCalled();
     expect(Topic.create).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalled();
     expect(transaction.commit).toHaveBeenCalled();
     expect(transaction.rollback).not.toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
@@ -812,7 +810,7 @@ describe("test getTopicBooks", () => {
     const { req, res, next } = mockRequest;
 
     Topic.findOne.mockResolvedValue({ id: 2 });
-    returnRawQuery.mockResolvedValue([{ id: 1, BookCollectionId: 2 }]);
+    returnFromRaw.mockResolvedValue([{ id: 1, BookCollectionId: 2 }]);
     BookCollection.findAll.mockResolvedValue([{ id: 1, page_count: 100 }]);
 
     await getTopicBooks(req, res, next);
@@ -820,7 +818,7 @@ describe("test getTopicBooks", () => {
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
     expect(Topic.findOne).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalled();
     expect(BookCollection.findAll).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
@@ -857,7 +855,7 @@ describe("test getTopicPosts", () => {
     const { req, res, next } = mockRequest;
 
     Topic.findOne.mockResolvedValue({ id: 2 });
-    returnRawQuery
+    returnFromRaw
       .mockResolvedValueOnce([{ id: 1, review: "r" }])
       .mockResolvedValueOnce([{ id: 1, thought: "t" }])
       .mockResolvedValueOnce([{ id: 1, quote: "q" }]);
@@ -867,7 +865,7 @@ describe("test getTopicPosts", () => {
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
     expect(Topic.findOne).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
     expect(next).not.toHaveBeenCalled();
   });
@@ -879,7 +877,7 @@ describe("test getTopicPosts", () => {
     const { req, res, next } = mockRequest;
 
     Topic.findOne.mockResolvedValue({ id: 2 });
-    returnRawQuery
+    returnFromRaw
       .mockResolvedValueOnce([{ id: 1, review: "r" }])
       .mockResolvedValueOnce([{ id: 1, thought: "t" }])
       .mockResolvedValueOnce([{ id: 1, quote: "q" }]);
@@ -900,7 +898,7 @@ describe("test getTopicPosts", () => {
     const { req, res, next } = mockRequest;
 
     Topic.findOne.mockResolvedValue({ id: 2 });
-    returnRawQuery
+    returnFromRaw
       .mockResolvedValueOnce([{ id: 1, review: "r" }])
       .mockResolvedValueOnce([{ id: 1, thought: "t" }])
       .mockResolvedValueOnce([{ id: 1, quote: "q" }]);
@@ -921,7 +919,7 @@ describe("test getTopicPosts", () => {
     const { req, res, next } = mockRequest;
 
     Topic.findOne.mockResolvedValue({ id: 2 });
-    returnRawQuery
+    returnFromRaw
       .mockResolvedValueOnce([{ id: 1, review: "r" }])
       .mockResolvedValueOnce([{ id: 1, thought: "t" }])
       .mockResolvedValueOnce([{ id: 1, quote: "q" }]);
@@ -967,8 +965,8 @@ describe("test setFollowingState", () => {
 
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalledWith(
+    expect(returnFromRaw).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalledWith(
       expect.anything(String),
       expect.stringMatching("INSERT")
     );
@@ -984,8 +982,8 @@ describe("test setFollowingState", () => {
 
     expect(validationResult).toHaveBeenCalled();
     expect(matchedData).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalled();
-    expect(returnRawQuery).toHaveBeenCalledWith(
+    expect(returnFromRaw).toHaveBeenCalled();
+    expect(returnFromRaw).toHaveBeenCalledWith(
       expect.anything(String),
       expect.stringMatching("DELETE")
     );

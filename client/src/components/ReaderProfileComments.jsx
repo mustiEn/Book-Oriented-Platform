@@ -43,8 +43,8 @@ const ReaderProfileComments = () => {
 
     comments.length > 0 ? setHasMore(true) : setHasMore(false);
     setIndex(index + 5);
-    console.log(response);
   };
+
   return (
     <>
       <ul>

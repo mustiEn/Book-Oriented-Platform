@@ -36,13 +36,11 @@ const BookCategoriesList = () => {
       if (!res.ok) {
         throw new Error(data.error);
       }
-      console.log(data);
       setPending(false);
       setHasMore(data.length > 0 ? true : false);
       setDataIndex(50);
       setBookCategories(data);
     } catch (error) {
-      console.log(error);
       setPending(false);
       toast.error(error.message);
     }
@@ -50,8 +48,6 @@ const BookCategoriesList = () => {
 
   const getMoreCategories = async () => {
     try {
-      console.log(dataIndex);
-
       const res = await fetch(
         `/api/get-book-categories?q=${searchQ}&index=${dataIndex}`
       );
@@ -65,7 +61,6 @@ const BookCategoriesList = () => {
       setHasMore(data.length > 0 ? true : false);
       setBookCategories((prev) => [...prev, ...data]);
     } catch (error) {
-      console.log(error);
       setPending(false);
       toast.error(error.message);
     }

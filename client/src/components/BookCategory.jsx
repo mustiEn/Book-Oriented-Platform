@@ -12,7 +12,6 @@ const BookCategory = () => {
     mostReadLastMonth,
     mostReadLastYear,
   } = useLoaderData();
-  console.log(useLoaderData());
 
   return (
     <>

@@ -27,11 +27,8 @@ const Premium = () => {
       if (!res.ok) {
         throw new Error(data.message);
       }
-      console.log(data);
       window.location.replace(data.url);
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   };
 
   return (

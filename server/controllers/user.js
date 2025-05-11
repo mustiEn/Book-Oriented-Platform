@@ -23,7 +23,7 @@ import { Subscription } from "../models/Subscription.js";
 import { Notification } from "../models/Notification.js";
 
 import { trendingTopics, trendingTopicsSql } from "../crons/index.js";
-import { logger, returnRawQuery } from "../utils/constants.js";
+import { logger, returnFromRaw } from "../utils/constants.js";
 
 import Stripe from "stripe";
 import dotenv from "dotenv";
@@ -41,11 +41,7 @@ export const shareReview = async (req, res, next) => {
     let topic;
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { topic: topicName, title, review, bookId } = matchedData(req);
@@ -87,11 +83,7 @@ export const shareQuote = async (req, res, next) => {
     let topic;
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const {
@@ -140,11 +132,7 @@ export const shareThought = async (req, res, next) => {
     let topic;
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { topic: topicName, title, thought, bookId } = matchedData(req);
@@ -238,6 +226,7 @@ export const getHomePagePosts = async (req, res, next) => {
         LEFT JOIN topics top ON r.topicId = top.id 
         INNER JOIN posts p ON p.postId = r.id 
         AND p.post_type = "review"
+        AND is_restricted = 0
       GROUP BY 
         r.id
       ORDER BY 
@@ -276,6 +265,7 @@ export const getHomePagePosts = async (req, res, next) => {
         JOIN users u ON t.userId = u.id 
         JOIN posts p ON p.postId = t.id 
         AND p.post_type = "thought"   
+        AND is_restricted = 0
       ORDER BY 
         t.createdAt DESC
       LIMIT ${limit} OFFSET ${offset};  
@@ -317,6 +307,7 @@ export const getHomePagePosts = async (req, res, next) => {
         INNER JOIN users u ON u.id = q.userId
         INNER JOIN posts p ON p.postId = q.id
         AND p.post_type = "quote"
+        AND is_restricted = 0
       GROUP BY 
         q.id
       ORDER BY 
@@ -325,9 +316,9 @@ export const getHomePagePosts = async (req, res, next) => {
     `;
 
     const [reviews, thoughts, quotes] = await Promise.all([
-      returnRawQuery(reviewsSql),
-      returnRawQuery(thoughtsSql),
-      returnRawQuery(quotesSql),
+      returnFromRaw(reviewsSql),
+      returnFromRaw(thoughtsSql),
+      returnFromRaw(quotesSql),
     ]);
 
     posts = [...reviews, ...thoughts, ...quotes];
@@ -346,18 +337,14 @@ export const getBookReviews = async (req, res, next) => {
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { bookId } = matchedData(req);
     const totalRatingSql = `SELECT ROUND(AVG(rating),1) AS rate,
                           COUNT(*) AS total_people_rated
                         FROM rated_books
-                        WHERE bookId=52
+                        WHERE bookId= ?
                         `;
     const reviewsSql = `SELECT 
                           MAX(rb.id) AS id, 
@@ -381,18 +368,18 @@ export const getBookReviews = async (req, res, next) => {
                           LEFT JOIN book_reading_states c ON c.userId = r.userId 
                           INNER JOIN users u ON u.id = r.userId 
                         WHERE 
-                          r.bookId = 52 
+                          r.bookId = ? 
                         GROUP BY 
                           r.userId
                         `;
     const ratingsSql = `SELECT rating,COUNT(rating) AS total
                         FROM rated_books
-                        WHERE bookId=${bookId}
+                        WHERE bookId= ?
                         GROUP BY rating`;
     const [reviews, ratings, totalRating] = await Promise.all([
-      returnRawQuery(reviewsSql),
-      returnRawQuery(ratingsSql),
-      returnRawQuery(totalRatingSql),
+      returnFromRaw(reviewsSql, [bookId]),
+      returnFromRaw(ratingsSql, [bookId]),
+      returnFromRaw(totalRatingSql, [bookId]),
     ]);
     let ratingsMap = new Map();
 
@@ -414,11 +401,7 @@ export const setPrivateNote = async (req, res, next) => {
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { privateNote, bookId } = matchedData(req);
@@ -637,9 +620,12 @@ export const getReaderBookInteractionData = async (req, res, next) => {
                                 ON a.userId = c.userId
                                 LEFT JOIN rated_books d
                                 ON a.userId = d.userId
-                                WHERE a.bookId=${bookId}
-                                AND a.userId=${userId}`;
-    const readerBookRecord = await returnRawQuery(readerBookRecordSql);
+                                WHERE a.bookId= ?
+                                AND a.userId= ?`;
+    const readerBookRecord = await returnFromRaw(readerBookRecordSql, [
+      bookId,
+      userId,
+    ]);
 
     readerBookRecord.rating =
       readerBookRecord.rating == null ? 0 : readerBookRecord.rating;
@@ -714,12 +700,7 @@ export const getBookStatistics = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { bookId } = matchedData(req);
     const readerAgeRange = {};
@@ -737,50 +718,50 @@ export const getBookStatistics = async (req, res, next) => {
                         INNER JOIN book_reading_states b
                         ON a.id=b.userId
                         WHERE reading_state IS NOT NULL
-                        and b.bookId=${bookId};`;
+                        and b.bookId= ?;`;
     const bookStatisticsSql = `SELECT *, ROUND((male*100)/(male+female),1) AS male_percentage,
                             ROUND((female*100)/(male+female),1) AS female_percentage
                             FROM (SELECT COUNT(reading_state) AS read_
                             FROM book_reading_states
                             WHERE reading_state="Read"
-                            AND bookId=${bookId}) a
+                            AND bookId= ?) a
                             CROSS JOIN
                             (SELECT COUNT(reading_state) AS currently_reading
                             FROM book_reading_states
                             WHERE reading_state="Currently reading"
-                            AND bookId=${bookId})  b
+                            AND bookId= ?)  b
                             CROSS JOIN
                             (SELECT COUNT(reading_state) AS want_to_read
                             FROM book_reading_states
                             WHERE reading_state="Want to read"
-                            AND bookId=${bookId})  c
+                            AND bookId= ?)  c
                             CROSS JOIN
                             (SELECT COUNT(reading_state) AS did_not_finish
                             FROM book_reading_states
                             WHERE reading_state="Did not finish"
-                            AND bookId=${bookId})  d
+                            AND bookId= ?)  d
                             CROSS JOIN
                             (SELECT COUNT(*) AS reviews
                             FROM reviews
-                            WHERE bookId=${bookId}) e
+                            WHERE bookId= ?) e
                             CROSS JOIN
                             (SELECT ROUND(AVG(rating),1) AS rate
                             FROM rated_books
-                            WHERE bookId=${bookId}) f
+                            WHERE bookId= ?) f
                             CROSS JOIN
                             (SELECT COUNT(*) AS people_rated
                             FROM rated_books
-                            WHERE bookId=${bookId}
+                            WHERE bookId= ?
                             AND rating IS NOT NULL) g
                             CROSS JOIN
                             (SELECT COUNT(*) AS likes
                             FROM liked_books
-                            WHERE bookId=${bookId}
+                            WHERE bookId= ?
                             AND is_liked=1) h
                             CROSS JOIN
                             (SELECT COUNT(*) AS views
                             FROM liked_books
-                            WHERE bookId=${bookId}) i
+                            WHERE bookId= ?) i
                             CROSS JOIN
                             (SELECT 
                             COUNT(CASE WHEN gender = 'Male' THEN 1 END) AS male,
@@ -791,11 +772,21 @@ export const getBookStatistics = async (req, res, next) => {
                             book_reading_states b
                             ON b.userId=u.id
                             WHERE b.reading_state IS NOT NULL
-                            AND bookId=${bookId}) t) j`;
+                            AND bookId= ?) t) j`;
 
     const [readers, bookStatistics] = await Promise.all([
-      returnRawQuery(readersSql),
-      returnRawQuery(bookStatisticsSql),
+      returnFromRaw(readersSql, [bookId]),
+      returnFromRaw(bookStatisticsSql, [
+        bookId,
+        bookId,
+        bookId,
+        bookId,
+        bookId,
+        bookId,
+        bookId,
+        bookId,
+        bookId,
+      ]),
     ]);
 
     for (const x of ageRangeArr) {
@@ -825,16 +816,16 @@ export const getReaderNotifications = async (req, res, next) => {
                                     SET 
                                       is_read = 1
                                     WHERE 
-                                      receiverId = ${userId}`;
+                                      receiverId = ?`;
 
-    await returnRawQuery(unReadNotificationsSql, QueryTypes.UPDATE);
+    await returnFromRaw(unReadNotificationsSql, [userId], QueryTypes.UPDATE);
 
     const notificationsSql = `SELECT 
                                 * 
                               FROM 
                                 notifications n 
                               WHERE 
-                                receiverId = ${userId}
+                                receiverId = ?
                               AND 
                                 TYPE != "comment"
                               AND
@@ -850,15 +841,15 @@ export const getReaderNotifications = async (req, res, next) => {
                                           JSON_EXTRACT(n.content, '$.senderId')
                                         ) 
                                       WHERE 
-                                        receiverId = ${userId} 
+                                        receiverId = ? 
                                       AND 
                                         TYPE = "comment"
                                       AND
                                         is_hidden = 0`;
 
     const [notifications, commentNotifications] = await Promise.all([
-      returnRawQuery(notificationsSql),
-      returnRawQuery(commentNotificationsSql),
+      returnFromRaw(notificationsSql, [userId]),
+      returnFromRaw(commentNotificationsSql, [userId]),
     ]);
 
     const notificationsMerged = [
@@ -882,9 +873,9 @@ export const markNotificationsAsRead = async (req, res, next) => {
                                       SET 
                                         is_read = 1
                                       WHERE 
-                                        receiverId = ${userId}`;
+                                        receiverId = ?`;
 
-    await returnRawQuery(unReadNotificationsSql, QueryTypes.UPDATE);
+    await returnFromRaw(unReadNotificationsSql, [userId], QueryTypes.UPDATE);
     res.status(200).json({ message: "Success" });
   } catch (error) {
     next(error);
@@ -896,12 +887,7 @@ export const hideNotifications = async (req, res, next) => {
     const userId = req.session.passport.user;
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { id } = matchedData(req);
     const updateNotificationsSql = `UPDATE 
@@ -909,11 +895,15 @@ export const hideNotifications = async (req, res, next) => {
                                     SET 
                                       is_hidden = 1
                                     WHERE 
-                                      receiverId = ${userId}
+                                      receiverId = ?
                                     AND 
-                                      id = ${id}`;
+                                      id = ?`;
 
-    await returnRawQuery(updateNotificationsSql, QueryTypes.UPDATE);
+    await returnFromRaw(
+      updateNotificationsSql,
+      [userId, id],
+      QueryTypes.UPDATE
+    );
 
     res.status(200).json({ message: "The notification has been hidden" });
   } catch (error) {
@@ -929,16 +919,12 @@ export const getReaderProfiles = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { bookId, q: qParam } = matchedData(req);
     const q = !qParam ? "Read" : qParam.replaceAll("-", " ");
     let readerProfilesSql;
+    let replacements = [];
 
     if ((q && q !== "Liked") || !q) {
       readerProfilesSql = `SELECT 
@@ -965,13 +951,14 @@ export const getReaderProfiles = async (req, res, next) => {
                                     FROM 
                                       book_reading_states 
                                     WHERE 
-                                      reading_state = "${q}" 
-                                      AND bookId = ${bookId}
+                                      reading_state = ? 
+                                      AND bookId = ?
                                   ) 
                                 GROUP BY 
                                   userId
                               ) b ON b.userId = a.id
                             `;
+      replacements = [q, bookId];
     } else if (q && q === "Liked") {
       readerProfilesSql = `SELECT 
                               a.userId, 
@@ -990,16 +977,17 @@ export const getReaderProfiles = async (req, res, next) => {
                                   liked_books 
                                 WHERE 
                                   is_liked = 1 
-                                  AND bookId = ${bookId}
+                                  AND bookId = ?
                               ) a 
                               LEFT JOIN book_reading_states b ON b.userId = a.userId 
                               INNER JOIN users c ON c.id = a.userId 
                             GROUP BY 
                               a.userId
                             `;
+      replacements = [bookId];
     }
 
-    const readerProfiles = await returnRawQuery(readerProfilesSql);
+    const readerProfiles = await returnFromRaw(readerProfilesSql, replacements);
     res.status(200).json({
       readerProfiles,
     });
@@ -1012,12 +1000,7 @@ export const displayReaderProfile = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { username } = matchedData(req);
     const readerSql = `
@@ -1025,7 +1008,6 @@ export const displayReaderProfile = async (req, res, next) => {
         u.username, 
         u.firstname, 
         u.lastname,
-        u.readership, 
         u.DOB, 
         u.gender, 
         u.profile_photo, 
@@ -1042,11 +1024,12 @@ export const displayReaderProfile = async (req, res, next) => {
         users u 
         LEFT JOIN posts p ON p.userId = u.id 
         AND post_type != "comment"
+        AND is_restricted = 0
         LEFT JOIN subscriptions s ON s.userId = u.id 
         AND s.status = "active" 
       WHERE 
-        u.username = "${username}"`;
-    const reader = await returnRawQuery(readerSql);
+        u.username = ?`;
+    const reader = await returnFromRaw(readerSql, [username]);
 
     if (!reader) {
       throw new Error(`User not found`);
@@ -1075,13 +1058,9 @@ export const filterReaderBooks = async (req, res, next) => {
     };
     let tableParam;
     let whereParam;
+    let readerBookWhereStmt;
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { q, sort, category, author, year, username } = matchedData(req);
 
@@ -1099,19 +1078,18 @@ export const filterReaderBooks = async (req, res, next) => {
       whereParam = `reading_state = "${q}"`;
     }
 
-    let readerBookWhereStmt = `WHERE ${whereParam} AND a.userId=${
+    readerBookWhereStmt = `WHERE ${whereParam} AND a.userId=${
       user.toJSON().id
     }`;
-    const readerBookOrderByStmt =
-      sort != undefined
-        ? `ORDER BY f.${querySort[sort][0]} ${querySort[sort][1]}`
-        : "";
+    const readerBookOrderByStmt = sort
+      ? `ORDER BY f.${querySort[sort][0]} ${querySort[sort][1]}`
+      : "";
 
-    if (category != undefined) {
+    if (category) {
       readerBookWhereStmt += ` AND h.category= "${category}"`;
-    } else if (author != undefined) {
+    } else if (author) {
       readerBookWhereStmt += ` AND d.author= "${author}"`;
-    } else if (year != undefined && year != "All times") {
+    } else if (year && year != "All times") {
       readerBookWhereStmt += ` AND YEAR(a.createdAt)= "${year}"`;
     }
 
@@ -1197,17 +1175,17 @@ export const filterReaderBooks = async (req, res, next) => {
                               LEFT JOIN rated_books rb2 ON rb2.bookId = a.bookId 
                             WHERE 
                               ${whereParam} 
-                              AND a.userId = ${userId} 
+                              AND a.userId = ${user.toJSON().id} 
                             GROUP BY 
                               a.bookId
                                           `;
     const readerBooksMerged = [];
     const [readerBooks, booksPerAuthor, booksPerCategory, bookRatings] =
       await Promise.all([
-        returnRawQuery(readerBooksSql),
-        returnRawQuery(booksPerAuthorSql),
-        returnRawQuery(booksPerCategorySql),
-        returnRawQuery(bookRatingsSql),
+        returnFromRaw(readerBooksSql),
+        returnFromRaw(booksPerAuthorSql),
+        returnFromRaw(booksPerCategorySql),
+        returnFromRaw(bookRatingsSql),
       ]);
 
     if (readerBooks.length != 0) {
@@ -1237,12 +1215,7 @@ export const getReaderReviews = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { username } = matchedData(req);
     const user = await User.findOne({
@@ -1301,15 +1274,16 @@ export const getReaderReviews = async (req, res, next) => {
         LEFT JOIN topics top ON r.topicId = top.id 
         INNER JOIN posts p ON p.postId = r.id 
         AND p.post_type = "review"
+        AND is_restricted = 0
       WHERE 
-        r.userId = ${user.toJSON().id} 
+        r.userId = ? 
       GROUP BY 
         p.id
       ORDER BY
         r.createdAt DESC
     `;
 
-    const readerReviews = await returnRawQuery(reviewsSql);
+    const readerReviews = await returnFromRaw(reviewsSql, [user.toJSON().id]);
     res.status(200).json({
       readerReviews,
     });
@@ -1322,12 +1296,7 @@ export const getReaderQuotes = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
     const { username } = matchedData(req);
     const user = await User.findOne({
       attributes: ["id"],
@@ -1377,14 +1346,15 @@ export const getReaderQuotes = async (req, res, next) => {
         INNER JOIN users u ON u.id = q.userId
         INNER JOIN posts p ON p.postId = q.id
         AND p.post_type = "quote"
-      WHERE q.userId = ${user.toJSON().id}
+        AND is_restricted = 0
+      WHERE q.userId = ?
       GROUP BY 
         q.id
       ORDER BY 
         q.createdAt DESC
     `;
 
-    const readerQuotes = await returnRawQuery(quotesSql);
+    const readerQuotes = await returnFromRaw(quotesSql, [user.toJSON().id]);
 
     res.status(200).json({
       readerQuotes,
@@ -1398,12 +1368,7 @@ export const getReaderThoughts = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
     const { username } = matchedData(req);
 
     const user = await User.findOne({
@@ -1448,13 +1413,14 @@ export const getReaderThoughts = async (req, res, next) => {
         LEFT JOIN topics top ON t.topicId = top.id 
         JOIN users u ON t.userId = u.id 
         JOIN posts p ON p.postId = t.id 
-        AND p.post_type = "thought"   
+        AND p.post_type = "thought"
+        AND is_restricted = 0   
       WHERE 
-        t.userId = ${user.toJSON().id}
+        t.userId = ?
       ORDER BY 
         t.createdAt DESC 
     `;
-    const thoughts = await returnRawQuery(thoughtsSql);
+    const thoughts = await returnFromRaw(thoughtsSql, [user.toJSON().id]);
 
     res.status(200).json({ thoughts });
   } catch (err) {
@@ -1467,12 +1433,7 @@ export const updateReaderBookDates = async (req, res, next) => {
     const userId = req.session.passport.user;
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { bookId, startingDate, finishingDate } = matchedData(req);
 
@@ -1499,12 +1460,7 @@ export const updateReaderPageNumber = async (req, res, next) => {
     const userId = req.session.passport.user;
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { bookId, pageNumber } = matchedData(req);
 
@@ -1591,11 +1547,7 @@ export const getReaderBookshelfOverview = async (req, res, next) => {
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { username } = matchedData(req);
@@ -1627,7 +1579,7 @@ export const getReaderBookshelfOverview = async (req, res, next) => {
                                   book_reading_states 
                                 WHERE 
                                   reading_state = "Read" 
-                                  AND userId = ${user.toJSON().id} 
+                                  AND userId = ? 
                                   AND YEAR(finishing_date)= YEAR(
                                     CURDATE()
                                   ) 
@@ -1645,7 +1597,7 @@ export const getReaderBookshelfOverview = async (req, res, next) => {
                                       INNER JOIN AUTHORS c ON c.id = b.authorId 
                                     WHERE 
                                       reading_state = "Read" 
-                                      AND userId = ${user.toJSON().id} 
+                                      AND userId = ? 
                                     GROUP BY 
                                       c.id
                                   `;
@@ -1660,15 +1612,15 @@ export const getReaderBookshelfOverview = async (req, res, next) => {
                                         INNER JOIN categories c ON c.id = b.categoryId 
                                       WHERE 
                                         reading_state = "Read" 
-                                        AND userId = ${user.toJSON().id} 
+                                        AND userId = ? 
                                       GROUP BY 
                                         c.id
                                       `;
     let [yearlyReadBooksData, readBooksPerAuthor, readBooksPerCategory] =
       await Promise.all([
-        returnRawQuery(yearlyReadBooksSql),
-        returnRawQuery(readBooksPerAuthorSql),
-        returnRawQuery(readBooksPerCategorySql),
+        returnFromRaw(yearlyReadBooksSql, [user.toJSON().id]),
+        returnFromRaw(readBooksPerAuthorSql, [user.toJSON().id]),
+        returnFromRaw(readBooksPerCategorySql, [user.toJSON().id]),
       ]);
 
     yearlyReadBooksData = new Map(
@@ -1706,7 +1658,7 @@ export const getLoggedInReader = async (req, res, next) => {
                         LEFT JOIN subscriptions s ON s.userId = u.id 
                         AND s.status = "active"
                       WHERE 
-                        u.id = ${userId} 
+                        u.id = ? 
                       GROUP BY 
                         u.id`;
     const unReadNotificationsSql = `SELECT COUNT(*) unread
@@ -1715,10 +1667,10 @@ export const getLoggedInReader = async (req, res, next) => {
                                     WHERE 
                                       is_read = 0
                                     AND 
-                                      receiverId = ${userId}`;
+                                      receiverId = ?`;
     const [user, unReadNotifications] = await Promise.all([
-      returnRawQuery(userSql),
-      returnRawQuery(unReadNotificationsSql),
+      returnFromRaw(userSql, [userId]),
+      returnFromRaw(unReadNotificationsSql, [userId]),
     ]);
 
     if (!user) {
@@ -1740,11 +1692,7 @@ export const getReaderPostComments = async (req, res, next) => {
     let comments, post;
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { postType, postId } = matchedData(req);
@@ -1776,10 +1724,11 @@ export const getReaderPostComments = async (req, res, next) => {
                           FROM 
                             comments c 
                             INNER JOIN posts p ON c.id = p.postId 
-                            AND p.post_type = "comment" 
+                            AND p.post_type = "comment"
+                            AND is_restricted = 0 
                             INNER JOIN users u ON u.id = c.userId 
                           WHERE 
-                            c.commentToId = ${postId}
+                            c.commentToId = ?
                           `;
 
     if (postType == "review") {
@@ -1830,8 +1779,9 @@ export const getReaderPostComments = async (req, res, next) => {
                 JOIN book_Collections bc ON r.bookId = bc.id 
                 LEFT JOIN topics t ON r.topicId = t.id 
                 JOIN posts p ON p.postId = r.id 
-                AND p.id = ${postId} 
+                AND p.id = ? 
                 AND p.post_type = "review"
+                AND is_restricted = 0
               `;
     } else if (postType == "quote") {
       post = `SELECT 
@@ -1882,24 +1832,16 @@ export const getReaderPostComments = async (req, res, next) => {
                 JOIN Book_Collections AS bc ON q.bookId = bc.id 
                 LEFT JOIN Topics AS top ON q.topicId = top.id 
                 JOIN posts p ON p.postId = q.id 
-                AND p.id = ${postId} 
+                AND p.id = ? 
                 AND p.post_type = "quote"
+                AND is_restricted = 0
               `;
     } else if (postType == "thought") {
       post = `SELECT 
                 p.id, 
                 t.title, 
                 t.thought, 
-                t.createdAt, 
-                (
-                  SELECT 
-                    GROUP_CONCAT(thi.image SEPARATOR ', ') 
-                  FROM 
-                    thoughts t 
-                    JOIN thought_images thi ON t.id = thi.thoughtId 
-                  WHERE 
-                    t.id = t.id
-                ) AS post_images, 
+                t.createdAt,
                 u.username AS username, 
                 u.firstname AS firstname, 
                 u.lastname AS lastname, 
@@ -1910,11 +1852,11 @@ export const getReaderPostComments = async (req, res, next) => {
               FROM 
                 Thoughts AS t 
                 JOIN Users AS u ON t.userId = u.id 
-                LEFT JOIN Thought_Images AS ThoughtImage ON t.id = ThoughtImage.thoughtId 
                 LEFT JOIN Topics AS top ON t.topicId = top.id 
                 JOIN posts p ON p.postId = t.id 
-                AND p.id =  ${postId} 
+                AND p.id =  ? 
                 AND p.post_type = "thought"
+                AND is_restricted = 0
               `;
     } else {
       post = `SELECT 
@@ -1932,13 +1874,14 @@ export const getReaderPostComments = async (req, res, next) => {
                 Comments AS c 
                 JOIN Users AS u ON c.userId = u.id
                 JOIN posts p ON p.postId = c.id 
-                AND p.id = ${postId} 
+                AND p.id = ? 
                 AND p.post_type = "comment"
+                AND is_restricted = 0
               `;
     }
 
-    [post] = await returnRawQuery(post);
-    comments = await returnRawQuery(commentsSql);
+    [post] = await returnFromRaw(post, [postId]);
+    comments = await returnFromRaw(commentsSql, [postId]);
     res.status(200).json({
       post,
       comments,
@@ -1969,11 +1912,7 @@ export const sendComment = async (req, res, next) => {
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { comment, commentToId, postType } = matchedData(req);
@@ -1991,9 +1930,10 @@ export const sendComment = async (req, res, next) => {
                             comments c 
                             INNER JOIN posts p ON c.id = p.postId 
                             AND p.post_type = "comment" 
+                            AND is_restricted = 0
                             INNER JOIN users u ON u.id = c.userId 
                           WHERE 
-                            c.commentToId = ${commentToId}
+                            c.commentToId = ?
                           `;
 
     const post = await Post.findOne({
@@ -2051,7 +1991,7 @@ export const sendComment = async (req, res, next) => {
     );
     await t.commit();
 
-    const comments = await returnRawQuery(commentsSql);
+    const comments = await returnFromRaw(commentsSql, [commentToId]);
 
     res.status(200).json({
       comments,
@@ -2070,11 +2010,7 @@ export const getReaderComments = async (req, res, next) => {
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { index, username } = matchedData(req);
@@ -2109,8 +2045,9 @@ export const getReaderComments = async (req, res, next) => {
             INNER JOIN users us ON us.id = c.userId 
             INNER JOIN posts p ON p.postId = c.id 
             AND p.post_type = "comment" 
+            AND is_restricted = 0
           WHERE 
-            us.username = "${username}" 
+            us.username = ? 
             AND us.id = c.userId
         ) AS t ON t.commentToId = p.id 
         INNER JOIN users u ON t.receiverId = u.id
@@ -2120,7 +2057,7 @@ export const getReaderComments = async (req, res, next) => {
               ${index}
     `;
 
-    const comments = await returnRawQuery(commentsSql);
+    const comments = await returnFromRaw(commentsSql, [username]);
 
     res.status(200).json({
       comments,
@@ -2135,12 +2072,7 @@ export const getThemedTopics = async (req, res, next) => {
     const result = validationResult(req);
     const userId = req.session.passport.user;
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { category } = matchedData(req);
     const topicCategory = await TopicCategory.findOne({
@@ -2162,9 +2094,11 @@ export const getThemedTopics = async (req, res, next) => {
                               AND uta.UserId = ${userId}
                               INNER JOIN topics t ON t.id = tca.TopicId 
                             WHERE 
-                              topicCategoryId = ${topicCategory.id};
+                              topicCategoryId = ?;
                             `;
-    const themedTopics = await returnRawQuery(themedTopicsSql);
+    const themedTopics = await returnFromRaw(themedTopicsSql, [
+      topicCategory.id,
+    ]);
 
     res.status(200).json(themedTopics);
   } catch (error) {
@@ -2182,12 +2116,7 @@ export const createTopic = async (req, res, next) => {
     const image = colorList[Math.floor(Math.random() * colorList.length)];
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { topic, category } = matchedData(req);
     const topicCategory = await TopicCategory.findAll({
@@ -2238,11 +2167,7 @@ export const getTopic = async (req, res, next) => {
     const userId = req.session.passport.user;
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { topicName } = matchedData(req);
@@ -2267,11 +2192,11 @@ export const getTopic = async (req, res, next) => {
         END AS isFollowing
       FROM topics t
       LEFT JOIN user_topic_association uta 
-        ON uta.UserId = ${userId} AND uta.TopicId = t.id
-      WHERE t.topic = "${topicName}";
+        ON uta.UserId = ? AND uta.TopicId = t.id
+      WHERE t.topic = ?;
     `;
 
-    topic = await returnRawQuery(topicSql);
+    topic = await returnFromRaw(topicSql, [userId, topicName]);
     res.status(200).json(topic);
   } catch (error) {
     next(error);
@@ -2284,12 +2209,7 @@ export const getTopicBooks = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
     const { topicName } = matchedData(req);
     const topic = await Topic.findOne({
       where: {
@@ -2316,9 +2236,9 @@ export const getTopicBooks = async (req, res, next) => {
                               ON 
                                 tba.BookCollectionId = bc.id
                               WHERE 
-                                tba.TopicId = ${topic.id}
+                                tba.TopicId = ?
                                 `;
-    const topicBooks = await returnRawQuery(topicBooksSql);
+    const topicBooks = await returnFromRaw(topicBooksSql, [topic.id]);
 
     const topicBookIds = topicBooks.map((item) => item.BookCollectionId);
     const books = await BookCollection.findAll({
@@ -2464,7 +2384,8 @@ export const getTopicPosts = async (req, res, next) => {
         LEFT JOIN topics top ON r.topicId = top.id 
         INNER JOIN posts p ON p.postId = r.id 
         AND p.post_type = "review"
-        WHERE r.topicId = ${topic.id}
+        AND is_restricted = 0
+        WHERE r.topicId = ?
       GROUP BY 
         r.id
       ORDER BY 
@@ -2503,8 +2424,9 @@ export const getTopicPosts = async (req, res, next) => {
         JOIN users u ON t.userId = u.id 
         JOIN posts p ON p.postId = t.id 
         AND p.post_type = "thought"
+        AND is_restricted = 0
         WHERE 
-          top.id = ${topic.id}   
+          top.id = ?   
       ORDER BY 
         t.createdAt ${sortBy}
       LIMIT ${limit} OFFSET ${offset};  
@@ -2546,7 +2468,8 @@ export const getTopicPosts = async (req, res, next) => {
         INNER JOIN users u ON u.id = q.userId
         INNER JOIN posts p ON p.postId = q.id
         AND p.post_type = "quote"
-        WHERE q.topicId = ${topic.id}
+        AND is_restricted = 0
+        WHERE q.topicId = ?
       GROUP BY 
         q.id
       ORDER BY 
@@ -2556,9 +2479,9 @@ export const getTopicPosts = async (req, res, next) => {
 
     if (!q) {
       const [reviews, thoughts, quotes] = await Promise.all([
-        returnRawQuery(reviewsSql),
-        returnRawQuery(thoughtsSql),
-        returnRawQuery(quotesSql),
+        returnFromRaw(reviewsSql, [topic.id]),
+        returnFromRaw(thoughtsSql, [topic.id]),
+        returnFromRaw(quotesSql, [topic.id]),
       ]);
 
       posts = [...reviews, ...thoughts, ...quotes];
@@ -2568,11 +2491,11 @@ export const getTopicPosts = async (req, res, next) => {
           : new Date(a.createdAt) - new Date(b.createdAt);
       });
     } else if (q == "review") {
-      posts = await returnRawQuery(reviewsSql);
+      posts = await returnFromRaw(reviewsSql);
     } else if (q == "thought") {
-      posts = await returnRawQuery(thoughtsSql);
+      posts = await returnFromRaw(thoughtsSql);
     } else if (q == "quote") {
-      posts = await returnRawQuery(quotesSql);
+      posts = await returnFromRaw(quotesSql);
     }
 
     jsonDict["posts"] = posts;
@@ -2635,12 +2558,7 @@ export const getTopicReaders = async (req, res, next) => {
   try {
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
 
     const { topicName } = matchedData(req);
     const topic = await Topic.findOne({
@@ -2670,7 +2588,7 @@ export const getTopicReaders = async (req, res, next) => {
                                   GROUP BY
                                     u.id
                                 `;
-    const topicReaders = await returnRawQuery(topicReadersSql);
+    const topicReaders = await returnFromRaw(topicReadersSql);
 
     res.status(200).json(topicReaders);
   } catch (error) {
@@ -2795,10 +2713,10 @@ export const getExploreGenerals = async (req, res, next) => {
     `;
     const [topics, bookWorms, topLikedBooks, whatShallIread] =
       await Promise.all([
-        returnRawQuery(topicsSql),
-        returnRawQuery(bookWormsSql),
-        returnRawQuery(topLikedBooksSql),
-        returnRawQuery(whatShallIreadSql),
+        returnFromRaw(topicsSql),
+        returnFromRaw(bookWormsSql),
+        returnFromRaw(topLikedBooksSql),
+        returnFromRaw(whatShallIreadSql),
       ]);
 
     res.status(200).json({ topics, bookWorms, topLikedBooks, whatShallIread });
@@ -2894,10 +2812,10 @@ export const getExploreReaders = async (req, res, next) => {
         20`;
     const [bookWorms, bookWormsPremium, topQuoters, topReviewers] =
       await Promise.all([
-        returnRawQuery(bookWormsSql),
-        returnRawQuery(bookWormsPremiumSql),
-        returnRawQuery(topQuotersSql),
-        returnRawQuery(topReviewersSql),
+        returnFromRaw(bookWormsSql),
+        returnFromRaw(bookWormsPremiumSql),
+        returnFromRaw(topQuotersSql),
+        returnFromRaw(topReviewersSql),
       ]);
 
     res
@@ -2926,7 +2844,7 @@ export const getExplorePopularTopics = async (req, res, next) => {
                                 t.follower_count DESC
                               LIMIT 10;
                     `;
-    const popularTopics = await returnRawQuery(popularTopicsSql);
+    const popularTopics = await returnFromRaw(popularTopicsSql);
 
     res.status(200).json({ trendingTopics, popularTopics });
   } catch (error) {
@@ -2941,7 +2859,7 @@ export const getAllTopics = async (req, res, next) => {
                           topic label
                         FROM 
                           topics`;
-    const topics = await returnRawQuery(topicsSql);
+    const topics = await returnFromRaw(topicsSql);
 
     res.status(200).json(topics);
   } catch (error) {
@@ -3148,12 +3066,12 @@ export const getExploreBooks = async (req, res, next) => {
       mostReadLastMonth,
       mostReadLastYear,
     ] = await Promise.all([
-      returnRawQuery(whatShallIreadSql),
-      returnRawQuery(mostReadSql),
-      returnRawQuery(mostLikedSql),
-      returnRawQuery(highestRatedSql),
-      returnRawQuery(mostReadLastMonthSql),
-      returnRawQuery(mostReadLastYearSql),
+      returnFromRaw(whatShallIreadSql),
+      returnFromRaw(mostReadSql),
+      returnFromRaw(mostLikedSql),
+      returnFromRaw(highestRatedSql),
+      returnFromRaw(mostReadLastMonthSql),
+      returnFromRaw(mostReadLastYearSql),
     ]);
 
     res.status(200).json({
@@ -3171,7 +3089,7 @@ export const getExploreBooks = async (req, res, next) => {
 
 export const getTrendingTopics = async (req, res, next) => {
   try {
-    const updated = await returnRawQuery(trendingTopicsSql);
+    const updated = await returnFromRaw(trendingTopicsSql);
     res.status(200).json(updated);
   } catch (error) {
     next(error);
@@ -3193,12 +3111,7 @@ export const setFollowingState = async (req, res, next) => {
     const userId = req.session.passport.user;
     const result = validationResult(req);
 
-    if (!result.isEmpty())
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+    if (!result.isEmpty()) throw new Error(result.array()[0].msg);
     const { topicId, isFollowing } = matchedData(req);
 
     const sqlUpdate = `INSERT INTO user_topic_association 
@@ -3210,9 +3123,9 @@ export const setFollowingState = async (req, res, next) => {
     `;
 
     if (isFollowing) {
-      await returnRawQuery(sqlUpdate, QueryTypes.INSERT);
+      await returnFromRaw(sqlUpdate, QueryTypes.INSERT);
     } else {
-      await returnRawQuery(sqlDelete, QueryTypes.DELETE);
+      await returnFromRaw(sqlDelete, QueryTypes.DELETE);
     }
 
     res.status(200).json({ message: "Success" });
@@ -3226,11 +3139,7 @@ export const getBookCategories = async (req, res, next) => {
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { q, index } = matchedData(req);
@@ -3257,7 +3166,7 @@ export const getBookCategories = async (req, res, next) => {
                                   50 
                                 ${offset}  
                                   `;
-    const bookCategories = await returnRawQuery(bookCategoriesSql);
+    const bookCategories = await returnFromRaw(bookCategoriesSql);
 
     res.status(200).json(bookCategories);
   } catch (error) {
@@ -3506,11 +3415,11 @@ export const getCategoryBooks = async (req, res, next) => {
       mostReadLastMonth,
       mostReadLastYear,
     ] = await Promise.all([
-      returnRawQuery(mostReadSql),
-      returnRawQuery(mostLikedSql),
-      returnRawQuery(highestRatedSql),
-      returnRawQuery(mostReadLastMonthSql),
-      returnRawQuery(mostReadLastYearSql),
+      returnFromRaw(mostReadSql),
+      returnFromRaw(mostLikedSql),
+      returnFromRaw(highestRatedSql),
+      returnFromRaw(mostReadLastMonthSql),
+      returnFromRaw(mostReadLastYearSql),
     ]);
 
     res.status(200).json({
@@ -3540,7 +3449,7 @@ export const getSidebarTopics = async (req, res, next) => {
         t.id
       LIMIT 5
     `;
-    const topics = await returnRawQuery(topicsSql);
+    const topics = await returnFromRaw(topicsSql);
 
     res.status(200).json(topics);
   } catch (error) {
@@ -3554,11 +3463,7 @@ export const createCheckoutSession = async (req, res, next) => {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { premiumType } = matchedData(req);

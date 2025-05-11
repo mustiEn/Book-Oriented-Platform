@@ -46,6 +46,6 @@ export const BookCollection = sequelize.define(
     },
   },
   {
-    indexes: [{ fields: ["book_key"], unique: true }],
+    indexes: [{ fields: ["title"], unique: false, type: "FULLTEXT" }],
   }
 );

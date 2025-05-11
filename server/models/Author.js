@@ -7,8 +7,10 @@ export const Author = sequelize.define(
     author: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: true,
     },
   },
-  { timestamps: false, indexes: [{ unique: true, fields: ["author"] }] }
+  {
+    timestamps: false,
+    indexes: [{ unique: true, name: "author_idx", fields: ["author"] }],
+  }
 );

@@ -6,8 +6,6 @@ import PostThought from "./PostThought";
 const ReaderProfileThoughts = () => {
   const { thoughts } = useLoaderData();
 
-  console.log(thoughts);
-
   return (
     <>
       <ul id="thoughts" className="d-flex flex-column gap-3">

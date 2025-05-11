@@ -67,8 +67,6 @@ const ShareReview = () => {
       return;
     }
 
-    console.log(review);
-
     try {
       const res = await fetch(`/api/share-review`, {
         method: "POST",
@@ -110,8 +108,6 @@ const ShareReview = () => {
       label: item.truncatedTitle,
       value: item.id,
     }));
-    console.log(data);
-
     return data;
   };
 
@@ -142,7 +138,6 @@ const ShareReview = () => {
                 bookId: newValue ? newValue.id : null,
               });
               setSelectedBook(newValue ?? null);
-              console.log(newValue);
             }}
           />
           {validated && !selectedBook && (

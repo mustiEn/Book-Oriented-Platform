@@ -10,9 +10,10 @@ const logger = tracerLogger.colorConsole({
   dateformat: "HH:MM:ss",
 });
 
-const returnRawQuery = (query, queryType) => {
+const returnFromRaw = (query, params = [], queryType = QueryTypes.SELECT) => {
   return sequelize.query(query, {
-    type: queryType || QueryTypes.SELECT,
+    replacements: params,
+    type: queryType,
   });
 };
 
@@ -20,4 +21,4 @@ const initializeReviewer = async () => {
   return new Sentiment();
 };
 
-export { logger, returnRawQuery, initializeReviewer };
+export { logger, returnFromRaw, initializeReviewer };

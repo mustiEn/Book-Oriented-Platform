@@ -76,19 +76,21 @@ import BookCategoriesList from "./components/BookCategoriesList";
 import Search from "./views/Search.jsx";
 import { ClipLoader } from "react-spinners";
 
+export const returnSuspenseLoader = () => {
+  return (
+    <ClipLoader
+      color="#cf7e05"
+      className="position-absolute top-50 end-50 start-50"
+    ></ClipLoader>
+  );
+};
+
 function App() {
   const router = createBrowserRouter([
     {
       path: "/return",
       element: (
-        <Suspense
-          fallback={
-            <ClipLoader
-              color="#cf7e05"
-              className="position-fixed top-50 end-50 start-50"
-            ></ClipLoader>
-          }
-        >
+        <Suspense fallback={returnSuspenseLoader()}>
           <Completion />
         </Suspense>
       ),
@@ -96,14 +98,7 @@ function App() {
     {
       path: "/signup",
       element: (
-        <Suspense
-          fallback={
-            <ClipLoader
-              color="#cf7e05"
-              className="position-fixed top-50 end-50 start-50"
-            ></ClipLoader>
-          }
-        >
+        <Suspense fallback={returnSuspenseLoader()}>
           <Signup />
         </Suspense>
       ),
@@ -111,14 +106,7 @@ function App() {
     {
       path: "/login",
       element: (
-        <Suspense
-          fallback={
-            <ClipLoader
-              color="#cf7e05"
-              className="position-fixed top-50 end-50 start-50"
-            ></ClipLoader>
-          }
-        >
+        <Suspense fallback={returnSuspenseLoader()}>
           <Login />
         </Suspense>
       ),
@@ -163,14 +151,7 @@ function App() {
             {
               path: "/notifications",
               element: (
-                <Suspense
-                  fallback={
-                    <ClipLoader
-                      color="#cf7e05"
-                      className="position-fixed top-50 end-50 start-50"
-                    ></ClipLoader>
-                  }
-                >
+                <Suspense fallback={returnSuspenseLoader()}>
                   <Notifications />
                 </Suspense>
               ),
@@ -209,14 +190,7 @@ function App() {
                 {
                   index: true,
                   element: (
-                    <Suspense
-                      fallback={
-                        <ClipLoader
-                          color="#cf7e05"
-                          className="position-fixed top-50 end-50 start-50"
-                        ></ClipLoader>
-                      }
-                    >
+                    <Suspense fallback={returnSuspenseLoader()}>
                       <TopicBooks />
                     </Suspense>
                   ),
@@ -225,14 +199,7 @@ function App() {
                 {
                   path: "posts",
                   element: (
-                    <Suspense
-                      fallback={
-                        <ClipLoader
-                          color="#cf7e05"
-                          className="position-fixed top-50 end-50 start-50"
-                        ></ClipLoader>
-                      }
-                    >
+                    <Suspense fallback={returnSuspenseLoader()}>
                       <TopicPosts />
                     </Suspense>
                   ),
@@ -241,14 +208,7 @@ function App() {
                 {
                   path: "readers",
                   element: (
-                    <Suspense
-                      fallback={
-                        <ClipLoader
-                          color="#cf7e05"
-                          className="position-fixed top-50 end-50 start-50"
-                        ></ClipLoader>
-                      }
-                    >
+                    <Suspense fallback={returnSuspenseLoader()}>
                       <TopicReaders />
                     </Suspense>
                   ),
@@ -310,14 +270,7 @@ function App() {
                 {
                   path: "bookshelf",
                   element: (
-                    <Suspense
-                      fallback={
-                        <ClipLoader
-                          color="#cf7e05"
-                          className="position-fixed top-50 end-50 start-50"
-                        ></ClipLoader>
-                      }
-                    >
+                    <Suspense fallback={returnSuspenseLoader()}>
                       <ReaderProfileBookshelf />
                     </Suspense>
                   ),
@@ -339,14 +292,7 @@ function App() {
             {
               path: "/posts/:postType/:postId",
               element: (
-                <Suspense
-                  fallback={
-                    <ClipLoader
-                      color="#cf7e05"
-                      className="position-fixed top-50 end-50 start-50"
-                    ></ClipLoader>
-                  }
-                >
+                <Suspense fallback={returnSuspenseLoader()}>
                   <ReaderPostComments />
                 </Suspense>
               ),
@@ -364,14 +310,7 @@ function App() {
                 {
                   path: ":categoryId",
                   element: (
-                    <Suspense
-                      fallback={
-                        <ClipLoader
-                          color="#cf7e05"
-                          className="position-fixed top-50 end-50 start-50"
-                        ></ClipLoader>
-                      }
-                    >
+                    <Suspense fallback={returnSuspenseLoader()}>
                       <BookCategory />
                     </Suspense>
                   ),

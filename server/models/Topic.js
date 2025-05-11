@@ -22,7 +22,7 @@ export const Topic = sequelize.define(
     },
   },
   {
-    indexes: [{ unique: true, fields: ["topic"] }, { fields: ["image"] }],
+    indexes: [{ unique: true, fields: ["topic"] }],
     timestamps: false,
   }
 );

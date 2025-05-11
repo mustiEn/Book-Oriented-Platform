@@ -22,9 +22,7 @@ export const loadReaderNotifications = async () => {
     const data = await res.json();
 
     return data;
-  } catch (error) {
-    console.log(error);
-  }
+  } catch (error) {}
 };
 
 export const loadHomePagePosts = async () => {
@@ -35,8 +33,6 @@ export const loadHomePagePosts = async () => {
   }
 
   const data = await res.json();
-  console.log(data);
-
   return data;
 };
 
@@ -52,8 +48,6 @@ export const loadExploreGeneral = async () => {
     }
   }
   const data = await Promise.all([response[0].json(), response[1].json()]);
-  console.log(data);
-
   // return { topicCategories, topics };
   return data;
 };
@@ -70,8 +64,6 @@ export const loadExploreTopics = async () => {
     }
   }
   const data = await Promise.all([response[0].json(), response[1].json()]);
-  console.log(data);
-
   return data;
 };
 
@@ -92,7 +84,6 @@ export const loadExploreBooks = async () => {
   if (!response.ok) {
     throw new Error(data.error);
   }
-  console.log(data);
   return data;
 };
 
@@ -125,7 +116,6 @@ export const loadReaderThoughts = async ({ params }) => {
   if (!response.ok) {
     throw new Error(response);
   }
-  console.log(data);
   return data;
 };
 
@@ -146,8 +136,6 @@ export const loadTopicPosts = async ({ request, params }) => {
   const { topicName } = params;
   const q = new URL(request.url);
   const search = q.search;
-  console.log(search);
-  console.log(q);
 
   const response = await fetch(`/api/get-topic-posts/${topicName}/0${search}`);
   const data = await response.json();
@@ -164,7 +152,6 @@ export const loadTopicBooks = async ({ params }) => {
   if (!response.ok) {
     throw new Error(response);
   }
-  // console.log(data);
   return data;
 };
 
@@ -200,20 +187,15 @@ export const loadBookDetails = async ({ params }) => {
     const data = await Promise.all(
       response.map(async (item) => await item.json())
     );
-    console.log(data);
-
     return data;
-    // return { bookDetails: data1, readerBookDetailsHeader: data2 };
   } catch (error) {
     toast.error(error.message);
-    console.log(error);
   }
 };
 
 export const loadReaderProfiles = async ({ request, params }) => {
   const q = new URL(request.url).searchParams.get("q");
   const { bookId } = params;
-  console.log(q);
   const res = await fetch(
     `/api/get-reader-profiles/${bookId}/reader${q ? `?q=` + q : ""}`
   );
@@ -241,16 +223,13 @@ export const loadBookStatistics = async ({ params }) => {
   const response = await fetch(`/api/get-book-statistics/${bookId}`);
   const data = await response.json();
   if (!response.ok) {
-    console.log(response, data);
     throw new Error("response");
   }
-  // console.log(response, data);
   return data;
 };
 
 export const loadReaderProfile = async ({ params }) => {
   const { profile: username } = params;
-  console.log(username);
 
   const res = await fetch(`/api/profile/${username}/display-reader-profile`);
 
@@ -264,14 +243,11 @@ export const loadReaderProfile = async ({ params }) => {
 
 export const loadReaderComments = async ({ params }) => {
   const { profile: username } = params;
-  console.log(params);
-
   const response = await fetch(`/api/get-reader-comments/${username}/0`);
   const data = await response.json();
   if (!response.ok) {
     throw new Error(response);
   }
-  console.log(response);
 
   return data;
 };
@@ -292,7 +268,6 @@ export const loadReaderPostComments = async ({ params }) => {
 export const loadReaderQuotes = async ({ params }) => {
   const { profile: username } = params;
   const response = await fetch(`/api/${username}/get-reader-quotes`);
-  console.log(username);
 
   if (!response.ok) {
     toast.error("Something went wrong");
@@ -305,7 +280,6 @@ export const loadReaderQuotes = async ({ params }) => {
 export const loadReaderReviews = async ({ params }) => {
   const { profile: username } = params;
   const response = await fetch(`/api/${username}/get-reader-reviews`);
-  console.log(username);
 
   if (!response.ok) {
     toast.error("Something went wrong");
@@ -319,7 +293,6 @@ export const loadReaderBooks = async ({ request, params }) => {
   const { profile: username } = params;
   const q = new URL(request.url).search;
   const response = await fetch(`/api/profile/${username}/books${q}`);
-  console.log(q);
 
   const data = await response.json();
   if (!response.ok) {
@@ -357,27 +330,21 @@ export const loadBookDetailsForPost = async () => {
 
 export const loadBookCategoriesList = async () => {
   const res = await fetch("/api/get-book-categories");
-  console.log("book categories");
 
   const data = await res.json();
   if (!res.ok) {
     throw new Error(response);
   }
-  console.log(data);
-
   return data;
 };
 
 export const loadBookCategory = async ({ params }) => {
   const { categoryId } = params;
-  console.log("book category", categoryId);
 
   const response = await fetch(`/api/get-book-category/${categoryId}`);
   const data = await response.json();
   if (!response.ok) {
     throw new Error(response);
   }
-  console.log(data);
-
   return data;
 };

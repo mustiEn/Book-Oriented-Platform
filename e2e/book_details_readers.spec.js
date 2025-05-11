@@ -14,7 +14,6 @@ test.describe("visit /book/it-s-a-book/1/readers?q=Read page, component = book-d
       page.on("response", async (res) => {
         if (res.url().includes(`/api/get-reader-profiles/1/reader?q=${q}`)) {
           const data = await res.json();
-          console.log(data);
         }
       });
 

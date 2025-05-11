@@ -14,10 +14,8 @@ import {
   FaClock,
   FaUserPen,
 } from "react-icons/fa6";
-import { toast } from "react-hot-toast";
 import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
-import Spinner from "../spinner/Spinner";
 
 const ReaderProfileBookshelf = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -50,7 +48,6 @@ const ReaderProfileBookshelf = () => {
   ];
 
   useEffect(() => {
-    console.log(activeQuery);
     if (new Date().getFullYear() != readerJoinedYear) {
       Array.from(
         { length: new Date().getFullYear() - readerJoinedYear },
@@ -72,7 +69,7 @@ const ReaderProfileBookshelf = () => {
           className={({ isActive }) =>
             isActive ? "btn btn-sm btn-light" : "btn btn-sm btn-outline-light"
           }
-          to={`/${readerUsername}/bookshelf`}
+          to={`/profile/${readerUsername}/bookshelf`}
           onClick={() => setIsLoading(true)}
         >
           Overview
@@ -93,7 +90,7 @@ const ReaderProfileBookshelf = () => {
                   <Dropdown.Item
                     key={`dropdown-${i}`}
                     as={Link}
-                    to={`/${readerUsername}/bookshelf/books?q=${encodeURIComponent(
+                    to={`/profile/${readerUsername}/bookshelf/books?q=${encodeURIComponent(
                       option
                     )}`}
                   >
@@ -119,7 +116,7 @@ const ReaderProfileBookshelf = () => {
                     <Dropdown.Item
                       key={`dropdown-sort-${sort.sortBy}`}
                       as={Link}
-                      to={`/${readerUsername}/bookshelf/books?q=${q}&sort=${encodeURIComponent(
+                      to={`/profile/${readerUsername}/bookshelf/books?q=${q}&sort=${encodeURIComponent(
                         sort.sortBy
                       )}`}
                       onClick={() =>
@@ -155,7 +152,7 @@ const ReaderProfileBookshelf = () => {
                       <Dropdown.Item
                         key={`dropdown-category-${i}`}
                         as={Link}
-                        to={`/${readerUsername}/bookshelf/books?q=${q}&category=${encodeURIComponent(
+                        to={`/profile/${readerUsername}/bookshelf/books?q=${q}&category=${encodeURIComponent(
                           category.category
                         )}`}
                         onClick={() =>
@@ -190,7 +187,7 @@ const ReaderProfileBookshelf = () => {
                       <Dropdown.Item
                         key={`dropdown-author-${i}`}
                         as={Link}
-                        to={`/${readerUsername}/bookshelf/books?q=${q}&author=${encodeURIComponent(
+                        to={`/profile/${readerUsername}/bookshelf/books?q=${q}&author=${encodeURIComponent(
                           author.author
                         )}`}
                         onClick={() =>
@@ -225,7 +222,7 @@ const ReaderProfileBookshelf = () => {
                       <Dropdown.Item
                         as={Link}
                         key={`dropdown-year-${i}`}
-                        to={`/${readerUsername}/bookshelf/books?q=${q}&year=${year}`}
+                        to={`/profile/${readerUsername}/bookshelf/books?q=${q}&year=${year}`}
                         onClick={() =>
                           setActiveQuery((prev) => ({
                             ...Object.keys(prev).reduce(
@@ -256,7 +253,7 @@ const ReaderProfileBookshelf = () => {
                 <li key={index}>
                   <NavLink
                     className="btn btn-sm btn-outline-light"
-                    to={`/${readerUsername}/bookshelf/books?q=${encodeURIComponent(
+                    to={`/profile/${readerUsername}/bookshelf/books?q=${encodeURIComponent(
                       option
                     )}`}
                     onClick={() => setIsLoading(true)}
@@ -271,23 +268,11 @@ const ReaderProfileBookshelf = () => {
       </div>
       <Outlet
         context={{
-          setIsLoading,
           setChildDataLength,
           setCategories,
           setAuthors,
         }}
       />
-      {isLoading ? (
-        <Spinner
-          animation="border"
-          role="status"
-          className="position-fixed top-50 end-50 start-50"
-        >
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-      ) : (
-        ""
-      )}
     </>
   );
 };

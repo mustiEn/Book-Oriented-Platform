@@ -61,8 +61,6 @@ const ShareThought = () => {
       return;
     }
 
-    console.log(thought);
-
     try {
       const res = await fetch(`/api/share-thought`, {
         method: "POST",
@@ -104,8 +102,6 @@ const ShareThought = () => {
       label: item.truncatedTitle,
       value: item.id,
     }));
-    console.log(data);
-
     return data;
   };
 
@@ -134,7 +130,6 @@ const ShareThought = () => {
                 bookId: newValue ? newValue.id : null,
               });
               setSelectedBook(newValue ?? null);
-              console.log(newValue);
             }}
           />
         </Form.Group>

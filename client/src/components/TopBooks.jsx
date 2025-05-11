@@ -16,8 +16,6 @@ const TopBooks = ({ books }) => {
     mostReadLastYear,
   ] = books;
 
-  console.log(books);
-
   return (
     <>
       <div className="d-flex flex-column gap-3">

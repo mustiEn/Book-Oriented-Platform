@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import TopicCategoryLinks from "./TopicCategoryLinks";
-import { Link, useLoaderData, useNavigation } from "react-router-dom";
+import { Link, useLoaderData } from "react-router-dom";
 import Button from "react-bootstrap/esm/Button";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { v4 as uuid } from "uuid";
@@ -28,8 +28,6 @@ const ExploreGeneral = () => {
     isFollowed: false,
   });
   const [pending, setPending] = useState(false);
-
-  console.log(followingStates);
   const sendFollowingState = async () => {
     try {
       const res = await fetch(`/api/set-following-state`, {
@@ -48,7 +46,6 @@ const ExploreGeneral = () => {
         throw new Error(data.error);
       }
 
-      console.log(data);
       setFollowingStates((prev) => ({
         ...prev,
         [isTopicFollowed.topicId]: prev[isTopicFollowed.topicId] ? 0 : 1,
@@ -58,7 +55,6 @@ const ExploreGeneral = () => {
         `You ${isTopicFollowed.isFollowed ? "followed" : "unfollowed"}`
       );
     } catch (error) {
-      console.log(error);
       setPending(false);
       toast.error(error.message);
     }
@@ -120,7 +116,6 @@ const ExploreGeneral = () => {
                         isFollowed: followingStates[topic.id] ? 0 : 1,
                       });
                       setPending(true);
-                      console.log(followingStates[topic.id]);
                     }}
                   >
                     {followingStates[topic.id] ? "Unfollow" : "Follow"}

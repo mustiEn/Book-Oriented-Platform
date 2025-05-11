@@ -1,5 +1,5 @@
 import { test, expect, vi, beforeEach, describe, afterEach } from "vitest";
-import { logger, returnRawQuery } from "../../utils/constants";
+import { logger, returnFromRaw } from "../../utils/constants";
 import { bookCollection, login, signup } from "../../controllers/index";
 import { validationResult, matchedData } from "express-validator";
 import Groq, { mockCreate } from "groq-sdk";
@@ -35,14 +35,14 @@ describe("test bookcollection", () => {
     mockRequest.req["params"] = mockReqData;
 
     matchedData.mockReturnValue(mockReqData);
-    returnRawQuery.mockResolvedValue(mockData);
+    returnFromRaw.mockResolvedValue(mockData);
 
     const { req, res, next } = mockRequest;
     await bookCollection(req, res, next);
 
     expect(validationResult).toHaveBeenCalledWith(req);
-    expect(returnRawQuery).toHaveBeenCalled();
-    await expect(returnRawQuery()).resolves.toMatchObject([
+    expect(returnFromRaw).toHaveBeenCalled();
+    await expect(returnFromRaw()).resolves.toMatchObject([
       { author: "jack", title: "abc" },
     ]);
     expect(Groq).toHaveBeenCalled();
@@ -69,7 +69,7 @@ describe("test bookcollection", () => {
     mockRequest.req["query"] = mockReqData;
 
     matchedData.mockReturnValue(mockReqData);
-    returnRawQuery.mockResolvedValue(mockData);
+    returnFromRaw.mockResolvedValue(mockData);
 
     const { req, res, next } = mockRequest;
 
@@ -77,8 +77,8 @@ describe("test bookcollection", () => {
 
     expect(validationResult).toHaveBeenCalled();
     expect(validationResult).toHaveBeenCalledWith(req);
-    expect(returnRawQuery).toHaveBeenCalled();
-    await expect(returnRawQuery()).resolves.toMatchObject(mockData);
+    expect(returnFromRaw).toHaveBeenCalled();
+    await expect(returnFromRaw()).resolves.toMatchObject(mockData);
     expect(res.status).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
   });

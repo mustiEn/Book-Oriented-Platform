@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { FaArrowLeft } from "react-icons/fa6";
 import {
   Link,
   useLoaderData,
@@ -14,7 +13,6 @@ import BackNavigation from "../components/BackNavigation";
 
 const ThemedTopics = () => {
   const themedTopics = useLoaderData();
-  const navigate = useNavigate();
   const params = useParams();
   const [followingStates, setFollowingStates] = useState(
     themedTopics.reduce((acc, curr) => {
@@ -44,7 +42,6 @@ const ThemedTopics = () => {
         throw new Error(data.error);
       }
 
-      console.log(data);
       setFollowingStates((prev) => ({
         ...prev,
         [isTopicFollowed.topicId]: prev[isTopicFollowed.topicId] ? 0 : 1,
@@ -53,7 +50,6 @@ const ThemedTopics = () => {
         `You ${isTopicFollowed.isFollowed ? "followed" : "unfollowed"}`
       );
     } catch (error) {
-      console.log(error);
       toast.error(error.message);
     }
   };
@@ -67,9 +63,6 @@ const ThemedTopics = () => {
       return () => clearTimeout(timer);
     }
   }, [isTopicFollowed]);
-
-  console.log(themedTopics);
-  console.log(followingStates);
 
   return (
     <>
@@ -117,7 +110,6 @@ const ThemedTopics = () => {
                     topicId: topic.id,
                     isFollowed: followingStates[topic.id] ? 0 : 1,
                   });
-                  console.log(followingStates[topic.id]);
                 }}
               >
                 {followingStates[topic.id] ? "Unfollow" : "Follow"}

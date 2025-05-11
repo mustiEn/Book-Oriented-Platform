@@ -27,7 +27,6 @@ const Search = () => {
       setPending(false);
       setBooks(data);
     } catch (error) {
-      console.log(error);
       toast.error(error.message);
     }
   };

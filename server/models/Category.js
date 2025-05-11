@@ -7,8 +7,10 @@ export const Category = sequelize.define(
     category: {
       type: DataTypes.STRING,
       allowNull: true,
-      unique: true,
     },
   },
-  { timestamps: false, indexes: [{ fields: ["category"], unique: true }] }
+  {
+    timestamps: false,
+    indexes: [{ fields: ["category"], unique: true }],
+  }
 );

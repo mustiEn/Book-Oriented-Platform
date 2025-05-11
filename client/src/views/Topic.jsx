@@ -35,7 +35,6 @@ const Topic = () => {
       setFollowerCount((prev) => prev + (isFollowing ? 1 : -1));
       toast.success(`You ${isFollowing ? "followed" : "unfollowed"}`);
     } catch (error) {
-      console.log(error);
       setPending(false);
       toast.error(error.message);
     }

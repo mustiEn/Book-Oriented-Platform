@@ -19,8 +19,6 @@ const Payment = () => {
   }, []);
 
   useEffect(() => {
-    console.log("sds", isFetched);
-
     if (isFetched.current) return;
     isFetched.current = true;
 
@@ -31,9 +29,7 @@ const Payment = () => {
       });
       const { clientSecret } = await response.json();
       setClientSecret(clientSecret);
-      console.log(clientSecret);
     })();
-    console.log("client secret got");
   }, []);
   return (
     <>

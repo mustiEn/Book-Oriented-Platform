@@ -2,7 +2,7 @@ import { sequelize } from "./db.js";
 import { DataTypes } from "sequelize";
 import { Topic } from "./Topic.js";
 import { Notification } from "./Notification.js";
-import { logger, returnRawQuery } from "../utils/constants.js";
+import { logger, returnFromRaw } from "../utils/constants.js";
 
 export const Post = sequelize.define(
   "Post",
@@ -20,12 +20,12 @@ export const Post = sequelize.define(
       allowNull: false,
       defaultValue: 0,
     },
-    restricted: {
+    is_restricted: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
   },
-  { timestamps: true, indexes: [{ fields: ["post_type"] }] }
+  { timestamps: true }
 );
 
 Post.addHook("afterCreate", async (post, options) => {
@@ -47,7 +47,7 @@ Post.addHook("afterCreate", async (post, options) => {
       SELECT UserId 
         FROM user_topic_association
         WHERE TopicId = ${post.dataValues.topicId}`;
-    const users = await returnRawQuery(sql);
+    const users = await returnFromRaw(sql);
     for (const user of users) {
       if (user == post.dataValues.userId) continue;
       await Notification.create({

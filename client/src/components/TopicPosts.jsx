@@ -25,12 +25,12 @@ const TopicPosts = () => {
   const [hasMore, setHasMore] = useState(true);
   const [index, setIndex] = useState(20);
   const [searchParams, setSearchParams] = useSearchParams();
-  const params = useParams();
-  const q = searchParams.get("q");
-  const location = useLocation();
-  const navigation = useNavigation();
   const [activeBtns, setActiveBtns] = useState("The newest");
   const [pending, setPending] = useState(false);
+  const params = useParams();
+  const location = useLocation();
+  const navigation = useNavigation();
+  const q = searchParams.get("q");
   const { topicName } = params;
   const returnComponent = (post) => {
     let component;

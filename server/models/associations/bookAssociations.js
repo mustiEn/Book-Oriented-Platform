@@ -18,8 +18,8 @@ import { Thought } from "../Thought.js";
 import { Topic } from "../Topic.js";
 
 export const bookAssociations = () => {
-  BookCollection.belongsToMany(Topic, { through: "topic_book_associations" });
-  Topic.belongsToMany(BookCollection, { through: "topic_book_associations" });
+  BookCollection.belongsToMany(Topic, { through: "topic_book_association" });
+  Topic.belongsToMany(BookCollection, { through: "topic_book_association" });
 
   BookCollection.hasMany(Quote, {
     foreignKey: "bookId",

@@ -1,6 +1,6 @@
 import { matchedData, validationResult } from "express-validator";
 import { User } from "../models/User.js";
-import { logger, returnRawQuery } from "../utils/constants.js";
+import { logger, returnFromRaw } from "../utils/constants.js";
 import bcrypt from "bcrypt";
 
 const signup = async (req, res, next) => {
@@ -14,11 +14,7 @@ const signup = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { email, password, firstname, lastname, username, DOB, gender } =
@@ -79,16 +75,10 @@ const login = async (req, res, next) => {
   //^ If the password matches, it logs the user in and returns a success message.
 
   try {
-    console.log("Checking");
-
     const result = validationResult(req);
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { username, password } = matchedData(req);
@@ -129,11 +119,7 @@ const bookCollection = async (req, res, next) => {
     let data;
 
     if (!result.isEmpty()) {
-      throw new Error(
-        `Validation failed.\n Msg: ${result.array()[0].msg}.\n Path: ${
-          result.array()[0].path
-        }`
-      );
+      throw new Error(result.array()[0].msg);
     }
 
     const { q, bookId } = matchedData(req);
@@ -164,36 +150,14 @@ const bookCollection = async (req, res, next) => {
                   ON h.bookId=a.id
                   LEFT JOIN descriptions i
                   ON h.descriptionId=i.id
-                  WHERE a.id = ${bookId}
+                  WHERE a.id = ?
                   GROUP BY book_key`;
 
-      data = await returnRawQuery(sql);
+      data = await returnFromRaw(sql, [bookId]);
 
       if (data.length == 0) {
         throw new Error("Book not found");
       }
-      // if (data[0].author !== null) {
-      //   //& if author not null, gets some data related to author from groq
-
-      //   const completion = await groq.chat.completions.create({
-      //     model: "llama3-8b-8192",
-      //     messages: [
-      //       {
-      //         role: "user",
-      //         content: `Who is or are ${data[0].author}?
-      //         This person/people has the following book: ${data[0].title}.
-      //        Give your answer as formal as possible
-      //        because this will be used in an online book website.
-      //        Answer about this person/people should be about their major, achievements
-      //        and any other relevant information.
-      //        Don't say anything like "Im happy to help" or "I hope this helps"
-      //        at the beginning or end of your answer.`,
-      //       },
-      //     ],
-      //   });
-
-      //   data[0]["author_info"] = completion.choices[0].message?.content;
-      // }
     } else {
       //& Gets 20 books from the database with the query
 
@@ -230,7 +194,7 @@ const bookCollection = async (req, res, next) => {
                           JOIN AUTHORS AS au ON au.id = aubo.authorId 
                           JOIN publishers AS pu ON pu.id = pubo.publisherId 
                         WHERE 
-                          bo.title LIKE '%${q}%' 
+                          bo.title LIKE ? 
 
                         UNION 
 
@@ -248,7 +212,7 @@ const bookCollection = async (req, res, next) => {
                           JOIN AUTHORS AS au ON au.id = aubo.authorId 
                           JOIN publishers AS pu ON pu.id = pubo.publisherId 
                         WHERE 
-                          au.author LIKE '%${q}%' 
+                          au.author LIKE ? 
 
                         UNION 
 
@@ -266,14 +230,14 @@ const bookCollection = async (req, res, next) => {
                           JOIN AUTHORS AS au ON au.id = aubo.authorId 
                           JOIN publishers AS pu ON pu.id = pubo.publisherId 
                         WHERE 
-                          pu.publisher LIKE '%${q}%'
+                          pu.publisher LIKE ?
                       ) AS df 
                     GROUP BY 
                       id 
                     LIMIT 
                       20`;
 
-      data = await returnRawQuery(sql);
+      data = await returnFromRaw(sql, [`%${q}%`, `%${q}%`, `%${q}%`]);
     }
 
     return res.status(200).json(data);

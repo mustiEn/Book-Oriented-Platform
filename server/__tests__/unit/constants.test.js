@@ -1,5 +1,5 @@
 import { vi, test, expect, describe, beforeAll } from "vitest";
-import { logger, returnRawQuery } from "../../utils/constants";
+import { logger, returnFromRaw } from "../../utils/constants";
 import traceLogger from "tracer";
 
 vi.mock("../utils/constants");
@@ -8,12 +8,12 @@ vi.mock("tracer");
 test.skip("function should work", async () => {
   const mockResult = [{ id: 1, bookId: 22 }];
   const mockSql = `SELECT a.* from a`;
-  returnRawQuery.mockResolvedValue(mockResult);
+  returnFromRaw.mockResolvedValue(mockResult);
 
-  const result = await returnRawQuery(mockSql, "QUERY");
+  const result = await returnFromRaw(mockSql, "QUERY");
 
-  expect(returnRawQuery).toHaveBeenCalled();
-  expect(returnRawQuery).toHaveBeenCalledWith(
+  expect(returnFromRaw).toHaveBeenCalled();
+  expect(returnFromRaw).toHaveBeenCalledWith(
     expect.stringContaining("SELECT"),
     expect.anything()
   );

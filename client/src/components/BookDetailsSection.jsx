@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy } from "react";
 import {
   NavLink,
   Link,
@@ -18,16 +18,14 @@ import {
 import { toast } from "react-hot-toast";
 import Button from "react-bootstrap/Button";
 import "../css/book_details_section.css";
-import ReaderBookModalDetails from "./ReaderBookModalDetails";
 import Spinner from "../spinner/Spinner";
 import BackNavigation from "./BackNavigation";
+import { returnSuspenseLoader } from "../App";
+
+const ReaderBookModalDetails = lazy(() => import("./ReaderBookModalDetails"));
 
 const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
-  const navigate = useNavigate();
-  const navigation = useNavigation();
   const bookPageCount = { [bookDetails.id]: bookDetails.page_count };
-  console.log(readerBookInteractionData);
-
   const ref = useRef({
     effect1: false,
     effect2: false,
@@ -56,7 +54,6 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
     ratePrev: readerBookInteractionData.rating,
     rateToggler: false,
   });
-
   const sendBookLiked = async (isLiked) => {
     const res = await fetch(`/api/set-book-liked/${bookDetails.id}`, {
       method: "POST",
@@ -123,15 +120,17 @@ const BookDetailsSection = ({ bookDetails, readerBookInteractionData }) => {
   return (
     <>
       <BackNavigation innerHtml="Book Details" />
-      <ReaderBookModalDetails
-        modalProps={[
-          bookPageCount,
-          pending,
-          setPending,
-          modalState,
-          setModalState,
-        ]}
-      />
+      <Suspense fallback={returnSuspenseLoader()}>
+        <ReaderBookModalDetails
+          modalProps={[
+            bookPageCount,
+            pending,
+            setPending,
+            modalState,
+            setModalState,
+          ]}
+        />
+      </Suspense>
       <div id="bookDetails" className="w-100 p-4">
         <div className="book-details-header w-100 d-flex align-items-center gap-3">
           {bookDetails.thumbnail ? (

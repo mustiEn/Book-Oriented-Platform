@@ -1,30 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   useSearchParams,
   useLoaderData,
   useOutletContext,
-  useLocation,
   Link,
 } from "react-router-dom";
 import slugify from "react-slugify";
-import { toast } from "react-hot-toast";
 import { FaStar } from "react-icons/fa6";
 import "../css/bookshelf_books.css";
 
 const BookshelfBooks = () => {
   const data = useLoaderData();
-  const { setIsLoading, setChildDataLength, setAuthors, setCategories } =
-    useOutletContext();
+  const { setChildDataLength, setAuthors, setCategories } = useOutletContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const q = searchParams.get("q").replaceAll("-", " ");
 
   useEffect(() => {
     if (data) {
-      setIsLoading(false);
       setChildDataLength(data.readerBooksMerged.length);
       setAuthors(data.booksPerAuthor);
       setCategories(data.booksPerCategory);
-      console.log(data);
     }
   }, [data]);
 

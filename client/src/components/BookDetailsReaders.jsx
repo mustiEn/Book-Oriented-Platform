@@ -9,7 +9,6 @@ import {
 } from "react-router-dom";
 
 const BookDetailsReaders = () => {
-  console.log("Component rendering");
   const { readerProfiles } = useLoaderData();
   const location = useLocation();
   const options = [
@@ -19,7 +18,6 @@ const BookDetailsReaders = () => {
     "Did-not-finish",
     "Liked",
   ];
-  console.log(readerProfiles);
 
   return (
     <>

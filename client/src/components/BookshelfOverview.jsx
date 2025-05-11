@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useLoaderData, useOutletContext } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import React from "react";
+import { useLoaderData } from "react-router-dom";
 import {
   Line,
   XAxis,
@@ -10,12 +9,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-// import "./bookshelf_overview.css";
 
 const BookshelfOverview = () => {
   const data = useLoaderData();
-  const { setIsLoading } = useOutletContext();
-
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -27,11 +23,6 @@ const BookshelfOverview = () => {
     }
     return null;
   };
-  // console.log(data);
-
-  useEffect(() => {
-    setIsLoading(false);
-  }, [data]);
 
   return (
     <>
@@ -79,5 +70,3 @@ const BookshelfOverview = () => {
 };
 
 export default BookshelfOverview;
-
-

@@ -34,7 +34,7 @@ const Layout = () => {
         />
         <div
           id="MainContent"
-          className="flex-shrink-0 border-end border-opacity-50 border-secondary border-start"
+          className="position-relative flex-shrink-0 border-end border-opacity-50 border-secondary border-start"
         >
           <Outlet context={loggedInReader} />
         </div>

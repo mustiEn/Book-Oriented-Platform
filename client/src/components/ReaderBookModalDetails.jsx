@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { FaCaretDown, FaLock } from "react-icons/fa6";
+import React, { useEffect, useRef } from "react";
+import { FaLock } from "react-icons/fa6";
 import Button from "react-bootstrap/esm/Button";
 import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";
@@ -45,11 +45,8 @@ const ReaderBookModalDetails = ({ modalProps }) => {
         return;
       }
       const data = await res.json();
-      console.log(data);
-
       toast.success("Book dates updated");
     } catch (error) {
-      console.log(error);
       toast.error("Something went wrong");
     }
   };
@@ -71,10 +68,8 @@ const ReaderBookModalDetails = ({ modalProps }) => {
         toast.error("Something went wrong");
         return;
       }
-      const data = await res.json();
       toast.success("Page number updated");
     } catch (error) {
-      console.log(error);
       toast.error("Something went wrong");
     }
   };
@@ -136,7 +131,6 @@ const ReaderBookModalDetails = ({ modalProps }) => {
       setPending(false);
     } catch (error) {
       toast.error(error.message);
-      console.log(error);
     }
   };
   const sendReadingState = async () => {
@@ -160,15 +154,12 @@ const ReaderBookModalDetails = ({ modalProps }) => {
         return;
       }
       toast.success("Reading state updated");
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   };
   const sendPrivateNote = async () => {
     try {
       const privateNote =
         modalState.privateNote == null ? "" : modalState.privateNote.trim();
-      console.log("private note send api", privateNote);
 
       const res = await fetch(`/api/set-private-note/${modalState.bookId}`, {
         method: "POST",
@@ -187,7 +178,6 @@ const ReaderBookModalDetails = ({ modalProps }) => {
 
       toast.success("Private note updated");
     } catch (error) {
-      console.log(error);
       toast.error(error);
     }
   };

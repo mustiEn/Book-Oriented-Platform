@@ -48,10 +48,8 @@ export const User = sequelize.define(
     indexes: [
       { fields: ["email"], unique: true },
       { fields: ["username"], unique: true },
-      { fields: ["firstname"] },
-      { fields: ["lastname"] },
-      { fields: ["gender"] },
-      { fields: ["readerShip"] },
+      { fields: ["firstname"], unique: false, type: "FULLTEXT" },
+      { fields: ["lastname"], unique: false, type: "FULLTEXT" },
     ],
   }
 );

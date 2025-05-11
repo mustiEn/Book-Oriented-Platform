@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
-import { FaArrowLeft } from "react-icons/fa6";
 import { toast } from "react-hot-toast";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import "../css/topic_category.css";
@@ -9,14 +8,11 @@ import BackNavigation from "../components/BackNavigation";
 
 const CreateTopic = () => {
   const topicCategories = useLoaderData();
-  const navigate = useNavigate();
   const [categoryCount, setCategoryCount] = useState(0);
   const [topic, setTopic] = useState({
     topic: "",
-    // description: "",
     category: [],
   });
-  console.log(useLoaderData());
 
   const returnCategoryClassnames = (param) => {
     let classnames;
@@ -42,8 +38,6 @@ const CreateTopic = () => {
 
   const handleSubmit = async () => {
     try {
-      console.log(topic.category.length);
-
       if (topic.topic == "") {
         toast.error("Topic is required");
         throw new Error("Topic is required");
@@ -66,13 +60,10 @@ const CreateTopic = () => {
       setCategoryCount(0);
       setTopic({
         topic: "",
-        // description: "",
         category: [],
       });
       toast.success("Topic created successfully");
-      console.log(data);
     } catch (error) {
-      console.log(error);
       toast.error(error);
     }
   };
