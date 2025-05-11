@@ -26,7 +26,6 @@ Thought.addHook("afterCreate", async (thought, options) => {
       userId: thought.userId,
     });
   } catch (error) {
-    logger.log(error);
     throw error;
   }
 });

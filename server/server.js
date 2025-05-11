@@ -15,8 +15,9 @@ import { setupAssociations } from "./models/associations.js";
 import "./crons/index.js";
 
 dotenv.config();
-export const app = express();
 
+export const app = express();
+const port = process.env.PORT || 8081;
 const SequelizeStore = sequelizeStore(session.Store);
 const sessionStore = new SequelizeStore({
   db: sequelize,
@@ -58,12 +59,10 @@ app.use(express.urlencoded({ extended: true }));
 sessionStore.sync();
 app.use(passport.initialize());
 app.use(passport.session());
-
 app.use(indexRouter);
 app.use(userRouter);
 app.use(handleError);
 
-const port = process.env.PORT || 8081;
 if (process.env.NODE_ENV !== "test") {
   app.listen(port, () => {
     logger.log(`Server is running on port ${port}`);

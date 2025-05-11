@@ -4,14 +4,14 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import React from "react";
 import { LazyLoadImage } from "react-lazy-load-image-component";
-import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
+import { FaComment } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const PostQuote = ({ data }) => {
+const PostQuote = ({ data, commentCount = data.comment_count }) => {
   const post = data;
   const formatDate = (date) => {
     const time = dayjs(date).local();
@@ -38,16 +38,28 @@ const PostQuote = ({ data }) => {
             className="rounded-2"
           />
           <img
-            src="https://placehold.co/40x40"
+            src={
+              post.profile_photo
+                ? `/Pps_and_Bgs/${post.profile_photo}`
+                : "https://placehold.co/35"
+            }
             alt=""
             className="userPp rounded-circle position-absolute end-0"
+            width={35}
+            height={35}
             style={{ top: 40 + "%" }}
           />
         </div>
       ) : (
         <img
-          src="https://placehold.co/45x45"
+          src={
+            post.profile_photo
+              ? `/Pps_and_Bgs/${post.profile_photo}`
+              : "https://placehold.co/35"
+          }
           alt=""
+          width={35}
+          height={35}
           className="userPp rounded-circle float-start"
         />
       )}
@@ -103,6 +115,7 @@ const PostQuote = ({ data }) => {
               <div
                 className="book-title fw-bold"
                 style={{ fontSize: 14 + "px" }}
+                title={post.book_title}
               >
                 {post.truncated_title}
               </div>
@@ -115,10 +128,6 @@ const PostQuote = ({ data }) => {
               >
                 <div className="d-flex gap-1">
                   <div className="published-date">{post.published_date}</div>
-                  <span className="dot-separator">&#183;</span>
-                  <div className="publisher">{post.publishers}</div>
-                  <span className="dot-separator">&#183;</span>
-                  <div className="authors">{post.authors}</div>
                 </div>
                 <div className="page">Page {post.page}</div>
               </div>
@@ -133,7 +142,7 @@ const PostQuote = ({ data }) => {
             title="Reply"
           >
             <FaComment style={{ fill: "#b6b6b6" }} />
-            <span style={{ color: "#b6b6b6" }}>{post.comment_count}</span>
+            <span style={{ color: "#b6b6b6" }}>{commentCount}</span>
           </Link>
         </div>
       </div>

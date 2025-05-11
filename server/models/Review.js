@@ -1,7 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "./db.js";
 import { Post } from "./Post.js";
-import { logger } from "../utils/constants.js";
 
 export const Review = sequelize.define("Review", {
   title: {
@@ -23,7 +22,6 @@ Review.addHook("afterCreate", async (review, options) => {
       userId: review.userId,
     });
   } catch (error) {
-    logger.log(error);
     throw error;
   }
 });

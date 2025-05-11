@@ -2,8 +2,8 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
-import React, { useEffect } from "react";
-import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
+import React from "react";
+import { FaComment } from "react-icons/fa6";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import { Link } from "react-router-dom";
 
@@ -11,9 +11,8 @@ dayjs.extend(relativeTime);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const PostReview = ({ data }) => {
+const PostReview = ({ data, commentCount = data.comment_count }) => {
   const post = data;
-
   const formatDate = (date) => {
     const time = dayjs(date).local();
     if (dayjs().diff(time, "year") >= 1) {
@@ -24,6 +23,7 @@ const PostReview = ({ data }) => {
       return time.fromNow();
     }
   };
+
   return (
     <>
       {post.topic != null ? (
@@ -39,15 +39,27 @@ const PostReview = ({ data }) => {
             className="rounded-2"
           />
           <img
-            src="https://placehold.co/40x40"
+            src={
+              post.profile_photo
+                ? `/Pps_and_Bgs/${post.profile_photo}`
+                : "https://placehold.co/35"
+            }
             alt=""
             className="userPp rounded-circle position-absolute end-0"
+            width={35}
+            height={35}
             style={{ top: 40 + "%" }}
           />
         </div>
       ) : (
         <img
-          src="https://placehold.co/45x45"
+          src={
+            post.profile_photo
+              ? `/Pps_and_Bgs/${post.profile_photo}`
+              : "https://placehold.co/35"
+          }
+          width={35}
+          height={35}
           alt=""
           className="userPp rounded-circle float-start"
         />
@@ -157,6 +169,7 @@ const PostReview = ({ data }) => {
               <div
                 className="book-title fw-bold"
                 style={{ fontSize: 14 + "px" }}
+                title={post.book_title}
               >
                 {post.truncated_title}
               </div>
@@ -169,10 +182,6 @@ const PostReview = ({ data }) => {
               >
                 <div className="d-flex gap-1">
                   <div className="published-date">{post.published_date}</div>
-                  <span className="dot-separator">&#183;</span>
-                  <div className="publisher">{post.publishers}</div>
-                  <span className="dot-separator">&#183;</span>
-                  <div className="authors">{post.authors}</div>
                 </div>
                 <div className="people-read">
                   {post.people_read} people read this
@@ -189,7 +198,7 @@ const PostReview = ({ data }) => {
             title="Reply"
           >
             <FaComment style={{ fill: "#b6b6b6" }} />
-            <span style={{ color: "#b6b6b6" }}>{post.comment_count}</span>
+            <span style={{ color: "#b6b6b6" }}>{commentCount}</span>
           </Link>
         </div>
       </div>

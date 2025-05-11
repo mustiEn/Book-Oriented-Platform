@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
-import { useLoaderData, Link, useParams } from "react-router-dom";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
+import { useLoaderData, useParams } from "react-router-dom";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import "../css/reader_post_comments.css";
@@ -16,14 +11,9 @@ import PostQuote from "./PostQuote";
 import PostThought from "./PostThought";
 import BackNavigation from "./BackNavigation";
 
-dayjs.extend(relativeTime);
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
 const ReaderPostComments = () => {
-  console.log(useLoaderData());
-  const postCommentsData = useLoaderData();
-  let { post, comments, user } = postCommentsData;
+  const { post, comments, user } = useLoaderData();
+  const [commentCount, setCommentCount] = useState(comments.length);
   const [commentList, setCommentList] = useState(comments);
   const { postType, postId } = useParams();
   const [comment, setComment] = useState("");
@@ -40,45 +30,38 @@ const ReaderPostComments = () => {
           postType: postType,
         }),
       });
-      const data = await res.json();
+      const { comments } = await res.json();
 
       if (!res) throw new Error("Failed to send comment");
 
-      setCommentList(data.comments);
+      setCommentList(comments);
+      setCommentCount(comments.length);
       toast.success("Comment sent");
       setComment("");
-      console.log(data);
     } catch (error) {
       toast.error(error.message);
       console.log(error);
     }
   };
-  const formatDate = (date) => {
-    const time = dayjs(date).local();
-    if (dayjs().diff(time, "year") >= 1) {
-      // Format as DD/MM/YYYY
-      return time.format("DD.MM.YYYY");
-    } else {
-      // Format as "X minutes/hours/days ago"
-      return time.fromNow();
-    }
-  };
   const returnPostComponent = () => {
     let comp;
     if (postType == "comment") {
-      comp = <PostComment data={post} />;
+      comp = (
+        <PostComment isPost={true} commentCount={commentCount} data={post} />
+      );
     } else if (postType == "review") {
-      comp = <PostReview data={post} />;
+      comp = <PostReview commentCount={commentCount} data={post} />;
     } else if (postType == "quote") {
-      comp = <PostQuote data={post} />;
+      comp = <PostQuote commentCount={commentCount} data={post} />;
     } else {
-      comp = <PostThought data={post} />;
+      comp = <PostThought commentCount={commentCount} data={post} />;
     }
     return comp;
   };
 
   useEffect(() => {
     setCommentList(comments);
+    setCommentCount(comments.length);
   }, [comments]);
 
   return (
@@ -88,7 +71,7 @@ const ReaderPostComments = () => {
         {returnPostComponent()}
         <hr />
       </div>
-      {commentList.length > 0 ? (
+      {commentList.length > 0 && (
         <ul
           id="comments"
           className="d-flex flex-column gap-3 p-3"
@@ -97,57 +80,12 @@ const ReaderPostComments = () => {
           {commentList.map((comment) => {
             return (
               <li key={comment.id} className="comment">
-                <img
-                  src="https://placehold.co/45x45"
-                  alt=""
-                  className="userPp rounded-circle float-start me-2"
-                />
-                <div className="d-flex flex-column gap-2">
-                  <div className="comment-header ms-2">
-                    <div className="d-flex align-items-center gap-2">
-                      <div className="user-official-name fw-bold">
-                        {comment.firstname} {comment.lastname}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "0.9" + "rem",
-                          color: "rgb(186, 180, 171)",
-                        }}
-                      >
-                        @{comment.username}
-                      </div>
-                      <div
-                        className="d-flex"
-                        style={{ fontSize: "0.9" + "rem" }}
-                      >
-                        - {formatDate(comment.createdAt)}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="comment-body ms-2">
-                    <div>{comment.comment}</div>
-                  </div>
-                  <div className="comment-footer d-flex">
-                    <Link
-                      className="comment-link rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
-                      to={`/posts/comment/${comment.id}`}
-                      style={{ width: 55 + "px", height: 30 + "px" }}
-                      title="Reply"
-                    >
-                      <FaComment style={{ fill: "#b6b6b6" }} />
-                      <span style={{ color: "#b6b6b6" }}>
-                        {comment.comment_count}
-                      </span>
-                    </Link>
-                  </div>
-                </div>
+                <PostComment commentCount={commentCount} data={comment} />
                 <hr />
               </li>
             );
           })}
         </ul>
-      ) : (
-        ""
       )}
       <div
         className="position-fixed bottom-0 border-top p-3"

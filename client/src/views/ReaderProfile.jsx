@@ -7,7 +7,10 @@ import {
   useOutletContext,
   useParams,
 } from "react-router-dom";
-import moment from "moment";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import { toast } from "react-hot-toast";
 import { FaCalendar, FaClockRotateLeft } from "react-icons/fa6";
 import Button from "react-bootstrap/Button";
@@ -16,11 +19,18 @@ import BackNavigation from "../components/BackNavigation";
 import { IoMdStar } from "react-icons/io";
 import { ClipLoader } from "react-spinners";
 
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
 const ReaderProfile = () => {
   const [readerProfileData, setReaderProfileData] = useState({});
-  const [editBtns, setEditBtns] = useState(false);
-  const { user } = useOutletContext();
+  const [isEditBtnClicked, setIsEditBtnClicked] = useState(false);
   const data = useLoaderData()[0];
+  const formatDate = (date, format) => {
+    const time = dayjs(date).local();
+    return time.format(format);
+  };
   const regex = /^[a-zA-Z0-9-_]+(\.(jpg|jpeg|png||webp))$/i;
   const bgRef = useRef(null);
   const ppRef = useRef(null);
@@ -48,8 +58,12 @@ const ReaderProfile = () => {
         throw new Error(data.error);
       }
 
-      getUpdatedReaderProfile("Profile");
+      setReaderProfileData((prev) => ({
+        ...prev,
+        profile_photo: data.image,
+      }));
       console.log(data);
+      toast.success("Profile photo updated successfully");
     } catch (error) {
       console.log(error);
       toast.error(error.message);
@@ -72,34 +86,23 @@ const ReaderProfile = () => {
       }
 
       const data = await response.json();
-      getUpdatedReaderProfile("Background");
       console.log(data);
+      setReaderProfileData((prev) => ({
+        ...prev,
+        background_photo: data.image,
+      }));
+      toast.success("Background photo updated successfully");
     } catch (error) {
       console.log(error);
       toast.error(error.message);
     }
   };
-  const getUpdatedReaderProfile = async (photo) => {
-    try {
-      const res = await fetch(
-        `/api/${readerProfileData.username}/display-reader-profile`
-      );
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(res.error);
-      }
-      console.log(data);
-      toast.success(`${photo} photo updated successfully`);
-      setReaderProfileData(data);
-    } catch (error) {
-      toast.error(error);
-      console.log(error);
-    }
-  };
+
+  console.log(formatDate(readerProfileData.createdAt, "YYYY"));
 
   useEffect(() => {
     setReaderProfileData(data);
-  }, []);
+  }, [profile]);
 
   return (
     <>
@@ -108,7 +111,7 @@ const ReaderProfile = () => {
           <div>
             {readerProfileData.firstname} {readerProfileData.lastname}
             <div className="text-pale" style={{ fontSize: 13 + "px" }}>
-              {readerProfileData.postCount} posts
+              {readerProfileData.post_count} posts
             </div>
           </div>
         }
@@ -141,7 +144,7 @@ const ReaderProfile = () => {
             />
             <button
               className={
-                editBtns
+                isEditBtnClicked
                   ? "p-0 rounded-5 border border-1 border-light d-flex justify-content-center align-items-center"
                   : "d-none"
               }
@@ -173,7 +176,7 @@ const ReaderProfile = () => {
             style={{
               backgroundImage:
                 readerProfileData.profile_photo == null
-                  ? `url("https://placehold.co/120x120")`
+                  ? `url("https://placehold.co/120")`
                   : `url(/Pps_and_Bgs/${readerProfileData.profile_photo})`,
               height: 120 + "px",
               width: 120 + "px",
@@ -197,7 +200,7 @@ const ReaderProfile = () => {
               />
               <button
                 className={
-                  editBtns
+                  isEditBtnClicked
                     ? "p-0 rounded-5 border border-1 border-light d-flex justify-content-center align-items-center"
                     : "d-none"
                 }
@@ -223,8 +226,8 @@ const ReaderProfile = () => {
           </div>
           <div>
             <Button
-              variant="primary"
-              onClick={() => setEditBtns((prev) => !prev)}
+              variant="light"
+              onClick={() => setIsEditBtnClicked((prev) => !prev)}
             >
               Edit
             </Button>
@@ -235,17 +238,14 @@ const ReaderProfile = () => {
             {readerProfileData.firstname} {readerProfileData.lastname}
           </div>
           <div className="d-flex gap-3">
-            <div style={{ color: "#b6b6b6" }}>
+            <div
+              style={{ color: "#b6b6b6" }}
+              className="align-items-center d-flex gap-2"
+            >
               @{readerProfileData.username}
               {readerProfileData.customer_id && (
                 <IoMdStar style={{ fill: "#45aceb", fontSize: 18 + "px" }} />
               )}
-            </div>
-            <div
-              style={{ fontSize: 14 + "px", backgroundColor: "#262626" }}
-              className="rounded-2 px-2"
-            >
-              {readerProfileData.readership}
             </div>
           </div>
           <div className="d-flex gap-3">
@@ -254,25 +254,28 @@ const ReaderProfile = () => {
               style={{ color: "#b6b6b6" }}
             >
               <FaCalendar />
-              {moment(readerProfileData.DOB).format("D MMMM YYYY")}
+              {formatDate(readerProfileData.DOB, "D MMMM YYYY")}
             </div>
             <div
               className="d-flex align-items-center gap-2"
               style={{ color: "#b6b6b6" }}
             >
               <FaClockRotateLeft />
-              Joined in{" "}
-              {moment(readerProfileData.createdAt).format("MMMM YYYY")}
+              Joined in {formatDate(readerProfileData.createdAt, "MMMM YYYY")}
             </div>
           </div>
           <div className="d-flex gap-2">
             <div className="d-flex gap-2">
-              <div>0</div>
-              <div style={{ color: "#b6b6b6" }}>Books</div>
+              <div>{readerProfileData.review_count}</div>
+              <div style={{ color: "#b6b6b6" }}>Reviews</div>
             </div>
             <div className="d-flex gap-2">
-              <div>0</div>
-              <div style={{ color: "#b6b6b6" }}>Reviews</div>
+              <div>{readerProfileData.quote_count}</div>
+              <div style={{ color: "#b6b6b6" }}>Quotes</div>
+            </div>
+            <div className="d-flex gap-2">
+              <div>{readerProfileData.thought_count}</div>
+              <div style={{ color: "#b6b6b6" }}>Thoughts</div>
             </div>
           </div>
         </div>
@@ -285,7 +288,7 @@ const ReaderProfile = () => {
               color: isActive ? "white" : "#b6b6b6",
               backgroundColor: isActive ? "#ffffff14" : "",
             })}
-            to={`/profile/${user[0].username}`}
+            to={`/profile/${readerProfileData.username}`}
             end
           >
             Reviews
@@ -351,10 +354,7 @@ const ReaderProfile = () => {
       >
         <div className="px-3">
           <Outlet
-            context={[
-              moment(readerProfileData.createdAt).format("YYYY"),
-              user[0].username,
-            ]}
+            readerJoinedYear={formatDate(readerProfileData.createdAt, "YYYY")}
           />
         </div>
       </Suspense>

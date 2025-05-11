@@ -7,7 +7,6 @@ import Spinner from "../spinner/Spinner";
 import InfiniteScroll from "react-infinite-scroll-component";
 
 const Home = () => {
-  const location = useLocation();
   const posts = useLoaderData();
   const [items, setItems] = useState(posts);
   const [hasMore, setHasMore] = useState(true);

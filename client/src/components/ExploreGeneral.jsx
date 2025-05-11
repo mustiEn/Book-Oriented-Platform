@@ -4,7 +4,7 @@ import { Link, useLoaderData, useNavigation } from "react-router-dom";
 import Button from "react-bootstrap/esm/Button";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { v4 as uuid } from "uuid";
-import { Navigation, Autoplay, Pagination } from "swiper/modules";
+import { Autoplay, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/autoplay";
@@ -15,7 +15,6 @@ import Spinner from "../spinner/Spinner";
 import { IoMdStar } from "react-icons/io";
 
 const ExploreGeneral = () => {
-  const navigation = useNavigation();
   const [topicCategories, generalData] = useLoaderData();
   const { topics, bookWorms, topLikedBooks, whatShallIread } = generalData;
   const [followingStates, setFollowingStates] = useState(
@@ -74,14 +73,6 @@ const ExploreGeneral = () => {
       return () => clearTimeout(timer);
     }
   }, [isTopicFollowed]);
-
-  // useEffect(() => {
-  //   if (navigation.state === "loading") {
-  //     setPending(true);
-  //   } else {
-  //     setPending(false);
-  //   }
-  // }, [navigation.state]);
 
   return (
     <>
@@ -144,7 +135,7 @@ const ExploreGeneral = () => {
           {whatShallIread.length > 0 ? (
             <Swiper
               modules={[Pagination, Autoplay]}
-              spaceBetween={45}
+              spaceBetween={13}
               slidesPerView="auto"
               pagination={{
                 clickable: true,
@@ -315,7 +306,7 @@ const ExploreGeneral = () => {
           {topLikedBooks.length > 0 ? (
             <Swiper
               modules={[Pagination, Autoplay]}
-              spaceBetween={45}
+              spaceBetween={13}
               slidesPerView="auto"
               pagination={{
                 clickable: true,

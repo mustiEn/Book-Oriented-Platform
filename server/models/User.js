@@ -24,11 +24,6 @@ export const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    readership: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      defaultValue: "New reader",
-    },
     DOB: {
       type: DataTypes.STRING,
       allowNull: false,

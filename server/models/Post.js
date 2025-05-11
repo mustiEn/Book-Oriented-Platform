@@ -48,7 +48,6 @@ Post.addHook("afterCreate", async (post, options) => {
         FROM user_topic_association
         WHERE TopicId = ${post.dataValues.topicId}`;
     const users = await returnRawQuery(sql);
-    // logger.log(users);
     for (const user of users) {
       if (user == post.dataValues.userId) continue;
       await Notification.create({

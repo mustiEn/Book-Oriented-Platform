@@ -1,16 +1,30 @@
 import React from "react";
 import { useLoaderData } from "react-router-dom";
-import moment from "moment";
 import ProgressBar from "react-bootstrap/ProgressBar";
 import { v4 as uuid } from "uuid";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+dayjs.extend(relativeTime);
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const BookDetailsReviews = () => {
   const reviewsAndRatingData = useLoaderData();
-  console.log(reviewsAndRatingData);
+  const formatDate = (date) => {
+    const time = dayjs(date).local();
+    if (dayjs().diff(time, "year") >= 1) {
+      // Format as DD/MM/YYYY
+      return time.format("DD.MM.YYYY");
+    } else {
+      // Format as "X minutes/hours/days ago"
+      return time.fromNow();
+    }
+  };
 
   return (
     <>
-      {/* <ToastContainer /> */}
       <div>
         <div className="fw-bold fs-5">Rate</div>
         <div id="rating" className="d-flex justify-content-between mb-5">
@@ -100,7 +114,7 @@ const BookDetailsReviews = () => {
                             // className="fw-bold"
                             style={{ fontSize: "0.9" + "rem" }}
                           >
-                            - {moment(review.created_at).fromNow(false)}
+                            - {formatDate(review.created_at)}
                           </div>
                         </span>
                       </div>

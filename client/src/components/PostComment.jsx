@@ -3,14 +3,14 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import React from "react";
-import { FaBookmark, FaComment, FaHeart } from "react-icons/fa6";
+import { FaComment } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const PostComment = ({ data }) => {
+const PostComment = ({ data, commentCount, isPost = false }) => {
   const post = data;
   const formatDate = (date) => {
     const time = dayjs(date).local();
@@ -26,8 +26,14 @@ const PostComment = ({ data }) => {
   return (
     <>
       <img
-        src="https://placehold.co/45x45"
+        src={
+          post.profile_photo
+            ? `/Pps_and_Bgs/${post.profile_photo}`
+            : "https://placehold.co/35"
+        }
         alt=""
+        width={35}
+        height={35}
         className="userPp rounded-circle float-start me-2"
       />
       <div className="d-flex flex-column gap-2">
@@ -55,12 +61,14 @@ const PostComment = ({ data }) => {
         <div className="post-footer d-flex">
           <Link
             className="comment-link rounded-3 d-flex gap-2 justify-content-center align-items-center text-decoration-none"
-            to={`/posts/comment${post.id}`}
+            to={`/posts/comment/${post.id}`}
             style={{ width: 55 + "px", height: 30 + "px" }}
             title="Reply"
           >
             <FaComment style={{ fill: "#b6b6b6" }} />
-            <span style={{ color: "#b6b6b6" }}>{post.comment_count}</span>
+            <span style={{ color: "#b6b6b6" }}>
+              {!isPost ? post.comment_count : commentCount}
+            </span>
           </Link>
         </div>
       </div>

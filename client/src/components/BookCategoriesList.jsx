@@ -17,7 +17,7 @@ import { TbHexagons } from "react-icons/tb";
 import { FaMagnifyingGlass } from "react-icons/fa6";
 import "../css/book_categories.css";
 import InfiniteScroll from "react-infinite-scroll-component";
-import RightSidebar from "./RightSidebar";
+import RightSidebar from "./SidebarRight";
 
 const BookCategoriesList = () => {
   const categories = useLoaderData();

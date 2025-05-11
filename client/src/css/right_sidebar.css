@@ -1,8 +1,19 @@
+#rightSidebar {
+  width: 300px;
+  height: 100vh;
+}
+
 .right-sidebar-item {
   width: max-content;
 }
 
 .right-sidebar-item:hover {
+  background-color: #1a1d23;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+}
+
+#see-more-topics:hover {
   background-color: #1a1d23;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);

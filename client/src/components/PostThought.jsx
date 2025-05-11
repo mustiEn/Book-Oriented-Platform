@@ -3,14 +3,14 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import React from "react";
-import { FaArrowLeft, FaComment, FaBookmark, FaHeart } from "react-icons/fa6";
+import { FaComment } from "react-icons/fa6";
 import { Link } from "react-router-dom";
 
 dayjs.extend(relativeTime);
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const PostThought = ({ data }) => {
+const PostThought = ({ data, commentCount = data.comment_count }) => {
   const post = data;
   const formatDate = (date) => {
     const time = dayjs(date).local();
@@ -25,8 +25,14 @@ const PostThought = ({ data }) => {
   return (
     <>
       <img
-        src="https://placehold.co/45x45"
+        src={
+          post.profile_photo
+            ? `/Pps_and_Bgs/${post.profile_photo}`
+            : "https://placehold.co/35"
+        }
         alt=""
+        width={35}
+        height={35}
         className="userPp rounded-circle float-start me-2"
       />
       <div className="d-flex flex-column gap-2">
@@ -53,10 +59,7 @@ const PostThought = ({ data }) => {
                   : "@" + post.username}
               </div>
               <span className="d-flex">
-                <div
-                  // className="fw-bold"
-                  style={{ fontSize: "0.9" + "rem" }}
-                >
+                <div style={{ fontSize: "0.9" + "rem" }}>
                   - {formatDate(post.createdAt)}
                 </div>
               </span>
@@ -66,48 +69,6 @@ const PostThought = ({ data }) => {
         <div className="thought-body ms-2">
           <div className="thought-title fw-bold fs-4">{post.title}</div>
           <div>{post.thought}</div>
-          {/* <div className="d-flex gap-2 mt-3">
-            <img
-            src={
-                post.thumbnail != null
-                ? post.thumbnail
-                : "https://placehold.co/40x60"
-            }
-            width="40"
-            height="60"
-            alt=""
-            />
-            <div className="book-details">
-            <div
-                className="book-title fw-bold"
-                style={{ fontSize: 14 + "px" }}
-            >
-                {post.truncated_title}
-            </div>
-            <div
-                className="book-details-inner"
-                style={{
-                color: "rgb(186, 180, 171)",
-                fontSize: 13 + "px",
-                }}
-            >
-                <div className="d-flex gap-1">
-                <div className="published-date">
-                    {post.published_date}
-                </div>
-                <span className="dot-separator">&#183;</span>
-                <div className="publisher">
-                    {post.publishers}
-                </div>
-                <span className="dot-separator">&#183;</span>
-                <div className="authors">{post.authors_}</div>
-                </div>
-                <div className="people-read">
-                {post.people_read} people read this
-                </div>
-            </div>
-            </div>
-        </div> */}
         </div>
         <div className="post-footer d-flex">
           <Link
@@ -117,7 +78,7 @@ const PostThought = ({ data }) => {
             title="Reply"
           >
             <FaComment style={{ fill: "#b6b6b6" }} />
-            <span style={{ color: "#b6b6b6" }}>{post.comment_count}</span>
+            <span style={{ color: "#b6b6b6" }}>{commentCount}</span>
           </Link>
         </div>
       </div>

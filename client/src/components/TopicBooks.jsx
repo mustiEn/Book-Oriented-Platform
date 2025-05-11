@@ -1,10 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { lazy, Suspense, useEffect, useState } from "react";
 import { Link, useLoaderData, useNavigation } from "react-router-dom";
 import { FaCaretDown, FaLock } from "react-icons/fa6";
 import Button from "react-bootstrap/esm/Button";
 import { toast } from "react-hot-toast";
-import ReaderBookModalDetails from "./ReaderBookModalDetails";
+// import ReaderBookModalDetails from "./ReaderBookModalDetails";
+const ReaderBookModalDetails = lazy(() => import("./ReaderBookModalDetails"));
 import Spinner from "../spinner/Spinner";
+import { ClipLoader } from "react-spinners";
 
 const TopicBooks = () => {
   const { books, bookPageCounts } = useLoaderData();
@@ -34,15 +36,17 @@ const TopicBooks = () => {
 
   return (
     <>
-      <ReaderBookModalDetails
-        modalProps={[
-          bookPageCounts,
-          pending,
-          setPending,
-          modalState,
-          setModalState,
-        ]}
-      />
+      <Suspense fallback={<ClipLoader color="#cf7e05" />}>
+        <ReaderBookModalDetails
+          modalProps={[
+            bookPageCounts,
+            pending,
+            setPending,
+            modalState,
+            setModalState,
+          ]}
+        />
+      </Suspense>
       {books.length > 0 ? (
         <ul className="d-flex flex-column gap-3 px-2">
           {books.map((book, i) => (

@@ -17,7 +17,7 @@ const TopicReaders = () => {
                     src={
                       reader.profile_photo
                         ? reader.profile_photo
-                        : "https://placehold.co/60x60"
+                        : "https://placehold.co/60"
                     }
                     className="rounded-circle"
                     width={60}

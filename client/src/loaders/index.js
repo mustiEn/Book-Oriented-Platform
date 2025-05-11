@@ -1,18 +1,13 @@
 import toast from "react-hot-toast";
 
 export const loadInitials = async () => {
-  const response = await Promise.all([
-    fetch("/api/get-reader-info"),
-    fetch("/api/get-sidebar-topics"),
-  ]);
-  const data = await Promise.all(
-    response.map(async (item) => await item.json())
-  );
-  for (const res of response) {
-    if (!res.ok) {
-      throw new Error(res.error);
-    }
+  const res = await fetch("/api/get-reader-info");
+
+  if (!res.ok) {
+    throw new Error(res.error);
   }
+
+  const data = await res.json();
   return data;
 };
 
@@ -136,13 +131,13 @@ export const loadReaderThoughts = async ({ params }) => {
 
 export const loadTopic = async ({ params }) => {
   const { topicName } = params;
-  const response = await fetch(`/api/get-topic/${topicName}`);
+  const res = await fetch(`/api/get-topic/${topicName}`);
 
-  if (!response.ok) {
+  if (!res.ok) {
     throw new Error(res.error);
   }
 
-  const data = await response.json();
+  const data = await res.json();
 
   return data;
 };
@@ -151,10 +146,10 @@ export const loadTopicPosts = async ({ request, params }) => {
   const { topicName } = params;
   const q = new URL(request.url);
   const search = q.search;
-  // console.log(q);
-  // console.log(q.pathname);
+  console.log(search);
+  console.log(q);
 
-  const response = await fetch(`/api/get-topic-posts/${topicName}${search}`);
+  const response = await fetch(`/api/get-topic-posts/${topicName}/0${search}`);
   const data = await response.json();
   if (!response.ok) {
     throw new Error(response);
@@ -291,8 +286,6 @@ export const loadReaderPostComments = async ({ params }) => {
   }
 
   const data = await response.json();
-  console.log("index load reader post comments", data);
-
   return data;
 };
 
@@ -322,23 +315,25 @@ export const loadReaderReviews = async ({ params }) => {
   return data;
 };
 
-export const loadReaderBooks = async ({ request }) => {
+export const loadReaderBooks = async ({ request, params }) => {
+  const { profile: username } = params;
   const q = new URL(request.url).search;
-  const response = await fetch(`/api/profile/books${q}`);
+  const response = await fetch(`/api/profile/${username}/books${q}`);
   console.log(q);
 
   const data = await response.json();
   if (!response.ok) {
     throw new Error(response);
   }
-  console.log("location");
-  console.log(q);
 
   return data;
 };
 
-export const loadReaderBookshelfOverview = async () => {
-  const response = await fetch(`/api/profile/bookshelf/get-bookshelf-overview`);
+export const loadReaderBookshelfOverview = async ({ params }) => {
+  const { profile: username } = params;
+  const response = await fetch(
+    `/api/profile/${username}/get-bookshelf-overview`
+  );
 
   const data = await response.json();
   if (!response.ok) {

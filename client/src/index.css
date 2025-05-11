@@ -6,7 +6,7 @@
 }
 
 #MainContent {
-  width: 700px;
+  width: 600px;
   min-height: 100vh;
 }
 
@@ -29,8 +29,6 @@
 ::-webkit-scrollbar-thumb:hover {
   background-color: #6c757d; /* Bootstrap dark gray */
 }
-
-/* Firefox */
 
 * {
   margin: 0;

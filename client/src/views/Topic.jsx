@@ -1,10 +1,55 @@
-import React from "react";
-import { NavLink, Outlet, useLoaderData, useNavigate } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { NavLink, Outlet, useLoaderData } from "react-router-dom";
 import Button from "react-bootstrap/Button";
 import BackNavigation from "../components/BackNavigation";
+import toast from "react-hot-toast";
+import Spinner from "../spinner/Spinner";
 
 const Topic = () => {
-  const topic = useLoaderData();
+  const [topic] = useLoaderData();
+  const [isFollowing, setIsFollowing] = useState(topic.isFollowing);
+  const [followerCount, setFollowerCount] = useState(topic.follower_count);
+  const [pending, setPending] = useState(false);
+  const ref = useRef(false);
+
+  const sendFollowingState = async () => {
+    try {
+      const res = await fetch(`/api/set-following-state`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          topicId: topic.id,
+          isFollowing: isFollowing,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error);
+      }
+
+      setPending(false);
+      setFollowerCount((prev) => prev + (isFollowing ? 1 : -1));
+      toast.success(`You ${isFollowing ? "followed" : "unfollowed"}`);
+    } catch (error) {
+      console.log(error);
+      setPending(false);
+      toast.error(error.message);
+    }
+  };
+
+  useEffect(() => {
+    if (ref.current) {
+      const timer = setTimeout(() => {
+        sendFollowingState();
+      }, 200);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isFollowing]);
 
   return (
     <>
@@ -27,12 +72,19 @@ const Topic = () => {
         )}
         <div className="d-flex flex-column gap-2 ms-3">
           <div className="fw-bold">{topic.topic}</div>
-          <div style={{ fontSize: 12 + "px" }}>
-            {topic.topicFollowerCount} followers
-          </div>
+          <div style={{ fontSize: 12 + "px" }}>{followerCount} followers</div>
         </div>
-        <Button className="ms-auto" variant={"outline-light"} size="sm">
-          Follow
+        <Button
+          className="ms-auto"
+          variant={"outline-light"}
+          size="sm"
+          onClick={() => {
+            setIsFollowing((prev) => !prev);
+            ref.current = true;
+            setPending(true);
+          }}
+        >
+          {isFollowing ? "Unfollow" : "Follow"}
         </Button>
       </div>
       <ul className="d-flex px-3 gap-2">
@@ -76,6 +128,7 @@ const Topic = () => {
       </ul>
       <hr className="mb-3 mt-0" />
       <Outlet />
+      <Spinner pendingVal={pending} />
     </>
   );
 };

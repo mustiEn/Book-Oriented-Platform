@@ -6,7 +6,6 @@ import { Link, redirect, useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/esm/Button";
 
 const Premium = () => {
-  const navigate = useNavigate();
   const [premium, setPremium] = useState("Annual");
   const bulletPoints = [
     "Profile Badge",
@@ -77,13 +76,15 @@ const Premium = () => {
                 )}
               </div>
             </Card.Subtitle>
-            <Card.Text>
+            <Card.Text as={"div"}>
               <div className="fw-bold">Features</div>
-              <ul>
-                {bulletPoints.map((item, i) => (
-                  <li key={i}>&#10003; {item}</li>
-                ))}
-              </ul>
+              <div>
+                <ul>
+                  {bulletPoints.map((item, i) => (
+                    <li key={i}>&#10003; {item}</li>
+                  ))}
+                </ul>
+              </div>
             </Card.Text>
             <Button className="btn btn-primary" onClick={handleSubmit}>
               Subscribe

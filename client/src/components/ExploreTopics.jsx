@@ -17,7 +17,7 @@ const ExploreTopics = () => {
   );
   const [isTopicFollowed, setIsTopicFollowed] = useState({
     topicId: null,
-    isFollowed: false,
+    isFollowing: false,
   });
   const [pending, setPending] = useState(false);
   console.log(followingStates);
@@ -31,7 +31,7 @@ const ExploreTopics = () => {
         },
         body: JSON.stringify({
           topicId: isTopicFollowed.topicId,
-          isFollowed: isTopicFollowed.isFollowed,
+          isFollowing: isTopicFollowed.isFollowing,
         }),
       });
 
@@ -47,7 +47,7 @@ const ExploreTopics = () => {
       }));
       setPending(false);
       toast.success(
-        `You ${isTopicFollowed.isFollowed ? "followed" : "unfollowed"}`
+        `You ${isTopicFollowed.isFollowing ? "followed" : "unfollowed"}`
       );
     } catch (error) {
       console.log(error);
@@ -136,7 +136,7 @@ const ExploreTopics = () => {
                         e.preventDefault();
                         setIsTopicFollowed({
                           topicId: topic.id,
-                          isFollowed: followingStates[topic.id] ? 0 : 1,
+                          isFollowing: followingStates[topic.id] ? 0 : 1,
                         });
                         setPending(true);
                         console.log(followingStates[topic.id]);
@@ -191,7 +191,7 @@ const ExploreTopics = () => {
                       e.preventDefault();
                       setIsTopicFollowed({
                         topicId: topic.id,
-                        isFollowed: followingStates[topic.id] ? 0 : 1,
+                        isFollowing: followingStates[topic.id] ? 0 : 1,
                       });
                       setPending(true);
                       console.log(followingStates[topic.id]);

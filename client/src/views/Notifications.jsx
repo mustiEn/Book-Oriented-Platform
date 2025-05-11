@@ -73,7 +73,7 @@ const Notifications = () => {
   const returnCommentElement = ({ username, profile_photo, content }) => {
     return (
       <>
-        <Link to={`/posts/comment${content.id}`}>
+        <Link to={`/posts/comment/${content.id}`}>
           <div className="d-flex gap-2 px-4 py-2">
             <FaUser
               className="float-start"
@@ -81,7 +81,13 @@ const Notifications = () => {
             />
             <div className="align-items-baseline d-flex flex-column gap-1">
               <img
-                src={profile_photo ?? "https://placehold.co/45x45"}
+                src={
+                  profile_photo
+                    ? "Pps_and_Bgs/" + profile_photo
+                    : "https://placehold.co/45x45"
+                }
+                width={45}
+                height={45}
                 className="rounded-circle"
                 alt=""
               />
@@ -160,7 +166,6 @@ const Notifications = () => {
     }
     return item;
   };
-
   const handleHideNotification = async (id) => {
     try {
       const res = await fetch(`/api/notifications/hide`, {

@@ -196,7 +196,7 @@ router.get(
 );
 
 router.get(
-  "/profile/books",
+  "/profile/:username/books",
   [
     isUserActive,
     query("q").isString(),
@@ -204,6 +204,7 @@ router.get(
     query("category").optional().isString(),
     query("year").optional().isString(),
     query("author").optional().isString(),
+    param("username").notEmpty().isString(),
   ],
   userController.filterReaderBooks
 );
@@ -229,22 +230,25 @@ router.get(
   [isUserActive, param("topicName").notEmpty().isString()],
   userController.getTopic
 );
-router.get(
-  "/get-topic-posts/:topicName",
 
+router.get(
+  "/get-topic-posts/:topicName/:index",
   [
     isUserActive,
     param("topicName").notEmpty().isString(),
     query("sortBy").optional().notEmpty().isString().escape(),
     query("q").optional().notEmpty().isString().escape(),
+    param("index").notEmpty().isInt(),
   ],
   userController.getTopicPosts
 );
+
 router.get(
   "/get-topic-books/:topicName",
   [isUserActive, param("topicName").notEmpty().isString()],
   userController.getTopicBooks
 );
+
 router.get(
   "/get-topic-readers/:topicName",
   [isUserActive, param("topicName").notEmpty().isString()],
@@ -305,7 +309,7 @@ router.post(
   "/set-following-state",
   [
     isUserActive,
-    body("isFollowed").notEmpty().isBoolean(),
+    body("isFollowing").notEmpty().isBoolean(),
     body("topicId").notEmpty().isInt(),
   ],
   userController.setFollowingState
@@ -344,8 +348,8 @@ router.post(
 );
 
 router.get(
-  "/profile/bookshelf/get-bookshelf-overview",
-  isUserActive,
+  "/profile/:username/get-bookshelf-overview",
+  [isUserActive, param("username").notEmpty().isString()],
   userController.getReaderBookshelfOverview
 );
 

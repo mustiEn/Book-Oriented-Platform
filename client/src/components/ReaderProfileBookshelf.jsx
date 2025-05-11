@@ -5,6 +5,7 @@ import {
   Outlet,
   useSearchParams,
   useOutletContext,
+  useParams,
 } from "react-router-dom";
 import {
   FaBookOpen,
@@ -18,7 +19,7 @@ import Dropdown from "react-bootstrap/Dropdown";
 import DropdownButton from "react-bootstrap/DropdownButton";
 import Spinner from "../spinner/Spinner";
 
-const ReaderProfileBookshelf = (l) => {
+const ReaderProfileBookshelf = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [childDataLength, setChildDataLength] = useState(null);
   const [categories, setCategories] = useState([]);
@@ -31,8 +32,8 @@ const ReaderProfileBookshelf = (l) => {
     year: "",
   });
   const q = searchParams.get("q");
-  const [readerJoinedYear, readerUsername] = useOutletContext();
-  console.log(useOutletContext());
+  const readerJoinedYear = useOutletContext();
+  const { profile: readerUsername } = useParams();
 
   const yearsArr = ["All times", readerJoinedYear];
   const options = [

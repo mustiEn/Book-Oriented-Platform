@@ -4,6 +4,7 @@ import { Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import "../css/top_books.css";
 import { v4 as uuid } from "uuid";
 
 const TopBooks = ({ books }) => {
@@ -25,7 +26,7 @@ const TopBooks = ({ books }) => {
           {mostReadLastMonth.length != 0 ? (
             <Swiper
               modules={[Pagination]}
-              spaceBetween={45}
+              spaceBetween={13}
               slidesPerView="auto"
               pagination={{
                 clickable: true,
@@ -98,7 +99,7 @@ const TopBooks = ({ books }) => {
           {mostReadLastYear.length != 0 ? (
             <Swiper
               modules={[Pagination]}
-              spaceBetween={45}
+              spaceBetween={13}
               slidesPerView="auto"
               pagination={{
                 clickable: true,
@@ -171,7 +172,7 @@ const TopBooks = ({ books }) => {
           {highestRated.length != 0 ? (
             <Swiper
               modules={[Pagination]}
-              spaceBetween={45}
+              // spaceBetween={13}
               slidesPerView="auto"
               pagination={{
                 clickable: true,
@@ -244,7 +245,7 @@ const TopBooks = ({ books }) => {
           {mostRead.length != 0 ? (
             <Swiper
               modules={[Pagination]}
-              spaceBetween={45}
+              spaceBetween={13}
               slidesPerView="auto"
               pagination={{
                 clickable: true,
@@ -317,7 +318,7 @@ const TopBooks = ({ books }) => {
           {mostLiked.length != 0 ? (
             <Swiper
               modules={[Pagination]}
-              spaceBetween={45}
+              spaceBetween={13}
               slidesPerView="auto"
               pagination={{
                 clickable: true,

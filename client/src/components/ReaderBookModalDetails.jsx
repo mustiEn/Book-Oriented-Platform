@@ -166,7 +166,6 @@ const ReaderBookModalDetails = ({ modalProps }) => {
   };
   const sendPrivateNote = async () => {
     try {
-      //? debunce timer
       const privateNote =
         modalState.privateNote == null ? "" : modalState.privateNote.trim();
       console.log("private note send api", privateNote);
@@ -205,13 +204,10 @@ const ReaderBookModalDetails = ({ modalProps }) => {
   }, [modalState.readingState]);
 
   useEffect(() => {
-    // console.log("private note effect");
-    // console.log(ref.current.privateNoteEffect);
-
     if (ref.current.privateNoteEffect && modalState.show) {
       const timeout = setTimeout(() => {
         sendPrivateNote();
-      }, 200);
+      }, 400);
       return () => clearTimeout(timeout);
     }
   }, [modalState.privateNote]);

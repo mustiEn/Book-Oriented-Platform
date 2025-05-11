@@ -17,7 +17,6 @@ export default passport.use(
       if (!user.password === password) {
         throw new Error("Incorrect password.");
       }
-      // logger.log('STRATEGY', user)
       return done(null, user);
     } catch (error) {
       return done(error, null);
@@ -26,12 +25,10 @@ export default passport.use(
 );
 
 passport.serializeUser((user, done) => {
-  // logger.log('SERIALIZER', user.id)
   done(null, user.id);
 });
 
 passport.deserializeUser(async (id, done) => {
   const user = await User.findOne({ where: { id: id } });
-  // logger.log('DESERIALIZER', user)
   done(null, user);
 });

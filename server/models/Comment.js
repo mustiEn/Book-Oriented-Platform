@@ -38,7 +38,6 @@ Comment.addHook("afterCreate", async (comment, options) => {
       );
     }
   } catch (error) {
-    logger.log(error);
     throw error;
   }
 });
