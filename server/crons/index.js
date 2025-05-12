@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { logger, returnRawQuery } from "../utils/constants.js";
+import { logger, returnFromRaw } from "../utils/constants.js";
 import dotenv from "dotenv";
 import { Post } from "../models/Post.js";
 import { RestrictedPost } from "../models/RestrictedPost.js";
@@ -53,7 +53,7 @@ const returnContent = async (postType, postId) => {
                         ${postType}s
                       WHERE 
                         id = ${postId}`;
-  const result = await returnRawQuery(contentSql);
+  const result = await returnFromRaw(contentSql);
   const content = result[0][postType];
   return content;
 };
@@ -107,11 +107,13 @@ export const trendingTopicsSql = `SELECT
             GROUP BY 
               p.topicId
             LIMIT 10;`;
-export let trendingTopics = await returnRawQuery(trendingTopicsSql);
+export let trendingTopics = await returnFromRaw(trendingTopicsSql);
+
+//? CRONS
 
 export const cronGetTrendingTopics = cron.schedule("* */24 * * *", async () => {
   try {
-    trendingTopics = await returnRawQuery(sql);
+    trendingTopics = await returnFromRaw(sql);
   } catch (error) {
     console.log(error);
     cronGetTrendingTopics.stop();
@@ -120,7 +122,7 @@ export const cronGetTrendingTopics = cron.schedule("* */24 * * *", async () => {
 
 export const cronRestrict = cron.schedule("*/5 * * * *", async () => {
   try {
-    const posts = await returnRawQuery(postsSql);
+    const posts = await returnFromRaw(postsSql);
     for (let element of posts) {
       let type = element.post_type;
       let postId = element.postId;
@@ -199,7 +201,7 @@ export const cronRecommendBooks = cron.schedule("* * * */2 *", async () => {
         LIMIT
           20
       `;
-      const result = await returnRawQuery(sql);
+      const result = await returnFromRaw(sql);
       return result;
     };
 
@@ -303,8 +305,8 @@ export const cronRecommendBooks = cron.schedule("* * * */2 *", async () => {
       //^  Returns: review_count, categoryId, category_name
 
       return await Promise.all([
-        returnRawQuery(userBookDataSql),
-        returnRawQuery(userReviewsDataSql),
+        returnFromRaw(userBookDataSql),
+        returnFromRaw(userReviewsDataSql),
       ]);
     };
 
@@ -326,9 +328,9 @@ export const cronRecommendBooks = cron.schedule("* * * */2 *", async () => {
       HAVING
         COUNT(brs.id) >= 10
     `;
-    const usersWithReadBooks = (
-      await returnRawQuery(usersWithReadBooksSql)
-    ).map((item) => item.userId);
+    const usersWithReadBooks = (await returnFromRaw(usersWithReadBooksSql)).map(
+      (item) => item.userId
+    );
 
     if (usersWithReadBooks.length == 0) {
       return;
