@@ -30,15 +30,14 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - name: Run Sequelize Migrations
-      run: |
-        cd server
-        npx sequelize-cli db:migrate
     - name: Start MySQL
       run: |
         sudo /etc/init.d/mysql start
         mysql -e "CREATE DATABASE IF NOT EXISTS \`$DB_DATABASE\`;" -u$DB_USER -p$DB_PASS
-
+    - name: Run Sequelize Migrations
+      run: |
+        cd server
+        npx sequelize-cli db:migrate
     - run: |
         cd server
         npm ci
