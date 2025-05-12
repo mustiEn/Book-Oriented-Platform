@@ -26,12 +26,12 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: 
+    - run: |
         cd server
         npm ci
-    - run: 
+    - run: |
         cd server
         npm run start --if-present
-    - run: 
+    - run: |
         cd server
         npm run test
