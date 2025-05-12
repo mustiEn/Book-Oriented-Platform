@@ -10,7 +10,7 @@ test.skip("function should work", async () => {
   const mockSql = `SELECT a.* from a`;
   returnFromRaw.mockResolvedValue(mockResult);
 
-  const result = await returnFromRaw(mockSql, "QUERY");
+  const result = returnFromRaw(mockSql, "QUERY");
 
   expect(returnFromRaw).toHaveBeenCalled();
   expect(returnFromRaw).toHaveBeenCalledWith(

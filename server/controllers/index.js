@@ -153,7 +153,7 @@ const bookCollection = async (req, res, next) => {
                   WHERE a.id = ?
                   GROUP BY book_key`;
 
-      data = await returnFromRaw(sql, [bookId]);
+      data = returnFromRaw(sql, [bookId]);
 
       if (data.length == 0) {
         throw new Error("Book not found");
@@ -237,7 +237,7 @@ const bookCollection = async (req, res, next) => {
                     LIMIT 
                       20`;
 
-      data = await returnFromRaw(sql, [`%${q}%`, `%${q}%`, `%${q}%`]);
+      data = returnFromRaw(sql, [`%${q}%`, `%${q}%`, `%${q}%`]);
     }
 
     return res.status(200).json(data);

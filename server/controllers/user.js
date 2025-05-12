@@ -623,7 +623,7 @@ export const getReaderBookInteractionData = async (req, res, next) => {
                                 ON a.userId = d.userId
                                 WHERE a.bookId= ?
                                 AND a.userId= ?`;
-    const readerBookRecord = await returnFromRaw(readerBookRecordSql, [
+    const readerBookRecord = returnFromRaw(readerBookRecordSql, [
       bookId,
       userId,
     ]);
@@ -819,7 +819,7 @@ export const getReaderNotifications = async (req, res, next) => {
                                     WHERE 
                                       receiverId = ?`;
 
-    await returnFromRaw(unReadNotificationsSql, [userId], QueryTypes.UPDATE);
+    returnFromRaw(unReadNotificationsSql, [userId], QueryTypes.UPDATE);
 
     const notificationsSql = `SELECT 
                                 * 
@@ -876,7 +876,7 @@ export const markNotificationsAsRead = async (req, res, next) => {
                                       WHERE 
                                         receiverId = ?`;
 
-    await returnFromRaw(unReadNotificationsSql, [userId], QueryTypes.UPDATE);
+    returnFromRaw(unReadNotificationsSql, [userId], QueryTypes.UPDATE);
     res.status(200).json({ message: "Success" });
   } catch (error) {
     next(error);
@@ -900,11 +900,7 @@ export const hideNotifications = async (req, res, next) => {
                                     AND 
                                       id = ?`;
 
-    await returnFromRaw(
-      updateNotificationsSql,
-      [userId, id],
-      QueryTypes.UPDATE
-    );
+    returnFromRaw(updateNotificationsSql, [userId, id], QueryTypes.UPDATE);
 
     res.status(200).json({ message: "The notification has been hidden" });
   } catch (error) {
@@ -988,7 +984,7 @@ export const getReaderProfiles = async (req, res, next) => {
       replacements = [bookId];
     }
 
-    const readerProfiles = await returnFromRaw(readerProfilesSql, replacements);
+    const readerProfiles = returnFromRaw(readerProfilesSql, replacements);
     res.status(200).json({
       readerProfiles,
     });
@@ -1030,7 +1026,7 @@ export const displayReaderProfile = async (req, res, next) => {
         AND s.status = "active" 
       WHERE 
         u.username = ?`;
-    const reader = await returnFromRaw(readerSql, [username]);
+    const reader = returnFromRaw(readerSql, [username]);
 
     if (!reader) {
       throw new Error(`User not found`);
@@ -1284,7 +1280,7 @@ export const getReaderReviews = async (req, res, next) => {
         r.createdAt DESC
     `;
 
-    const readerReviews = await returnFromRaw(reviewsSql, [user.toJSON().id]);
+    const readerReviews = returnFromRaw(reviewsSql, [user.toJSON().id]);
     res.status(200).json({
       readerReviews,
     });
@@ -1355,7 +1351,7 @@ export const getReaderQuotes = async (req, res, next) => {
         q.createdAt DESC
     `;
 
-    const readerQuotes = await returnFromRaw(quotesSql, [user.toJSON().id]);
+    const readerQuotes = returnFromRaw(quotesSql, [user.toJSON().id]);
 
     res.status(200).json({
       readerQuotes,
@@ -1421,7 +1417,7 @@ export const getReaderThoughts = async (req, res, next) => {
       ORDER BY 
         t.createdAt DESC 
     `;
-    const thoughts = await returnFromRaw(thoughtsSql, [user.toJSON().id]);
+    const thoughts = returnFromRaw(thoughtsSql, [user.toJSON().id]);
 
     res.status(200).json({ thoughts });
   } catch (err) {
@@ -1881,8 +1877,8 @@ export const getReaderPostComments = async (req, res, next) => {
               `;
     }
 
-    [post] = await returnFromRaw(post, [postId]);
-    comments = await returnFromRaw(commentsSql, [postId]);
+    [post] = returnFromRaw(post, [postId]);
+    comments = returnFromRaw(commentsSql, [postId]);
     res.status(200).json({
       post,
       comments,
@@ -1992,7 +1988,7 @@ export const sendComment = async (req, res, next) => {
     );
     await t.commit();
 
-    const comments = await returnFromRaw(commentsSql, [commentToId]);
+    const comments = returnFromRaw(commentsSql, [commentToId]);
 
     res.status(200).json({
       comments,
@@ -2058,7 +2054,7 @@ export const getReaderComments = async (req, res, next) => {
               ${index}
     `;
 
-    const comments = await returnFromRaw(commentsSql, [username]);
+    const comments = returnFromRaw(commentsSql, [username]);
 
     res.status(200).json({
       comments,
@@ -2097,9 +2093,7 @@ export const getThemedTopics = async (req, res, next) => {
                             WHERE 
                               topicCategoryId = ?;
                             `;
-    const themedTopics = await returnFromRaw(themedTopicsSql, [
-      topicCategory.id,
-    ]);
+    const themedTopics = returnFromRaw(themedTopicsSql, [topicCategory.id]);
 
     res.status(200).json(themedTopics);
   } catch (error) {
@@ -2197,7 +2191,7 @@ export const getTopic = async (req, res, next) => {
       WHERE t.topic = ?;
     `;
 
-    topic = await returnFromRaw(topicSql, [userId, topicName]);
+    topic = returnFromRaw(topicSql, [userId, topicName]);
     res.status(200).json(topic);
   } catch (error) {
     next(error);
@@ -2239,7 +2233,7 @@ export const getTopicBooks = async (req, res, next) => {
                               WHERE 
                                 tba.TopicId = ?
                                 `;
-    const topicBooks = await returnFromRaw(topicBooksSql, [topic.id]);
+    const topicBooks = returnFromRaw(topicBooksSql, [topic.id]);
 
     const topicBookIds = topicBooks.map((item) => item.BookCollectionId);
     const books = await BookCollection.findAll({
@@ -2492,11 +2486,11 @@ export const getTopicPosts = async (req, res, next) => {
           : new Date(a.createdAt) - new Date(b.createdAt);
       });
     } else if (q == "review") {
-      posts = await returnFromRaw(reviewsSql);
+      posts = returnFromRaw(reviewsSql);
     } else if (q == "thought") {
-      posts = await returnFromRaw(thoughtsSql);
+      posts = returnFromRaw(thoughtsSql);
     } else if (q == "quote") {
-      posts = await returnFromRaw(quotesSql);
+      posts = returnFromRaw(quotesSql);
     }
 
     jsonDict["posts"] = posts;
@@ -2589,7 +2583,7 @@ export const getTopicReaders = async (req, res, next) => {
                                   GROUP BY
                                     u.id
                                 `;
-    const topicReaders = await returnFromRaw(topicReadersSql);
+    const topicReaders = returnFromRaw(topicReadersSql);
 
     res.status(200).json(topicReaders);
   } catch (error) {
@@ -2845,7 +2839,7 @@ export const getExplorePopularTopics = async (req, res, next) => {
                                 t.follower_count DESC
                               LIMIT 10;
                     `;
-    const popularTopics = await returnFromRaw(popularTopicsSql);
+    const popularTopics = returnFromRaw(popularTopicsSql);
 
     res.status(200).json({ trendingTopics, popularTopics });
   } catch (error) {
@@ -2860,7 +2854,7 @@ export const getAllTopics = async (req, res, next) => {
                           topic label
                         FROM 
                           topics`;
-    const topics = await returnFromRaw(topicsSql);
+    const topics = returnFromRaw(topicsSql);
 
     res.status(200).json(topics);
   } catch (error) {
@@ -3090,7 +3084,7 @@ export const getExploreBooks = async (req, res, next) => {
 
 export const getTrendingTopics = async (req, res, next) => {
   try {
-    const updated = await returnFromRaw(trendingTopicsSql);
+    const updated = returnFromRaw(trendingTopicsSql);
     res.status(200).json(updated);
   } catch (error) {
     next(error);
@@ -3124,9 +3118,9 @@ export const setFollowingState = async (req, res, next) => {
     `;
 
     if (isFollowing) {
-      await returnFromRaw(sqlUpdate, QueryTypes.INSERT);
+      returnFromRaw(sqlUpdate, QueryTypes.INSERT);
     } else {
-      await returnFromRaw(sqlDelete, QueryTypes.DELETE);
+      returnFromRaw(sqlDelete, QueryTypes.DELETE);
     }
 
     res.status(200).json({ message: "Success" });
@@ -3167,7 +3161,7 @@ export const getBookCategories = async (req, res, next) => {
                                   50 
                                 ${offset}  
                                   `;
-    const bookCategories = await returnFromRaw(bookCategoriesSql);
+    const bookCategories = returnFromRaw(bookCategoriesSql);
 
     res.status(200).json(bookCategories);
   } catch (error) {
@@ -3450,7 +3444,7 @@ export const getSidebarTopics = async (req, res, next) => {
         t.id
       LIMIT 5
     `;
-    const topics = await returnFromRaw(topicsSql);
+    const topics = returnFromRaw(topicsSql);
 
     res.status(200).json(topics);
   } catch (error) {

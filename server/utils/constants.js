@@ -10,8 +10,12 @@ const logger = tracerLogger.colorConsole({
   dateformat: "HH:MM:ss",
 });
 
-const returnFromRaw = (query, params = [], queryType = QueryTypes.SELECT) => {
-  return sequelize.query(query, {
+const returnFromRaw = async (
+  query,
+  params = [],
+  queryType = QueryTypes.SELECT
+) => {
+  return await sequelize.query(query, {
     replacements: params,
     type: queryType,
   });

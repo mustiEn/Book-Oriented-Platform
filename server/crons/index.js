@@ -53,7 +53,7 @@ const returnContent = async (postType, postId) => {
                         ${postType}s
                       WHERE 
                         id = ${postId}`;
-  const result = await returnFromRaw(contentSql);
+  const result = returnFromRaw(contentSql);
   const content = result[0][postType];
   return content;
 };
@@ -107,13 +107,13 @@ export const trendingTopicsSql = `SELECT
             GROUP BY 
               p.topicId
             LIMIT 10;`;
-export let trendingTopics = await returnFromRaw(trendingTopicsSql);
+export let trendingTopics = returnFromRaw(trendingTopicsSql);
 
 //? CRONS
 
 export const cronGetTrendingTopics = cron.schedule("* */24 * * *", async () => {
   try {
-    trendingTopics = await returnFromRaw(sql);
+    trendingTopics = returnFromRaw(sql);
   } catch (error) {
     console.log(error);
     cronGetTrendingTopics.stop();
@@ -122,7 +122,7 @@ export const cronGetTrendingTopics = cron.schedule("* */24 * * *", async () => {
 
 export const cronRestrict = cron.schedule("*/5 * * * *", async () => {
   try {
-    const posts = await returnFromRaw(postsSql);
+    const posts = returnFromRaw(postsSql);
     for (let element of posts) {
       let type = element.post_type;
       let postId = element.postId;
@@ -201,7 +201,7 @@ export const cronRecommendBooks = cron.schedule("* * * */2 *", async () => {
         LIMIT
           20
       `;
-      const result = await returnFromRaw(sql);
+      const result = returnFromRaw(sql);
       return result;
     };
 
@@ -328,7 +328,7 @@ export const cronRecommendBooks = cron.schedule("* * * */2 *", async () => {
       HAVING
         COUNT(brs.id) >= 10
     `;
-    const usersWithReadBooks = (await returnFromRaw(usersWithReadBooksSql)).map(
+    const usersWithReadBooks = returnFromRaw(usersWithReadBooksSql).map(
       (item) => item.userId
     );
 
