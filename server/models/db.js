@@ -2,7 +2,8 @@ import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
 dotenv.config();
 
-const db = process.env.NODE_ENV === "test" ? "book-app-test" : "book-app";
+const db =
+  process.env.NODE_ENV === "test" ? "book-app-test" : process.env.DB_DATABASE;
 
 export const sequelize = new Sequelize(
   db,
