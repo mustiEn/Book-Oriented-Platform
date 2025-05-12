@@ -34,13 +34,13 @@ jobs:
       run: |
         sudo /etc/init.d/mysql start
         mysql -e "CREATE DATABASE IF NOT EXISTS \`$DB_DATABASE\`;" -u$DB_USER -p$DB_PASS
+    - run: |
+        cd server
+        npm ci
     - name: Run Sequelize Migrations
       run: |
         cd server
         npx sequelize-cli db:migrate
-    - run: |
-        cd server
-        npm ci
     - run: |
         cd server
         npm run start --if-present
