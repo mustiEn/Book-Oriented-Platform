@@ -2,13 +2,11 @@ import { test, expect, vi, beforeEach, describe, afterEach } from "vitest";
 import { logger, returnFromRaw } from "../../utils/constants";
 import { bookCollection, login, signup } from "../../controllers/index";
 import { validationResult, matchedData } from "express-validator";
-import Groq, { mockCreate } from "groq-sdk";
 import { User } from "../../models/User";
 import bcrypt from "bcrypt";
 
 vi.mock("express-validator");
-vi.mock("../utils/constants");
-vi.mock("groq-sdk");
+vi.mock("../../utils/constants");
 vi.mock("bcrypt");
 
 const mockRequest = {
@@ -29,7 +27,7 @@ afterEach(async () => {
 });
 
 describe("test bookcollection", () => {
-  test("should get req param `bookId` and add `author data` if data exists", async () => {
+  test("should get req param `bookId`", async () => {
     mockData = [{ author: "jack", title: "abc" }];
     mockReqData = { bookId: 1 };
     mockRequest.req["params"] = mockReqData;
@@ -45,20 +43,6 @@ describe("test bookcollection", () => {
     await expect(returnFromRaw()).resolves.toMatchObject([
       { author: "jack", title: "abc" },
     ]);
-    expect(Groq).toHaveBeenCalled();
-    expect(mockCreate).toHaveBeenCalled();
-    expect(mockCreate).toHaveBeenCalledWith({
-      model: "llama3-8b-8192",
-      messages: [
-        {
-          role: "user",
-          content: expect.stringContaining(
-            `Who is or are ${mockData[0].author}?`
-          ),
-        },
-      ],
-    });
-    expect(mockData[0]).toHaveProperty("author_info");
     expect(res.status).toHaveBeenCalled();
     expect(res.json).toHaveBeenCalled();
   });

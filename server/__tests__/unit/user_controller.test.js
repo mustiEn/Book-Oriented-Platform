@@ -4,7 +4,6 @@ import {
   createCheckoutSession,
   createTopic,
   displayReaderProfile,
-  getCategoryBooks,
   getLoggedInReader,
   getReaderPostComments,
   getReaderReviews,
@@ -35,6 +34,7 @@ import { Category } from "../../models/Category";
 import { TopicCategory } from "../../models/TopicCategory";
 import { RatedBook } from "../../models/RatedBook";
 import { BookCollection } from "../../models/BookCollection";
+import { Notification } from "../../models/Notification";
 import { RestrictedPost } from "../../models/RestrictedPost";
 import { RecommendedBook } from "../../models/RecommendedBook";
 import { Subscription } from "../../models/Subscription";
@@ -64,6 +64,7 @@ vi.mock("../../models/BookCollection");
 vi.mock("../../models/RestrictedPost");
 vi.mock("../../models/RecommendedBook");
 vi.mock("../../models/Subscription");
+vi.mock("../../models/Notification");
 
 const transaction = {
   rollback: vi.fn().mockResolvedValue(),
