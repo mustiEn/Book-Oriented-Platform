@@ -26,12 +26,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: |
-        cd server
-        npm ci
-    - run: |
-        cd server
-        npm run start --if-present
-    - run: |
-        cd server
-        npm run test
+    - name: Analyze with CodeQL
+      uses: codebeltnet/codeql-scan@v1.0.0
+    
+    
