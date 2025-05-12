@@ -54,6 +54,7 @@ export const shareReview = async (req, res, next) => {
       });
 
       if (!topic) {
+        console.log("hey");
         throw new Error("Topic not found");
       }
     }
