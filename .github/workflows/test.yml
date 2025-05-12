@@ -23,7 +23,7 @@ jobs:
         cd server
         npm ci
 
-    - run: 
+    - run: |
         cd server
         npm run test
     
