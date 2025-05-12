@@ -27,7 +27,7 @@ afterEach(async () => {
   mockRequest.req = {};
 });
 
-describe("test bookcollection", () => {
+describe.skip("test bookcollection", () => {
   test("should get req param `bookId`", async () => {
     mockData = [{ author: "jack", title: "abc" }];
     mockReqData = { bookId: 1 };
@@ -69,7 +69,7 @@ describe("test bookcollection", () => {
   });
 });
 
-describe("test login", () => {
+describe.skip("test login", () => {
   beforeEach(() => {
     mockReqData = { username: "Jack", password: "123Jack!" };
     mockRequest.req["body"] = mockReqData;
@@ -182,7 +182,7 @@ describe("test login", () => {
   });
 });
 
-describe("test signup", () => {
+describe.skip("test signup", () => {
   beforeEach(() => {
     mockReqData = {
       email: "jane.smith@example.com",

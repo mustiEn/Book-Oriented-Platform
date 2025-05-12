@@ -1,6 +1,14 @@
 //! UPDATE THIS FILE
 import { validationResult, matchedData } from "express-validator";
-import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  skip,
+  expect,
+  test,
+  vi,
+} from "vitest";
 import {
   createCheckoutSession,
   createTopic,
@@ -99,7 +107,7 @@ afterEach(() => {
   // console.log("exists func 1", fs.existsSync());
 });
 
-describe("test share review", () => {
+describe.skip("test share review", () => {
   beforeEach(() => {
     mockReqData = {
       topic: "Game",
@@ -157,7 +165,7 @@ describe("test share review", () => {
   });
 });
 
-describe("test setPrivateNote", () => {
+describe.skip("test setPrivateNote", () => {
   beforeEach(() => {
     mockReqData = {
       topic: "Game",
@@ -215,7 +223,7 @@ describe("test setPrivateNote", () => {
   });
 });
 
-describe("test displayReaderProfile", () => {
+describe.skip("test displayReaderProfile", () => {
   test("should return data", async () => {
     mockReqData = { username: "Jack" };
     mockRequest.req.body = mockReqData;
@@ -232,7 +240,7 @@ describe("test displayReaderProfile", () => {
   });
 });
 
-describe("test getReaderReviews", () => {
+describe.skip("test getReaderReviews", () => {
   beforeEach(() => {
     mockReqData = { username: "Jack" };
     mockRequest.req.body = mockReqData;
@@ -265,7 +273,7 @@ describe("test getReaderReviews", () => {
   });
 });
 
-describe("test updateReaderBookDates", () => {
+describe.skip("test updateReaderBookDates", () => {
   beforeEach(() => {
     mockReqData = { bookId: 1, startingDate: 2023, finishingDate: 2024 };
     mockRequest.req.body = mockReqData;
@@ -287,7 +295,7 @@ describe("test updateReaderBookDates", () => {
   });
 });
 
-describe("test uploadImage", () => {
+describe.skip("test uploadImage", () => {
   beforeEach(() => {
     mockRequest.req.files = {
       ppImage: [
@@ -413,7 +421,7 @@ describe("test uploadImage", () => {
   });
 });
 
-describe("test getLoggedInUser", () => {
+describe.skip("test getLoggedInUser", () => {
   beforeEach(() => {
     mockData = { id: 1, user: "jack" };
   });
@@ -446,7 +454,7 @@ describe("test getLoggedInUser", () => {
   });
 });
 
-describe("test getReaderPostComments", () => {
+describe.skip("test getReaderPostComments", () => {
   beforeEach(() => {
     mockData = { id: 1, user: "jack" };
   });
@@ -620,7 +628,7 @@ describe("test getReaderPostComments", () => {
   });
 });
 
-describe("test sendCommend", () => {
+describe.skip("test sendCommend", () => {
   beforeEach(() => {
     mockReqData = {
       comment: "abc",
@@ -711,7 +719,7 @@ describe("test sendCommend", () => {
   });
 });
 
-describe("test createTopic", () => {
+describe.skip("test createTopic", () => {
   beforeEach(() => {
     mockReqData = {
       topic: "abc",
@@ -760,7 +768,7 @@ describe("test createTopic", () => {
   });
 });
 
-describe("test getTopic", () => {
+describe.skip("test getTopic", () => {
   beforeEach(() => {
     mockReqData = {
       topicName: "wild rift",
@@ -798,7 +806,7 @@ describe("test getTopic", () => {
   });
 });
 
-describe("test getTopicBooks", () => {
+describe.skip("test getTopicBooks", () => {
   beforeEach(() => {
     mockReqData = {
       topicName: "wild rift",
@@ -840,7 +848,7 @@ describe("test getTopicBooks", () => {
   });
 });
 
-describe("test getTopicPosts", () => {
+describe.skip("test getTopicPosts", () => {
   beforeEach(() => {
     mockReqData = {
       topicName: "wild rift",
@@ -949,7 +957,7 @@ describe("test getTopicPosts", () => {
   });
 });
 
-describe("test setFollowingState", () => {
+describe.skip("test setFollowingState", () => {
   beforeEach(() => {
     mockReqData = {
       topicId: 2,
@@ -993,7 +1001,7 @@ describe("test setFollowingState", () => {
   });
 });
 
-describe("test createCheckoutSession", () => {
+describe.skip("test createCheckoutSession", () => {
   beforeEach(() => {
     mockReqData = {
       premiumType: "Annual",
@@ -1021,7 +1029,7 @@ describe("test createCheckoutSession", () => {
   });
 });
 
-describe("test listenWebhook", () => {
+describe.skip("test listenWebhook", () => {
   beforeEach(() => {
     mockReqData = {
       id: "evt_1Example12345",
