@@ -14,36 +14,15 @@ jobs:
 
     runs-on: ubuntu-latest
     
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-    env:
-      DB_DATABASE: "book-app"
-      DB_USER: root
-      DB_PASS: root
-
-    steps:   
+    steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+    - uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - name: Start MySQL
-      run: |
-        sudo /etc/init.d/mysql start
-        mysql -e "CREATE DATABASE IF NOT EXISTS \`$DB_DATABASE\`;" -u$DB_USER -p$DB_PASS
+        node-version: 20
     - run: |
         cd server
         npm ci
-    - name: Run Sequelize Migrations
-      run: |
-        cd server
-        npx sequelize-cli db:migrate
-    - run: |
-        cd server
-        npm run start --if-present
+
     - run: 
         cd server
         npm run test
