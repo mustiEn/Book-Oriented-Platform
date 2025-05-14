@@ -27,10 +27,10 @@ import { logger, returnFromRaw } from "../utils/constants.js";
 
 import Stripe from "stripe";
 import dotenv from "dotenv";
+dotenv.config();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
-dotenv.config();
 
 export const shareReview = async (req, res, next) => {
   //^ Gets topic, title, review and bookId.
