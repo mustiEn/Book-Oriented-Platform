@@ -13,7 +13,7 @@ Importing SQL files
 
 ## Usage
 
-After installation, you can use the command:
+After these, you can use the command:
 
 ```nodejs
 npm run start
