@@ -1,7 +1,6 @@
 import cron from "node-cron";
 import { logger, returnFromRaw } from "../utils/constants.js";
 import dotenv from "dotenv";
-import { Post } from "../models/Post.js";
 import { RestrictedPost } from "../models/RestrictedPost.js";
 import { RecommendedBook } from "../models/RecommendedBook.js";
 import Sentiment from "sentiment";
@@ -37,21 +36,21 @@ const options = {
 
 //? RESTRICTION
 
-const postsSql = `SELECT 
-                    id, post_type, postId, userId 
+const postsSql = `SELECT
+                    id, post_type, postId, userId
                   FROM
                     posts
-                  WHERE 
-                    restricted = 0
+                  WHERE
+                    is_restricted = 0
                   ORDER BY createdAt DESC
                   LIMIT 3
-                  
+
                   `;
 const returnContent = async (postType, postId) => {
   const contentSql = `SELECT ${postType}
                       FROM
                         ${postType}s
-                      WHERE 
+                      WHERE
                         id = ${postId}`;
   const result = returnFromRaw(contentSql);
   const content = result[0][postType];
@@ -84,27 +83,27 @@ const getContentSensitivity = async (text) => {
 
 //? TRENDING TOPICS
 
-export const trendingTopicsSql = `SELECT  
-              t.id, 
+export const trendingTopicsSql = `SELECT
+              t.id,
               t.topic,
-              t.image, 
-              t.post_count, 
-              t.follower_count, 
+              t.image,
+              t.post_count,
+              t.follower_count,
               IF(
-                MAX(uta.UserId) IS NULL, 
-                FALSE, 
+                MAX(uta.UserId) IS NULL,
+                FALSE,
                 TRUE
-              ) AS isFollowing 
-            FROM 
-              posts p 
-              INNER JOIN topics t ON t.id = p.topicId 
-              LEFT JOIN user_topic_association uta ON uta.TopicId = t.id 
-              AND uta.UserId = 6 
-            WHERE 
-              p.createdAt >= NOW() - INTERVAL 36 HOUR 
-              AND p.post_type != 'comment' 
-              AND p.topicId IS NOT NULL 
-            GROUP BY 
+              ) AS isFollowing
+            FROM
+              posts p
+              INNER JOIN topics t ON t.id = p.topicId
+              LEFT JOIN user_topic_association uta ON uta.TopicId = t.id
+              AND uta.UserId = 6
+            WHERE
+              p.createdAt >= NOW() - INTERVAL 36 HOUR
+              AND p.post_type != 'comment'
+              AND p.topicId IS NOT NULL
+            GROUP BY
               p.topicId
             LIMIT 10;`;
 export let trendingTopics = returnFromRaw(trendingTopicsSql);
