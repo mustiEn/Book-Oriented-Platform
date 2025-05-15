@@ -17,7 +17,7 @@ import { RiQuillPenFill } from "react-icons/ri";
 import { TiTag } from "react-icons/ti";
 import { useMedia } from "use-media";
 
-const LeftSidebar = ({ ref, loggedInReader }) => {
+const LeftSidebar = ({ loggedInReader }) => {
   const isWide = useMedia({ minWidth: "1200px" });
   const { user, unReadNotifications } = loggedInReader;
   const hasSub = user[0].customer_id ? true : false;

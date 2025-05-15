@@ -13,7 +13,8 @@ import "./strategies/strategy.js";
 import cookieParser from "cookie-parser";
 import { setupAssociations } from "./models/associations.js";
 import "./crons/index.js";
-
+import { createCsrfToken } from "./middlewares/csrf_token_handler.js";
+import { rateLimit } from "express-rate-limit";
 dotenv.config();
 
 export const app = express();
@@ -33,6 +34,10 @@ const sessionMiddleware = session({
     // httpOnly:true
   },
 });
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
 
 try {
   await sequelize.authenticate();
@@ -46,7 +51,14 @@ try {
 
 app.use(cookieParser());
 app.use(sessionMiddleware);
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:8080",
+    credentials: true,
+  })
+);
+app.use(limiter);
+app.get("/api/csrf-token", createCsrfToken);
 app.use(
   express.json({
     limit: "5mb",

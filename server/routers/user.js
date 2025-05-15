@@ -1,10 +1,9 @@
 import express from "express";
 import * as userController from "../controllers/user.js";
-import { query, body, param, check } from "express-validator";
+import { query, body, param } from "express-validator";
 import multer from "multer";
-import bodyParser from "body-parser";
 import { isUserActive } from "../middlewares/user_session_checker.js";
-import { logger } from "../utils/constants.js";
+import { verifyCsrfToken } from "../middlewares/verify_csrf_token.js";
 
 const maxSize = 25 * 1000 * 100;
 const storage = multer.diskStorage({
@@ -28,7 +27,7 @@ const router = express.Router();
 
 router.post(
   "/create-checkout-session",
-  [isUserActive, body("premiumType").notEmpty().isString()],
+  [isUserActive, verifyCsrfToken, body("premiumType").notEmpty().isString()],
   userController.createCheckoutSession
 );
 
@@ -76,6 +75,7 @@ router.post(
   "/share-review",
   [
     isUserActive,
+    verifyCsrfToken,
     body("topic").optional(),
     body("review").notEmpty().isString(),
     body("title").notEmpty().isString(),
