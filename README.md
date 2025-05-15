@@ -13,6 +13,6 @@ Sight Engine account (optional)
 ## Usage
 
 ```nodejs
-command
+#Server start
 npm run start
 ```
