@@ -8,11 +8,18 @@ Book Oriented Platform is a web app for interacting with books.
 Stripe account (optional)
 Ngrok account (optional)
 Sight Engine account (optional)
+Importing SQL files
 
 
 ## Usage
 
+After installation, you can use the command:
+
 ```nodejs
-/*Server start
 npm run start
 ```
+
+## Features
+  * Polymorphip Association
+  * Stripe Implementation
+  * Lazy loading
