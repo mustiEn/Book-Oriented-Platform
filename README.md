@@ -1,26 +1,18 @@
-# Foobar
+# Book Oriented Platform
 
-Foobar is a Python library for dealing with word pluralization.
+Book Oriented Platform is a web app for interacting with books.
 
-## Installation
+## Requirements
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
+.env file (check env sample)
+Stripe account (optional)
+Ngrok account (optional)
+Sight Engine account (optional)
 
-```bash
-pip install foobar
-```
 
 ## Usage
 
-```python
-import foobar
-
-# returns 'words'
-foobar.pluralize('word')
-
-# returns 'geese'
-foobar.pluralize('goose')
-
-# returns 'phenomenon'
-foobar.singularize('phenomena')
+```nodejs
+command
+npm run start
 ```
