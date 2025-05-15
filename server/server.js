@@ -13,6 +13,7 @@ import "./strategies/strategy.js";
 import cookieParser from "cookie-parser";
 import { setupAssociations } from "./models/associations.js";
 import "./crons/index.js";
+import { createCsrfToken } from "./middlewares/csrf_token_handler.js";
 
 dotenv.config();
 
@@ -46,7 +47,13 @@ try {
 
 app.use(cookieParser());
 app.use(sessionMiddleware);
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:8080",
+    credentials: true,
+  })
+);
+app.get("/api/csrf-token", createCsrfToken);
 app.use(
   express.json({
     limit: "5mb",
