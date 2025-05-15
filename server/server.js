@@ -38,7 +38,7 @@ const sessionMiddleware = session({
 try {
   await sequelize.authenticate();
   setupAssociations();
-  await sequelize.sync();
+  await sequelize.sync({ alter: true });
   logger.log("Connection has been established successfully.");
   logger.log("All models were synchronized successfully.");
 } catch (error) {

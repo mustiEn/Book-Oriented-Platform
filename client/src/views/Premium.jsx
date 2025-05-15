@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import Form from "react-bootstrap/esm/Form";
 import Badge from "react-bootstrap/esm/Badge";
 import Card from "react-bootstrap/Card";
-import { Link, redirect, useNavigate } from "react-router-dom";
 import Button from "react-bootstrap/esm/Button";
+import { fetchCsrfToken } from "../loaders/csrf_token";
 
 const Premium = () => {
   const [premium, setPremium] = useState("Annual");
+  const [csrfToken, setCsrfToken] = useState("");
   const bulletPoints = [
     "Profile Badge",
     "Edit post",
@@ -19,17 +19,26 @@ const Premium = () => {
       const res = await fetch("/api/create-checkout-session", {
         headers: {
           "Content-Type": "application/json",
+          "CRSF-Token": csrfToken,
         },
+        credentials: "include",
         method: "POST",
         body: JSON.stringify({ premiumType: premium }),
       });
       const data = await res.json();
+
       if (!res.ok) {
         throw new Error(data.message);
       }
+
       window.location.replace(data.url);
     } catch (error) {}
   };
+
+  useEffect(() => {
+    const token = fetchCsrfToken();
+    setCsrfToken(token);
+  });
 
   return (
     <>

@@ -27,8 +27,8 @@ import { logger, returnFromRaw } from "../utils/constants.js";
 
 import Stripe from "stripe";
 import dotenv from "dotenv";
-dotenv.config();
 
+dotenv.config();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_ENDPOINT_SECRET;
 
@@ -3463,9 +3463,6 @@ export const createCheckoutSession = async (req, res, next) => {
 
     const { premiumType } = matchedData(req);
     const userId = req.session.passport.user;
-    // const prices = await stripe.prices.list({
-    //   lookup_keys: [premiumType],
-    // });
     const priceId =
       premiumType == "Annual"
         ? "price_1QlxgDHBAbJebqsa0nRY5sF3"
