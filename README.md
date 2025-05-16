@@ -20,7 +20,7 @@ npm run start
 ```
 
 ## Features
-  * Polymorphip Association
+  * Polymorphic Association
   * Stripe Implementation
   * Lazy loading
 
