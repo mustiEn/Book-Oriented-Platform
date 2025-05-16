@@ -23,3 +23,16 @@ npm run start
   * Polymorphip Association
   * Stripe Implementation
   * Lazy loading
+
+## Login
+
+You can use the following users:
+  * username:ben11w && password:aa
+  * username:435ttt && password:aa
+
+## TO-DO
+
+I'm going to do the following things in the future:
+
+ * Admin view
+ * Disabling users to get another premium when already having one
