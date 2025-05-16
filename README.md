@@ -27,8 +27,8 @@ npm run start
 ## Login
 
 You can use the following users:
-  * username:ben11w && password:aa
-  * username:435ttt && password:aa
+  * Username:ben11w & Password:aa
+  * Username:435ttt & Password:aa
 
 ## TO-DO
 
